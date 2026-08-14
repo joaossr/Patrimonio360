@@ -1,0 +1,472 @@
+/*
+==========================================================
+ Patrimônio 360 v4
+ Navbar
+==========================================================
+*/
+
+#navbar{
+    width:100%;
+    height:94px;
+    display:flex;
+    align-items:center;
+    position:relative;
+    z-index:100;
+    background:#0c1116;
+    border-bottom:1px solid #252d36;
+    box-sizing:border-box;
+}
+
+.navbar{
+    width:100%;
+    height:100%;
+    min-width:0;
+    padding:0 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+    box-sizing:border-box;
+}
+
+/*
+==========================================================
+ LADO ESQUERDO
+==========================================================
+*/
+
+.navbar-left{
+    min-width:0;
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+/*
+==========================================================
+ BOTÕES SUPERIORES
+==========================================================
+*/
+
+.topbar-button{
+    width:52px;
+    height:52px;
+    flex:0 0 52px;
+    padding:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid #29323c;
+    border-radius:14px;
+    background:#171e25;
+    color:#f8fafc;
+    cursor:pointer;
+    box-sizing:border-box;
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s ease;
+}
+
+.topbar-button:hover{
+    background:#202832;
+    border-color:#394553;
+}
+
+.topbar-button:active{
+    transform:scale(.96);
+}
+
+.topbar-button svg{
+    width:18px;
+    height:18px;
+    display:block;
+    flex-shrink:0;
+}
+
+.navbar-icon-state{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/*
+==========================================================
+ BOTÃO MENU
+==========================================================
+*/
+
+.menu-toggle{
+    position:relative;
+}
+
+.menu-toggle:hover{
+    border-color:#3b82f6;
+}
+
+/*
+==========================================================
+ PESQUISA
+==========================================================
+*/
+
+.navbar-search{
+    width:445px;
+    max-width:100%;
+    height:52px;
+    min-width:180px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:0 16px;
+    border:1px solid #29323c;
+    border-radius:14px;
+    background:#171e25;
+    box-sizing:border-box;
+    transition:
+        border-color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease;
+}
+
+.navbar-search:focus-within{
+    border-color:#3b82f6;
+    background:#1a222b;
+    box-shadow:0 0 0 3px rgba(59,130,246,.08);
+}
+
+.navbar-search-icon{
+    width:18px;
+    height:18px;
+    flex:0 0 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#f1f5f9;
+}
+
+.navbar-search-icon svg{
+    width:16px;
+    height:16px;
+    display:block;
+}
+
+.navbar-search input{
+    width:100%;
+    height:100%;
+    min-width:0;
+    padding:0;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:#f8fafc;
+    font-family:inherit;
+    font-size:14px;
+}
+
+.navbar-search input::placeholder{
+    color:#7e8793;
+}
+
+/*
+==========================================================
+ LADO DIREITO
+==========================================================
+*/
+
+.navbar-right{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:14px;
+}
+
+/*
+==========================================================
+ NOVA MOVIMENTAÇÃO
+==========================================================
+*/
+
+.btn-new-transaction{
+    height:52px;
+    min-width:230px;
+    padding:0 22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    border:0;
+    border-radius:14px;
+    background:linear-gradient(
+        100deg,
+        #159fd2 0%,
+        #4d79f4 43%,
+        #9553e8 72%,
+        #ce2f8c 100%
+    );
+    color:#fff;
+    font-family:inherit;
+    font-size:15px;
+    font-weight:700;
+    white-space:nowrap;
+    cursor:pointer;
+    box-sizing:border-box;
+    box-shadow:0 8px 24px rgba(74,90,220,.16);
+    transition:
+        transform .2s ease,
+        filter .2s ease,
+        box-shadow .2s ease;
+}
+
+.btn-new-transaction:hover{
+    filter:brightness(1.08);
+    transform:translateY(-1px);
+    box-shadow:0 10px 30px rgba(74,90,220,.24);
+}
+
+.btn-new-transaction:active{
+    transform:translateY(0);
+}
+
+.btn-new-transaction svg{
+    width:18px;
+    height:18px;
+    flex:0 0 18px;
+}
+
+/*
+==========================================================
+ VALORES OCULTOS
+==========================================================
+*/
+
+body.values-hidden .money-value,
+body.values-hidden [data-sensitive="true"]{
+    filter:blur(7px);
+    user-select:none;
+}
+
+/*
+==========================================================
+ TEMA CLARO
+==========================================================
+*/
+
+html[data-theme="light"] #navbar{
+    background:#fff;
+    border-bottom-color:#e5e7eb;
+}
+
+html[data-theme="light"] .topbar-button{
+    background:#f8fafc;
+    border-color:#e2e8f0;
+    color:#111827;
+}
+
+html[data-theme="light"] .topbar-button:hover{
+    background:#f1f5f9;
+    border-color:#cbd5e1;
+}
+
+html[data-theme="light"] .navbar-search{
+    background:#f8fafc;
+    border-color:#e2e8f0;
+}
+
+html[data-theme="light"] .navbar-search:focus-within{
+    background:#fff;
+    border-color:#3b82f6;
+}
+
+html[data-theme="light"] .navbar-search input{
+    color:#111827;
+}
+
+html[data-theme="light"] .navbar-search-icon{
+    color:#334155;
+}
+
+html[data-theme="light"] .navbar-search input::placeholder{
+    color:#94a3b8;
+}
+
+/*
+==========================================================
+ NOTEBOOK
+==========================================================
+*/
+
+@media(max-width:1350px){
+
+    .navbar{
+        padding:0 22px;
+        gap:18px;
+    }
+
+    .navbar-search{
+        width:360px;
+    }
+
+    .navbar-right{
+        gap:10px;
+    }
+
+    .btn-new-transaction{
+        min-width:195px;
+        padding:0 18px;
+    }
+}
+
+/*
+==========================================================
+ TELAS MENORES
+==========================================================
+*/
+
+@media(max-width:1150px){
+
+    .navbar-search{
+        width:280px;
+    }
+
+    .btn-new-transaction{
+        min-width:52px;
+        width:52px;
+        padding:0;
+    }
+
+    .btn-new-transaction span{
+        display:none;
+    }
+}
+
+/*
+==========================================================
+ MOBILE
+==========================================================
+*/
+
+@media(max-width:950px){
+
+    #navbar{
+        height:76px;
+        position:sticky;
+        top:0;
+        z-index:900;
+    }
+
+    .navbar{
+        padding:0 15px;
+        gap:10px;
+    }
+
+    .navbar-left{
+        flex:0 0 auto;
+    }
+
+    .navbar-search{
+        display:none;
+    }
+
+    .navbar-right{
+        margin-left:auto;
+        gap:8px;
+    }
+
+    .topbar-button{
+        width:44px;
+        height:44px;
+        flex-basis:44px;
+        border-radius:12px;
+    }
+
+    .topbar-button svg{
+        width:17px;
+        height:17px;
+    }
+
+    .btn-new-transaction{
+        width:44px;
+        min-width:44px;
+        height:44px;
+        padding:0;
+        border-radius:12px;
+    }
+
+    .btn-new-transaction span{
+        display:none;
+    }
+
+    .btn-new-transaction svg{
+        width:18px;
+        height:18px;
+    }
+}
+
+/*
+==========================================================
+ CELULARES PEQUENOS
+==========================================================
+*/
+
+@media(max-width:520px){
+
+    #navbar{
+        height:68px;
+    }
+
+    .navbar{
+        padding:0 10px;
+        gap:7px;
+    }
+
+    .navbar-right{
+        gap:6px;
+    }
+
+    .topbar-button{
+        width:40px;
+        height:40px;
+        flex-basis:40px;
+        border-radius:11px;
+    }
+
+    .btn-new-transaction{
+        width:40px;
+        min-width:40px;
+        height:40px;
+        border-radius:11px;
+    }
+}
+
+/*
+==========================================================
+ CELULARES MUITO PEQUENOS
+==========================================================
+*/
+
+@media(max-width:380px){
+
+    .navbar{
+        padding:0 8px;
+        gap:5px;
+    }
+
+    .navbar-right{
+        gap:5px;
+    }
+
+    .topbar-button{
+        width:38px;
+        height:38px;
+        flex-basis:38px;
+    }
+
+    .btn-new-transaction{
+        width:38px;
+        min-width:38px;
+        height:38px;
+    }
+}

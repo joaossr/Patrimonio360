@@ -1,0 +1,174 @@
+/*
+==========================================================
+ Patrimônio 360 v4
+ Layout
+==========================================================
+*/
+
+:root{
+    --sidebar-open:290px;
+    --sidebar-closed:76px;
+    --navbar-height:94px;
+}
+
+html,
+body{
+    width:100%;
+    min-height:100%;
+    margin:0;
+}
+
+body{
+    overflow-x:hidden;
+    background:#0c1116;
+}
+
+.app{
+    width:100%;
+    min-height:100vh;
+    background:var(--bg-primary);
+}
+
+/*
+==========================================================
+ SIDEBAR
+==========================================================
+*/
+
+#sidebar{
+    width:var(--sidebar-open);
+    height:100vh;
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:1000;
+    transition:width .25s ease;
+}
+
+#sidebar:has(.sidebar.closed){
+    width:var(--sidebar-closed);
+}
+
+/*
+==========================================================
+ CONTEÚDO PRINCIPAL
+==========================================================
+*/
+
+.main{
+    margin-left:290px;
+    width:calc(100% - 290px);
+    min-height:100vh;
+    min-width:0;
+
+    transition:
+        margin-left .25s ease,
+        width .25s ease;
+}
+
+body.sidebar-collapsed .main{
+    margin-left:76px;
+    width:calc(100% - 76px);
+}
+
+/*
+==========================================================
+ NAVBAR
+==========================================================
+*/
+
+#navbar{
+    width:100%;
+}
+
+/*
+==========================================================
+ CONTEÚDO DAS PÁGINAS
+==========================================================
+*/
+
+#content{
+    width:100%;
+    padding:34px 32px 40px;
+    box-sizing:border-box;
+}
+
+.page{
+    width:100%;
+    max-width:1600px;
+    margin:0 auto;
+}
+
+/*
+==========================================================
+ GRIDS
+==========================================================
+*/
+
+.grid-2{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:24px;
+}
+
+.grid-3{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:24px;
+}
+
+.grid-4{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:24px;
+}
+
+/*
+==========================================================
+ RESPONSIVO
+==========================================================
+*/
+
+@media(max-width:1200px){
+
+    .grid-4{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+}
+
+@media(max-width:950px){
+
+    #sidebar{
+        width:0;
+    }
+
+    #sidebar:has(.sidebar.open){
+        width:280px;
+    }
+
+    .main,
+    body.sidebar-collapsed .main{
+        width:100%;
+        margin-left:0;
+    }
+
+    #content{
+        padding:24px 18px 32px;
+    }
+
+    .grid-2,
+    .grid-3,
+    .grid-4{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media(max-width:520px){
+
+    #content{
+        padding:20px 12px 28px;
+    }
+
+}
