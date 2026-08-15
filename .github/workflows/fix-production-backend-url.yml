@@ -29,6 +29,10 @@ jobs:
                   "const DEFAULT_BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787' ? location.origin : 'https://patrimonio360-hqka.onrender.com';"
               ),
               (
+                  "const AI_BACKEND_URL = (localStorage.getItem('p360-ai-backend') || DEFAULT_BACKEND_URL).replace(/\\/$/, '');",
+                  "const savedBackend = localStorage.getItem('p360-ai-backend');\nconst isLocalBackend = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787';\nconst AI_BACKEND_URL = (isLocalBackend ? (savedBackend || DEFAULT_BACKEND_URL) : DEFAULT_BACKEND_URL).replace(/\\/$/, '');"
+              ),
+              (
                   "fetch(`${AI_BACKEND_URL}/health`,",
                   "fetch(`${AI_BACKEND_URL}/api/status`,"
               ),
@@ -47,7 +51,7 @@ jobs:
               raise SystemExit(0)
 
           path.write_text(text, encoding='utf-8')
-          print('Frontend P360 ajustado: backend de produção + endpoint /api/status.')
+          print('Integração frontend/backend corrigida.')
           PY
 
       - name: Commit and push
@@ -59,5 +63,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.js
-          git commit -m 'Corrige conexão da IA com backend em produção'
+          git commit -m 'Impede override local quebrado no backend de produção'
           git push
