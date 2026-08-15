@@ -6,7 +6,8 @@ const args = new Map(process.argv.slice(2).map((arg) => {
   return [key, value];
 }));
 
-const cycles = Number(args.get('cycles') ?? 1);
+const cyclesArg = args.get('cycles');
+const cycles = cyclesArg == null ? 1 : Number(cyclesArg);
 const intervalMs = Number(args.get('interval') ?? 5000);
 const stopOnFailure = args.get('stop-on-failure') !== 'false';
 const commands = [
@@ -19,17 +20,24 @@ const commands = [
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function npmCommand() {
+  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
+}
+
 function run(command) {
   return new Promise((resolve) => {
-    const child = spawn(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', command], {
+    const child = spawn(npmCommand(), ['run', command], {
       cwd: process.cwd(),
       env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+      shell: false
     });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk) => { stdout += chunk.toString(); process.stdout.write(chunk); });
     child.stderr.on('data', (chunk) => { stderr += chunk.toString(); process.stderr.write(chunk); });
+    child.on('error', (error) => resolve({ command, code: 1, stdout, stderr: `${stderr}${error.message}` }));
     child.on('close', (code) => resolve({ command, code: code ?? 1, stdout, stderr }));
   });
 }
@@ -55,13 +63,14 @@ function summarize(result, label) {
 }
 
 async function main() {
-  if (!Number.isInteger(cycles) || cycles < 1) {
-    console.error('cycles deve ser um inteiro >= 1. Para execução contínua use --cycles=0.');
+  const continuous = cycles === 0;
+  if ((!Number.isInteger(cycles) || cycles < 0) || !Number.isFinite(intervalMs) || intervalMs < 0) {
+    console.error('Uso: npm run ai:quality-loop -- --cycles=1 [--interval=5000] [--stop-on-failure=false]');
+    console.error('Use --cycles=0 para execução contínua.');
     process.exitCode = 2;
     return;
   }
 
-  const continuous = cycles === 0;
   const maxCycles = continuous ? Number.POSITIVE_INFINITY : cycles;
   const report = { suite: 'P360 AI Quality Loop', startedAt: new Date().toISOString(), cycles: [] };
 
