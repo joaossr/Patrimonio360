@@ -2,8 +2,9 @@ const MONTHS = ['janeiro','fevereiro','marco','abril','maio','junho','julho','ag
 const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 const NUMBER_WORDS = new Map([
-  ['um', 1], ['uma', 1], ['dois', 2], ['duas', 2], ['tres', 3], ['quatro', 4], ['cinco', 5],
-  ['seis', 6], ['sete', 7], ['oito', 8], ['nove', 9], ['dez', 10]
+  ['zero', 0], ['um', 1], ['uma', 1], ['dois', 2], ['duas', 2], ['tres', 3], ['quatro', 4], ['cinco', 5],
+  ['seis', 6], ['sete', 7], ['oito', 8], ['nove', 9], ['dez', 10], ['onze', 11], ['doze', 12], ['treze', 13],
+  ['quatorze', 14], ['quinze', 15], ['dezesseis', 16], ['dezessete', 17], ['dezoito', 18], ['dezenove', 19], ['vinte', 20]
 ]);
 
 export function normalizeMoney(value) {
@@ -18,13 +19,21 @@ export function normalizeMoney(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function wordNumber(raw) {
+  const s = norm(raw).trim();
+  if (NUMBER_WORDS.has(s)) return NUMBER_WORDS.get(s);
+  const compound = s.match(/^(vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa)(?: e (um|dois|tres|quatro|cinco|seis|sete|oito|nove))?$/);
+  if (!compound) return 0;
+  const tens = {vinte:20,trinta:30,quarenta:40,cinquenta:50,sessenta:60,setenta:70,oitenta:80,noventa:90};
+  return tens[compound[1]] + (compound[2] ? (NUMBER_WORDS.get(compound[2]) || 0) : 0);
+}
+
 function candidates(text) {
   const raw = String(text || ''), out = [];
   const re = /(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)/gi;
   for (const m of raw.matchAll(re)) {
     const token = m[1], start = m.index ?? 0, end = start + m[0].length;
-    const before = raw.slice(Math.max(0, start - 24), start);
-    const after = raw.slice(end, end + 24);
+    const before = raw.slice(Math.max(0, start - 32), start), after = raw.slice(end, end + 32);
     if (/^\s*(?:x|vezes|parcelas?)\b/i.test(after)) continue;
     if (/parcelado\s+em\s*$/i.test(before)) continue;
     if (/^\d{4}$/.test(token) && Number(token) >= 1900 && Number(token) <= 2100) continue;
@@ -49,21 +58,25 @@ export function parseInstallments(text) {
 }
 
 export function parseMoney(text) {
-  const raw = String(text || '');
-  const thousand = raw.match(/(\d+(?:[.,]\d+)?)\s*mil\b/i);
+  const raw = String(text || ''), normalized = norm(raw);
+  const thousand = normalized.match(/(\d+(?:[.,]\d+)?)\s*mil\b/i);
   if (thousand) {
     const base = normalizeMoney(thousand[1]);
     if (base) return base * 1000;
   }
 
-  const wordThousand = norm(raw).match(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\s+mil\b/);
-  if (wordThousand) return (NUMBER_WORDS.get(wordThousand[1]) || 0) * 1000;
+  const wordThousand = normalized.match(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte)\s+mil\b/);
+  if (wordThousand) return (wordNumber(wordThousand[1]) || 0) * 1000;
 
   const list = candidates(raw);
-  if (!list.length) return 0;
-  const explicit = list.find(x => /r\$|reais?|real\b/i.test(raw.slice(Math.max(0, x.index - 18), x.index + 40)));
-  const semantic = list.find(x => /compr|gastar|gasto|custa|pre[cç]o|valor|coloc|invest|sal[aá]rio|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir|sobrou|entrou|torrei/i.test(raw.slice(Math.max(0, x.index - 28), x.index + 48)));
-  return (explicit || semantic || list[0])?.value || 0;
+  if (list.length) {
+    const explicit = list.find(x => /r\$|reais?|real\b/i.test(raw.slice(Math.max(0, x.index - 24), x.index + 48)));
+    const semantic = list.find(x => /compr|gastar|gasto|custa|pre[cç]o|valor|coloc|invest|sal[aá]rio|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir|sobrou|entrou|torrei|tenho|poss?o/.test(normalized.slice(Math.max(0, x.index - 34), x.index + 52)));
+    return (explicit || semantic || list[0])?.value || 0;
+  }
+
+  const word = normalized.match(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa)\b/);
+  return word ? wordNumber(word[1]) : 0;
 }
 
 export function parseFinancialValue(text) {
@@ -74,7 +87,9 @@ export function parseFinancialValue(text) {
 
 export function parseGoal(text, currentDate = new Date()) {
   const raw = String(text || ''), normalized = norm(raw);
-  if (!(/(quero|pretendo|preciso|meta|objetivo).*(chegar|atingir|guardar|juntar|ter|economizar)/.test(normalized) || /(chegar|atingir|guardar|juntar|economizar).*(meta|r\$|reais|\d|mil)/.test(normalized))) return null;
+  const goalSignal = /(preciso ter|quero ter|pretendo atingir|quero formar|meu objetivo|objetivo de|minha meta|meta de|quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar|formar uma reserva|juntar dinheiro|chegar nos?\s*\d|atingir\s*r?\$?\s*\d)/.test(normalized);
+  const projectionSignal = /(quanto.*(guardar|poupar|economizar|aportar)|qual.*aporte|quanto falta.*(meta|objetivo)|quando.*(chegar|atingir|alcan[cç]ar).*meta|projec[aã]o|projetar.*meta|em quanto tempo.*(chego|chegar|atingir)|quanto.*ate dezembro|aporte.*preciso|preciso.*aporte)/.test(normalized);
+  if (!goalSignal && !projectionSignal) return null;
   const target = parseMoney(raw);
   if (!target) return null;
   const monthIndex = MONTHS.findIndex(m => normalized.includes(m));
