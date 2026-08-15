@@ -14,19 +14,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update backend URL
+      - name: Fix production backend integration
         run: |
           python - <<'PY'
           from pathlib import Path
+
           path = Path('app.js')
           text = path.read_text(encoding='utf-8')
-          old = "const DEFAULT_BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787' ? location.origin : 'http://localhost:8787';"
-          new = "const DEFAULT_BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787' ? location.origin : 'https://patrimonio360-hqka.onrender.com';"
-          if old not in text:
-              print('URL antiga não encontrada; nenhuma alteração necessária.')
+          original = text
+
+          replacements = [
+              (
+                  "const DEFAULT_BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787' ? location.origin : 'http://localhost:8787';",
+                  "const DEFAULT_BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787' ? location.origin : 'https://patrimonio360-hqka.onrender.com';"
+              ),
+              (
+                  "fetch(`${AI_BACKEND_URL}/health`,",
+                  "fetch(`${AI_BACKEND_URL}/api/status`,"
+              ),
+              (
+                  "const timer=setTimeout(()=>controller.abort(),2500);",
+                  "const timer=setTimeout(()=>controller.abort(),10000);"
+              )
+          ]
+
+          for old, new in replacements:
+              if old in text:
+                  text = text.replace(old, new, 1)
+
+          if text == original:
+              print('Nenhuma alteração necessária no app.js.')
               raise SystemExit(0)
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
-          print('URL do backend atualizada para produção.')
+
+          path.write_text(text, encoding='utf-8')
+          print('Frontend P360 ajustado: backend de produção + endpoint /api/status.')
           PY
 
       - name: Commit and push
@@ -38,5 +59,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.js
-          git commit -m 'Conecta frontend ao backend em produção'
+          git commit -m 'Corrige conexão da IA com backend em produção'
           git push
