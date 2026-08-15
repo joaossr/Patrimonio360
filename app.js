@@ -14,8 +14,8 @@ let aiBackendStatus = { online:false, checked:false, service:'P360 Intelligence'
 async function checkAIBackend(){
   try{
     const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),2500);
-    const response=await fetch(`${AI_BACKEND_URL}/health`,{signal:controller.signal,cache:'no-store'});
+    const timer=setTimeout(()=>controller.abort(),10000);
+    const response=await fetch(`${AI_BACKEND_URL}/api/status`,{signal:controller.signal,cache:'no-store'});
     clearTimeout(timer);
     if(!response.ok)throw new Error('Health check falhou');
     const data=await response.json();
