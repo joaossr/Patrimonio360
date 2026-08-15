@@ -1,0 +1,28 @@
+{
+  "hosting": {
+    "site": "patrimonio360-e4190",
+    "public": ".",
+    "ignore": [
+      "firebase-hosting.public.json",
+      "firebase.json",
+      ".firebaserc",
+      ".firebase/**",
+      ".git/**",
+      "**/.*",
+      "**/node_modules/**",
+      "backend/**",
+      "server-local-backup.patch",
+      "server-local-backup.patch/**",
+      "firestore.rules",
+      "firestore.indexes.json",
+      "**/*.exe",
+      "**/*.dll",
+      "**/*.so",
+      "**/*.dylib",
+      "**/*.node"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "rewrites": [{"source":"**","destination":"/index.html"}]
+  }
+}
