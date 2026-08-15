@@ -15,6 +15,7 @@
     "test:ai": "node src/ai/self-test.js",
     "test:ai:regression": "node src/ai/regression-suite.js",
     "test:ai:large": "node src/ai/large-regression-suite.js",
+    "test:ai:natural": "node src/ai/natural-language-stress-suite.js",
     "test:ai:all": "node src/ai/ai-quality-gate.js"
   },
   "dependencies": {
