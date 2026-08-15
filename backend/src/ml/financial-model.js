@@ -11,12 +11,13 @@ const relu = x => Math.max(0, x);
 
 export function financialFeatures(context = {}, benchmark = {}) {
   const a = context.analysis || {};
-  const income = Number(a.income ?? a.receitas ?? context.income ?? 0);
-  const expense = Number(a.expense ?? a.expenses ?? context.expenses ?? 0);
-  const reserve = Number(context.reserve ?? a.reserve ?? 0);
+  const income = Number(a.income?.total ?? context.income ?? 0);
+  const expense = Number(a.expenses?.total ?? context.expenses ?? 0);
+  const reserve = Number(a.reserve?.current ?? context.reserve ?? 0);
   const debt = Number(context.debt ?? a.debt ?? 0);
-  const installments = Number(context.installments ?? a.installments ?? 0);
-  const goal = (context.goals || []).find(g => String(g.status || 'active') !== 'archived' && String(g.status || 'active') !== 'cancelled') || {};
+  const installments = Number(a.indicators?.installmentCommitment ?? context.installments ?? 0);
+  const goals = Array.isArray(context.goals) ? context.goals : [];
+  const goal = goals.find(g => String(g.status || 'active') !== 'archived' && String(g.status || 'active') !== 'cancelled') || {};
   const target = Number(goal.target || 0);
   const current = Number(goal.current || 0);
   const deadlineMonths = Math.max(1, Number(goal.deadlineMonths ?? 12));
@@ -41,13 +42,8 @@ export function financialFeatures(context = {}, benchmark = {}) {
 }
 
 export async function loadFinancialModel() {
-  try {
-    model = JSON.parse(await fs.readFile(MODEL_PATH, 'utf8'));
-    return true;
-  } catch {
-    model = null;
-    return false;
-  }
+  try { model = JSON.parse(await fs.readFile(MODEL_PATH, 'utf8')); return true; }
+  catch { model = null; return false; }
 }
 
 export function predictFinancialModel(features, loadedModel = model) {
@@ -58,22 +54,12 @@ export function predictFinancialModel(features, loadedModel = model) {
   const { w1, b1, w2, b2 } = loadedModel.weights;
   const hidden = w1.map((row, j) => relu(row.reduce((sum, weight, i) => sum + weight * x[i], Number(b1[j] || 0))));
   const output = w2.map((row, j) => sigmoid(row.reduce((sum, weight, i) => sum + weight * hidden[i], Number(b2[j] || 0))));
-  return {
-    purchaseAffordability: output[0],
-    reservePriority: output[1],
-    goalImpact: output[2],
-    investmentReadiness: output[3]
-  };
+  return { purchaseAffordability: output[0], reservePriority: output[1], goalImpact: output[2], investmentReadiness: output[3] };
 }
 
 export async function scoreFinancialContext(context = {}, benchmark = {}) {
   if (!model) await loadFinancialModel();
   if (!model) return { available: false, reason: 'Modelo financeiro próprio ainda não foi treinado.' };
   const features = financialFeatures(context, benchmark);
-  return {
-    available: true,
-    modelVersion: model.version,
-    scores: predictFinancialModel(features),
-    features
-  };
+  return { available: true, modelVersion: model.version, scores: predictFinancialModel(features), features };
 }
