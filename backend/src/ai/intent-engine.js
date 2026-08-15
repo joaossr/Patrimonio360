@@ -1,8 +1,8 @@
 import { normalizeUserText } from './text-normalizer.js';
 
 function hasAny(q, patterns){ return patterns.some(p => p.test(q)); }
-function classifyFallback(q, hasHistory){
-  const money=/r\$|\b\d{2,}\b|\b\d+[.,]\d{2}\b|\b\d+\s*mil\b|\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte)\s+mil\b/;
+function classifyFallback(q){
+  const money=/r\$|\b\d{2,}\b|\b\d+[.,]\d{2}\b|\b\d+\s*mil\b/;
   const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|guardar dinheiro/;
   const invest=/investir|invisto|investimento|aplicar|aplico|aplicacao|carteira/;
   const reserve=/reserva|emergencia|caixinha/;
@@ -14,17 +14,18 @@ function classifyFallback(q, hasHistory){
   const purchase=/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|\b\d+\s*x\b/;
   const diagnosis=/diagnostico|saude financeira|raio x|analise completa|panorama|situacao financeira/;
   const goal=/meta|objetivo|chegar|atingir|juntar|aportar|aporte|ate dezembro|até dezembro/;
-  if(hasAny(q,[diagnosis])) return 'diagnosis';
-  if(hasAny(q,[cards])) return 'cards';
-  if(hasAny(q,[purchase])) return 'purchase';
-  if(hasAny(q,[save, invest])) return save.test(q)&&invest.test(q)?'save_vs_invest':save.test(q)?'goal':'save_vs_invest';
-  if(hasAny(q,[goal])) return 'goal';
-  if(hasAny(q,[reserve])) return 'reserve';
-  if(hasAny(q,[expense])) return 'expenses';
-  if(hasAny(q,[budget])) return 'budget';
-  if(hasAny(q,[cash])) return 'cashflow';
-  if(hasAny(q,[accounts])) return accounts.test(q)?'accounts':null;
-  if(money.test(q)&&hasAny(q,[/recebi|renda|salario|entrou|ganhei|sobrou|coloquei|aportei|tenho/])) return 'accounts';
+  if (hasAny(q,[diagnosis])) return 'diagnosis';
+  if (hasAny(q,[cards])) return 'cards';
+  if (hasAny(q,[purchase])) return 'purchase';
+  if (save.test(q)&&invest.test(q)) return 'save_vs_invest';
+  if (invest.test(q)) return 'save_vs_invest';
+  if (hasAny(q,[goal])) return 'goal';
+  if (hasAny(q,[reserve])) return 'reserve';
+  if (hasAny(q,[expense])) return 'expenses';
+  if (hasAny(q,[budget])) return 'budget';
+  if (hasAny(q,[cash])) return 'cashflow';
+  if (hasAny(q,[accounts])) return 'accounts';
+  if (money.test(q)&&hasAny(q,[/recebi|renda|salario|entrou|ganhei|sobrou|coloquei|aportei|tenho/])) return 'accounts';
   return null;
 }
 
@@ -33,7 +34,9 @@ export function detectIntent(question, memory = {}) {
   const previous = [...(memory.recent || [])].reverse().find(x => x.role === 'user')?.content || '';
   const hasHistory = Boolean(previous);
 
-  if (hasAny(q,[/diagnost|analise completa|saude financeira|situacao financeira|raio.?x|panorama/])) return 'diagnosis';
+  // Correções do usuário sempre têm precedência sobre metas/contas/etc.
+  if (/corrig|esta errado|está errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
+  if (/diagnost|analise completa|saude financeira|situacao financeira|raio.?x|panorama/.test(q)) return 'diagnosis';
   if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
 
   const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|deixar.*conta|deixar.*parado|reserva|caixinha|dinheiro parado/;
@@ -50,8 +53,7 @@ export function detectIntent(question, memory = {}) {
   if (/reserva|emergencia/.test(q)) return 'reserve';
   if (/gastei|gastos?|despesas?|categoria|onde gasto|cortar|gastando demais|gasto mais|torrei|paguei/.test(q)) return 'expenses';
   if (/saldo|contas bancarias|dinheiro disponivel|quanto dinheiro|quanto tenho no banco|quanto tenho nas contas|quanto tenho em conta/.test(q)) return 'accounts';
-  if (/corrig|esta errado|nao e|interpretei|quis dizer|nao foi isso|minha prioridade/.test(q)) return 'feedback';
   if (/memoria|lembra|esqueceu/.test(q)) return 'memory';
   if (hasHistory && /^(e|entao|mas|se|quanto|qual|como|isso|esse|essa|ele|ela|nesse caso|e se)\b/.test(q)) return 'continuation';
-  return classifyFallback(q,hasHistory)||'general';
+  return classifyFallback(q)||'general';
 }
