@@ -1,6 +1,6 @@
 {
   "name": "patrimonio360-own-ai-backend",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,8 @@
     "start": "node src/server.js",
     "train:neural": "node src/ml/train.js",
     "train:financial": "node src/ml/train-financial-model.js",
+    "train:brazil": "node src/ml/train-financial-model.js",
+    "dataset:brazil": "node -e \"import('./src/ml/brazilian-dataset-v2.js').then(async m=>console.log(JSON.stringify(await m.buildBrazilianDatasetV2(),null,2)))\"",
     "doctor": "node src/doctor.js",
     "test:ai": "node src/ai/self-test.js"
   },
