@@ -27,5 +27,8 @@ function mount(){
   }catch(error){const typing=messages.querySelector('[data-typing="1"]');if(typing)typing.innerHTML=`<div class="ai-dash-bubble">Não consegui consultar a IA agora. Tente novamente em alguns segundos.</div>`;console.warn(error)}
   messages.scrollTop=messages.scrollHeight;
  }
+ function syncVisibility(){root.style.display=document.querySelector('#lineChart')?'':'none';if(!document.querySelector('#lineChart'))close();}
+ syncVisibility();
+ new MutationObserver(syncVisibility).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
 }
 waitForUser().then(u=>{user=u;mount()}).catch(()=>mount());
