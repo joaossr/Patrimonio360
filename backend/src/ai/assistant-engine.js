@@ -10,14 +10,16 @@ const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u03
 
 function purchaseQuestion(question,memory={}){
   const parsed=parseFinancialValue(question);
-  const continuation=/^(e|entao|mas|se|e se|quanto|qual|como)\b|^\d+\s*x\b|^em\s+\d+\s*(?:x|vezes|parcelas?)/i.test(norm(question));
-  if(!continuation || parsed.total===0 || parsed.total===parsed.installments) return question;
+  const q=norm(question);
+  const continuation=/^(e|entao|mas|se|e se|quanto|qual|como)\b|^\d+\s*x\b|^em\s+\d+\s*(?:x|vezes|parcelas?)/i.test(q);
+  if(!continuation) return question;
   const previous=[...(memory.recent||[])].reverse().find(x=>x.role==='user' && parseFinancialValue(x.content||'').total>0)?.content;
   if(!previous) return question;
   const prior=parseFinancialValue(previous);
   const currentInstallments=parsed.installments>1?parsed.installments:0;
-  if(prior.total>0 && currentInstallments>1) return `${previous} em ${currentInstallments}x`;
-  if(prior.total>0 && /parcel|vezes|\bx\b/.test(norm(question))) return `${previous} em ${currentInstallments||prior.installments}x`;
+  const currentLooksOnlyLikeInstallments=parsed.total>0 && currentInstallments>1 && Math.abs(parsed.total-currentInstallments)<0.001;
+  if(prior.total>0 && currentInstallments>1 && currentLooksOnlyLikeInstallments) return `${previous} em ${currentInstallments}x`;
+  if(prior.total>0 && /parcel|vezes|\bx\b/.test(q)) return `${previous} em ${currentInstallments||prior.installments}x`;
   return question;
 }
 
@@ -25,32 +27,21 @@ export function respondV2({question,state,currentMonth,memory,analysis,risk,prof
   const intent=detectIntent(question,memory);
   const month=resolveRequestedMonth(question,currentMonth);
   const context=buildFinancialContext(state,month,memory);
-  context.analysis=analysis;
-  context.risk=risk;
-  context.budget=analysis?.budget||null;
+  context.analysis=analysis; context.risk=risk; context.budget=analysis?.budget||null;
   const memoryPatch=extractMemoryFromMessage(question,memory);
   let answer=null, mutation=null;
-
   if(intent==='historical_income'){
     const h=historicalContext(state,month);
-    if(!h.found) answer=`Não encontrei receitas cadastradas em ${month}. Não vou substituir esse período pelos dados do mês atual.`;
-    else answer=`Em ${month}, encontrei ${money(h.income)} em receitas registradas. Desse valor, ${money(h.received)} já consta como recebido e ${money(h.income-h.received)} está pendente.`;
+    answer=!h.found?`Não encontrei receitas cadastradas em ${month}. Não vou substituir esse período pelos dados do mês atual.`:`Em ${month}, encontrei ${money(h.income)} em receitas registradas. Desse valor, ${money(h.received)} já consta como recebido e ${money(h.income-h.received)} está pendente.`;
   } else if(intent==='purchase'){
-    const result=evaluatePurchase(purchaseQuestion(question,memory),context,memory);
-    answer=explainPurchase(result);
+    answer=explainPurchase(evaluatePurchase(purchaseQuestion(question,memory),context,memory));
   } else if(intent==='goal'){
-    const parsed=parseGoal(question,new Date());
-    const existing=(state.goals||[]).find(g=>Math.abs(Number(g.target||0)-(parsed?.target||-1))<0.01);
-    if(parsed?.target){
-      if(existing) answer=`Já existe uma meta cadastrada próxima de ${money(parsed.target)}. Vou continuar usando a meta oficial do sistema nas próximas análises.`;
-      else { mutation={type:'createGoal',goal:{id:Date.now(),name:`Meta de ${money(parsed.target)}`,current:0,target:parsed.target,date:parsed.deadline||'',priority:'Alta'}}; answer=`Registrei a meta de ${money(parsed.target)}${parsed.deadline?` até ${parsed.deadline}`:''}. Ela passa a fazer parte do contexto da IA e será considerada quando você avaliar compras e aportes.`; }
-    } else answer='Consigo acompanhar a meta, mas preciso do valor-alvo. Exemplo: “Quero chegar a R$ 5.000 até dezembro”.';
+    const parsed=parseGoal(question,new Date()), existing=(state.goals||[]).find(g=>Math.abs(Number(g.target||0)-(parsed?.target||-1))<0.01);
+    if(parsed?.target){if(existing) answer=`Já existe uma meta cadastrada próxima de ${money(parsed.target)}. Vou continuar usando a meta oficial do sistema nas próximas análises.`;else{mutation={type:'createGoal',goal:{id:Date.now(),name:`Meta de ${money(parsed.target)}`,current:0,target:parsed.target,date:parsed.deadline||'',priority:'Alta'}};answer=`Registrei a meta de ${money(parsed.target)}${parsed.deadline?` até ${parsed.deadline}`:''}. Ela passa a fazer parte do contexto da IA e será considerada quando você avaliar compras e aportes.`;}}else answer='Consigo acompanhar a meta, mas preciso do valor-alvo. Exemplo: “Quero chegar a R$ 5.000 até dezembro”.';
   } else if(intent==='diagnosis'){
-    const d=completeDiagnosis(context,analysis,profile,insights);
-    answer=`**Diagnóstico financeiro**\n\nRisco: **${d.risk.level}** (${d.risk.score}/100).\n\n**3 pontos prioritários:**\n${d.topProblems.map((p,i)=>`${i+1}. **${p.title}** — ${p.reason}\n   Próximo passo: ${p.action}`).join('\n')||'Não encontrei três problemas sustentados pelos dados atuais.'}`;
-  } else if(intent==='investments'){
-    answer=context.investments.length?`Você tem ${money(context.investments.reduce((s,i)=>s+Number(i.current??i.invested??0),0))} em investimentos cadastrados, distribuídos em ${context.investments.length} posição(ões). Estou usando os investimentos reais do seu cadastro.`:'Não encontrei investimentos cadastrados no banco de dados. Não vou inventar uma carteira.';
-  } else if(intent==='feedback') answer='Entendi a correção. Vou registrá-la na memória estruturada para evitar repetir esse erro, sem alterar pesos de modelo.';
+    const d=completeDiagnosis(context,analysis,profile,insights); answer=`**Diagnóstico financeiro**\n\nRisco: **${d.risk.level}** (${d.risk.score}/100).\n\n**3 pontos prioritários:**\n${d.topProblems.map((p,i)=>`${i+1}. **${p.title}** — ${p.reason}\n   Próximo passo: ${p.action}`).join('\n')||'Não encontrei três problemas sustentados pelos dados atuais.'}`;
+  } else if(intent==='investments') answer=context.investments.length?`Você tem ${money(context.investments.reduce((s,i)=>s+Number(i.current??i.invested??0),0))} em investimentos cadastrados, distribuídos em ${context.investments.length} posição(ões). Estou usando os investimentos reais do seu cadastro.`:'Não encontrei investimentos cadastrados no banco de dados. Não vou inventar uma carteira.';
+  else if(intent==='feedback') answer='Entendi a correção. Vou registrá-la na memória estruturada para evitar repetir esse erro, sem alterar pesos de modelo.';
   else if(intent==='memory') answer=`Tenho ${(memory.facts||[]).length} fato(s), ${(memory.goals||[]).length} meta(s) de conversa, ${(memory.preferences||[]).length} preferência(s) e ${(memory.corrections||[]).length} correção(ões) na memória estruturada. Os dados financeiros oficiais continuam vindo do banco.`;
   return {answer,intent,month,context,memoryPatch,mutation};
 }
