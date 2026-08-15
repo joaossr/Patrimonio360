@@ -11,4 +11,13 @@ export function evaluatePurchase(question,context,memory={}){
  const risk=reasons.length>=3||current.planned-monthly<0?'crítico':reasons.length===2?'elevado':reasons.length===1?'atenção':'baixo',verdict=risk==='crítico'?'Eu evitaria agora.':risk==='elevado'?'Eu teria bastante cautela.':risk==='atenção'?'É possível, mas eu faria com cautela.':'Pelos dados disponíveis, parece administrável.';
  return{ok:true,value,installments,monthly,risk,verdict,reasons,goalImpact,budgetRemaining,future,reserve};
 }
-export function explainPurchase(result){if(!result?.ok)return result?.reason||'Não consegui interpretar a compra.';const lines=[`**${result.verdict}**`,`Compra: ${money(result.value)}${result.installments>1?` em ${result.installments}x de ${money(result.monthly)}`:' à vista'}.`,`Impacto mensal: ${money(result.monthly)}.`];if(result.budgetRemaining!=null)lines.push(`Margem do orçamento antes da compra: ${money(result.budgetRemaining}.`);lines.push(`Reserva de emergência: ${money(result.reserve)}.`,`Próximos 30 dias: ${money(result.future.receive)} a receber e ${money(result.future.pay)} a pagar.`);if(result.goalImpact){const g=result.goalImpact;lines.push(`Meta relacionada: ${g.name}; faltam ${money(g.remaining)}. A compra representa ${percent(g.share)} do que falta.`);if(g.share>=.1)lines.push(`Custo de oportunidade: ${money(result.value)} deixariam de ser direcionados à meta neste momento.`);}if(result.reasons.length)lines.push(`**Por que:** ${result.reasons.slice(0,4).join('; ')}.`);if(result.risk==='crítico'||result.risk==='elevado')lines.push('**Alternativas:** adiar, reduzir o valor da compra ou escolher uma parcela que caiba na margem sem comprometer a meta.');return lines.join('\n');}
+export function explainPurchase(result){
+ if(!result?.ok)return result?.reason||'Não consegui interpretar a compra.';
+ const lines=[`**${result.verdict}**`,`Compra: ${money(result.value)}${result.installments>1?` em ${result.installments}x de ${money(result.monthly)}`:' à vista'}.`,`Impacto mensal: ${money(result.monthly)}.`];
+ if(result.budgetRemaining!=null)lines.push(`Margem do orçamento antes da compra: ${money(result.budgetRemaining)}.`);
+ lines.push(`Reserva de emergência: ${money(result.reserve)}.`,`Próximos 30 dias: ${money(result.future.receive)} a receber e ${money(result.future.pay)} a pagar.`);
+ if(result.goalImpact){const g=result.goalImpact;lines.push(`Meta relacionada: ${g.name}; faltam ${money(g.remaining)}. A compra representa ${percent(g.share)} do que falta.`);if(g.share>=.1)lines.push(`Custo de oportunidade: ${money(result.value)} deixariam de ser direcionados à meta neste momento.`);}
+ if(result.reasons.length)lines.push(`**Por que:** ${result.reasons.slice(0,4).join('; ')}.`);
+ if(result.risk==='crítico'||result.risk==='elevado')lines.push('**Alternativas:** adiar, reduzir o valor da compra ou escolher uma parcela que caiba na margem sem comprometer a meta.');
+ return lines.join('\n');
+}
