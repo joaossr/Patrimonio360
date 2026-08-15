@@ -28,11 +28,12 @@ button,.nav-item,.icon-btn,.primary-btn,.secondary-btn,.text-btn{touch-action:ma
  .sidebar .brand h1,.sidebar .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .main,.app-shell.sidebar-collapsed .main{width:100%;margin-left:0;min-width:0}
  .topbar{height:76px;min-height:76px;padding:0 14px;padding-top:var(--p360-safe-top);box-sizing:content-box}
- .top-left,.top-actions{min-width:0;gap:8px}
+ .top-left{min-width:0;flex:1 1 auto;gap:8px}
+ .top-actions{min-width:0;flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto}
  .mobile-menu{display:grid;width:44px;height:44px;min-width:44px;flex:0 0 44px}
  .search{min-width:0;width:min(44vw,370px)}
- .top-actions{margin-left:auto}
  .icon-btn,.primary-btn,.secondary-btn{min-height:44px}
+ .top-actions .icon-btn{width:44px;min-width:44px;height:44px;padding:0;display:grid;place-items:center;flex:0 0 44px}
  .page{width:100%;max-width:none;padding:22px 16px calc(30px + var(--p360-safe-bottom))}
  .page-header{flex-wrap:wrap;margin-bottom:18px}
  .page-header>div,.page-header h2,.page-header p{min-width:0}
@@ -79,9 +80,9 @@ button,.nav-item,.icon-btn,.primary-btn,.secondary-btn,.text-btn{touch-action:ma
 }
 @media(max-width:600px){
  .topbar{height:68px;min-height:68px;padding-left:10px;padding-right:10px}
- .mobile-menu{width:42px;min-width:42px;height:42px}
- .top-actions{gap:6px}
- .top-actions .icon-btn{width:42px;min-width:42px;padding:0}
+ .top-left{gap:8px}
+ .top-actions{gap:8px;flex-wrap:nowrap}
+ .mobile-menu,.top-actions .icon-btn{width:42px;min-width:42px;height:42px;flex:0 0 42px;padding:0}
  .page{padding:18px 12px calc(26px + var(--p360-safe-bottom))}
  .kpi-grid{grid-template-columns:minmax(0,1fr)}
  .kpi-card{min-height:130px}
@@ -108,8 +109,10 @@ button,.nav-item,.icon-btn,.primary-btn,.secondary-btn,.text-btn{touch-action:ma
 }
 @media(max-width:430px){
  .sidebar{width:min(300px,92vw)!important;max-width:92vw}
- .top-actions .icon-btn{width:40px;min-width:40px;height:40px}
- .mobile-menu{width:40px;min-width:40px;height:40px}
+ .topbar{padding-left:10px;padding-right:10px}
+ .top-left{gap:8px}
+ .top-actions{gap:8px;flex-wrap:nowrap}
+ .top-actions .icon-btn,.mobile-menu{width:42px;min-width:42px;height:42px;flex:0 0 42px;padding:0}
  .page{padding-left:10px;padding-right:10px}
  .page-header h2{font-size:21px}
  .card{padding:12px}
@@ -118,10 +121,47 @@ button,.nav-item,.icon-btn,.primary-btn,.secondary-btn,.text-btn{touch-action:ma
 }
 @media(max-width:360px){
  .topbar{padding-left:7px;padding-right:7px}
- .top-left,.top-actions{gap:5px}
- .mobile-menu,.top-actions .icon-btn{width:38px;min-width:38px;height:38px}
+ .top-left{gap:8px}
+ .top-actions{gap:8px;flex-wrap:nowrap}
+ .mobile-menu,.top-actions .icon-btn{width:42px;min-width:42px;height:42px;flex:0 0 42px;padding:0}
  .page{padding-left:8px;padding-right:8px}
  .page-header h2{font-size:20px}
  .card{padding:11px}
 }
 @media(min-width:951px){.p360-mobile-overlay,.mobile-sidebar-close{display:none!important}}
+
+/* P360 v32 — espaçamento consistente dos botões do header mobile */
+@media(max-width:430px){
+  .top-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:nowrap;
+    margin-left:auto;
+  }
+  .top-actions .icon-btn,
+  .top-actions .mobile-menu,
+  .mobile-menu{
+    width:42px;
+    min-width:42px;
+    height:42px;
+    min-height:42px;
+    flex:0 0 42px;
+    padding:0;
+    display:grid;
+    place-items:center;
+  }
+}
+@media(max-width:360px){
+  .topbar{padding-left:7px;padding-right:7px}
+  .top-actions{gap:8px}
+  .top-actions .icon-btn,
+  .top-actions .mobile-menu,
+  .mobile-menu{
+    width:42px;
+    min-width:42px;
+    height:42px;
+    flex-basis:42px;
+  }
+}
