@@ -1,13 +1,14 @@
 {
   "name": "patrimonio360-own-ai-backend",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "train:neural": "node src/ml/train.js",
-    "doctor": "node src/doctor.js"
+    "doctor": "node src/doctor.js",
+    "test:ai": "node src/ai/self-test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
