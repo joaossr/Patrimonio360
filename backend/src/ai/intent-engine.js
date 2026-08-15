@@ -9,10 +9,9 @@ export function detectIntent(question, memory = {}) {
   if (/sal[aá]rio|renda|receit/.test(q) && /janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
   if (/guardar|poupar|economizar/.test(q) && /investir|investimento|aplicar|aplicacao|carteira/.test(q)) return 'save_vs_invest';
 
-  // Goal language must win over the generic expense intent. This prevents
-  // phrases such as "vou economizar para chegar em 5 mil" from being
-  // classified as an expense question.
-  if (/quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar|quanto .*guardar|quanto .*poupar|quanto .*economizar|meta|objetivo/.test(q)) return 'goal';
+  // Goal language must win over generic expense intent. This covers goal
+  // creation, contribution planning and projection questions.
+  if (/quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar|quanto .*guardar|quanto .*poupar|quanto .*economizar|quanto falta.*meta|quanto falta.*objetivo|quando.*(chegar|atingir|alcan[cç]ar).*meta|projec[aã]o.*meta|projetar.*meta|em quanto tempo.*meta|quanto tempo.*meta|meta.*dezembro|objetivo.*dezembro|meta|objetivo/.test(q)) return 'goal';
   if (/posso comprar|vale a pena comprar|comprar|compra|posso gastar|simule uma compra|celular|viol[aã]o|produto/.test(q)) return 'purchase';
   if (/\b\d+\s*x\b|\d+\s*(?:vezes|parcelas?)|parcelado/.test(q)) return 'purchase';
   if (/cart[aã]o|fatura|limite/.test(q)) return 'cards';
