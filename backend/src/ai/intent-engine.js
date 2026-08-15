@@ -14,7 +14,7 @@ function classifyFallback(q){
   const purchase=/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|\b\d+\s*x\b/;
   const diagnosis=/diagnostico|saude financeira|raio x|analise completa|panorama|situacao financeira/;
   const goal=/meta|objetivo|chegar|atingir|juntar|aportar|aporte|ate dezembro|até dezembro/;
-  if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)/.test(q)) return 'simulation';
+  if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
   if (hasAny(q,[diagnosis])) return 'diagnosis';
   if (hasAny(q,[cards])) return 'cards';
   if (hasAny(q,[purchase])) return 'purchase';
@@ -36,7 +36,7 @@ export function detectIntent(question, memory = {}) {
   const hasHistory = Boolean(previous);
 
   if (/corrig|esta errado|está errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
-  if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)/.test(q)) return 'simulation';
+  if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
   if (/diagnost|analise completa|saude financeira|situacao financeira|raio.?x|panorama/.test(q)) return 'diagnosis';
   if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
 
