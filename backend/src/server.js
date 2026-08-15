@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
-import { applicationDefault, cert, initializeApp, getApps } from 'firebase-admin/app';
+import { cert, initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { neuralForecast } from './ml/neural-engine.js';
@@ -50,12 +50,10 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
+
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: '1mb' }));
 
-// Serve o frontend quando o backend é iniciado localmente.
-// Assim, http://localhost:8787/ evita o erro 'Failed to fetch' causado
-// por abrir o frontend em outro host/porta sem o backend disponível.
 app.use(express.static(PROJECT_ROOT, {
     extensions: ['html'],
     index: 'index.html'
@@ -78,16 +76,11 @@ async function loadState(uid) {
     const snapshot = await db.doc(`users/${uid}/app/state`).get();
     return snapshot.exists ? snapshot.data().state || {} : {};
 }
-app.get('/api/config', (req, res) => {
-    res.json({ ok:true, telegram:!!process.env.TELEGRAM_BOT_TOKEN, botUsername:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot', backendOrigin:`http://localhost:${process.env.PORT||8787}` });
-});
 
-app.get('/health', async (req, res) => {
-    const neural = await neuralForecast({}, new Date().toISOString().slice(0, 7));
+function backendStatus(neural) {
     const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN);
-    const ok = firebaseReady && neural.available;
-    res.status(ok ? 200 : 503).json({
-        ok,
+    return {
+        ok: firebaseReady && neural.available,
         service: 'P360 Intelligence',
         backend: { port: Number(process.env.PORT || 8787) },
         firebase: { ready: firebaseReady, projectId: process.env.FIREBASE_PROJECT_ID || null, error: firebaseInitError?.message || null },
@@ -97,7 +90,40 @@ app.get('/health', async (req, res) => {
         memoryEngine: 'v1',
         languageEngine: 'p360-language-v1',
         model: neural.available ? { available: true, version: neural.modelVersion } : { available: false, reason: neural.reason }
+    };
+}
+
+app.get('/api/config', (req, res) => {
+    res.json({
+        ok: true,
+        telegram: !!process.env.TELEGRAM_BOT_TOKEN,
+        botUsername: process.env.TELEGRAM_BOT_USERNAME || 'Patrimonio360Bot',
+        backendOrigin: `${req.protocol}://${req.get('host')}`
     });
+});
+
+// Endpoint usado pelo frontend. Evita /health, que alguns bloqueadores de navegador filtram.
+app.get('/api/status', async (req, res) => {
+    try {
+        const neural = await neuralForecast({}, new Date().toISOString().slice(0, 7));
+        const status = backendStatus(neural);
+        res.status(status.ok ? 200 : 503).json(status);
+    } catch (error) {
+        console.error('P360 status error:', error);
+        res.status(503).json({ ok: false, service: 'P360 Intelligence', error: 'Falha ao verificar o backend.' });
+    }
+});
+
+// Mantido para diagnóstico manual.
+app.get('/health', async (req, res) => {
+    try {
+        const neural = await neuralForecast({}, new Date().toISOString().slice(0, 7));
+        const status = backendStatus(neural);
+        res.status(status.ok ? 200 : 503).json(status);
+    } catch (error) {
+        console.error('P360 health error:', error);
+        res.status(503).json({ ok: false, service: 'P360 Intelligence', error: 'Falha ao verificar o backend.' });
+    }
 });
 
 app.post('/api/telegram/link-code', authUser, async (req, res) => {
@@ -140,12 +166,20 @@ app.post('/api/ai/chat', authUser, async (req, res) => {
         ]);
         res.json({ answer, engine: { analysis, risk, neural, profile, insights, memory: { recentCount: recent.length } } });
     } catch (error) {
-        console.error(error);
+        console.error('P360 AI chat error:', error);
         res.status(500).json({ error: 'Não foi possível gerar a análise agora.' });
     }
 });
 
 app.listen(Number(process.env.PORT || 8787), () => {
     console.log(`P360 Own AI em http://localhost:${process.env.PORT || 8787}`);
-    startTelegramBot({ db, loadState });
+
+    // Polling do Telegram deve existir em apenas uma instância. Em produção, deixe
+    // TELEGRAM_POLLING=true somente na instância escolhida para rodar o bot.
+    const telegramPollingEnabled = String(process.env.TELEGRAM_POLLING || '').toLowerCase() === 'true';
+    if (telegramPollingEnabled) {
+        startTelegramBot({ db, loadState });
+    } else {
+        console.log('P360 Telegram polling desativado nesta instância.');
+    }
 });
