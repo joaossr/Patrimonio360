@@ -4,7 +4,7 @@ import { datasetIntentHint } from './dataset-v2-knowledge.js';
 function hasAny(q, patterns){ return patterns.some(p => p.test(q)); }
 function classifyFallback(q){
   const money=/r\$|\b\d{2,}\b|\b\d+[.,]\d{2}\b|\b\d+\s*mil\b/;
-  const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|guardar dinheiro/;
+  const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|guardar dinheiro|deixar.*conta|deixar.*parado/;
   const invest=/investir|invisto|investimento|aplicar|aplico|aplicacao|carteira/;
   const reserve=/reserva|emergencia|caixinha/;
   const expense=/gastei|gastos?|despesas?|torrei|paguei|gastando/;
@@ -18,9 +18,10 @@ function classifyFallback(q){
   if (/^(simule|simular|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir)\b/.test(q)) return 'simulation';
   if (hasAny(q,[diagnosis])) return 'diagnosis';
   if (hasAny(q,[cards])) return 'cards';
-  if (hasAny(q,[purchase])) return 'purchase';
   if (save.test(q)&&invest.test(q)) return 'save_vs_invest';
-  if (invest.test(q)) return 'save_vs_invest';
+  if (invest.test(q) && !purchase.test(q)) return 'save_vs_invest';
+  if (save.test(q) && !purchase.test(q)) return 'save_vs_invest';
+  if (hasAny(q,[purchase])) return 'purchase';
   if (hasAny(q,[goal])) return 'goal';
   if (hasAny(q,[reserve])) return 'reserve';
   if (hasAny(q,[expense])) return 'expenses';
@@ -50,12 +51,15 @@ export function detectIntent(question, memory = {}) {
 
   const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|deixar.*conta|deixar.*parado|reserva|caixinha|dinheiro parado/;
   const invest=/investir|invisto|investimento|aplicar|aplico|aplicacao|carteira/;
+  const purchase=/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|posso gastar.*compra|vale a pena comprar|simule.*compra|\b\d+\s*x\b/;
   if (save.test(q)&&invest.test(q)) return 'save_vs_invest';
+  if (save.test(q) && !purchase.test(q) && (/(conta|parado|guardar|poupar|economizar|juntar|separar)/.test(q))) return 'save_vs_invest';
+  if (invest.test(q) && !purchase.test(q)) return 'save_vs_invest';
 
   if (/(quanto|qual|como|quando|prazo|tempo).*(guardar|poupar|economizar|aportar|aporte|meta|objetivo)|quanto falta.*(meta|objetivo)|projec[aã]o|em quanto tempo.*(chego|atingir|alcan[cç]ar)|ate dezembro|até dezembro/.test(q)) return 'goal';
   if (/(meta|objetivo|quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar|formar uma reserva)/.test(q)) return 'goal';
 
-  if (/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|posso gastar.*compra|vale a pena comprar|simule.*compra|\b\d+\s*x\b/.test(q)) return 'purchase';
+  if (purchase.test(q)) return 'purchase';
   if (/cartao|fatura|limite/.test(q)) return 'cards';
   if (/orcamento|quanto posso gastar|margem|folga|quanto ainda posso|quanto sobra/.test(q)) return 'budget';
   if (/a pagar|a receber|vencimento|compromiss|fluxo|proximo mes|proximos dias|o que tenho para pagar|o que tenho para receber/.test(q)) return 'cashflow';
