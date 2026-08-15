@@ -51,7 +51,8 @@ export function parseInstallments(text) {
     /\bparcelado\s+em\s*(\d{1,3})(?:\s*(?:x|vezes|parcelas?))?\b/,
     /(?:em|de|por)\s*(\d{1,3})\s*(?:x|vezes|parcelas?)\b/,
     /\b(\d{1,3})\s*x\b/,
-    /\b(\d{1,3})\s*(?:vezes|parcelas?)\b/
+    /\b(\d{1,3})\s*(?:vezes|parcelas?)\b/,
+    /\b(\d{1,3})\s*parcela?s?\b/
   ]) {
     const m = raw.match(pattern);
     if (m) return Math.max(1, Number(m[1]));
