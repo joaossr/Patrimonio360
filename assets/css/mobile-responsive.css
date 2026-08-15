@@ -188,3 +188,23 @@ button,.nav-item,.icon-btn,.primary-btn,.secondary-btn,.text-btn{touch-action:ma
   .top-left{flex-basis:42px;width:42px;margin-right:8px}
   .top-actions{gap:8px}
 }
+
+/* P360 v34 — o menu mobile nunca pode ser ocultado por regras legadas */
+@media(max-width:950px){
+  #menuBtn.mobile-menu{
+    display:grid!important;
+    visibility:visible!important;
+    opacity:1!important;
+    position:relative!important;
+    width:42px!important;
+    min-width:42px!important;
+    max-width:42px!important;
+    height:42px!important;
+    min-height:42px!important;
+    flex:0 0 42px!important;
+    padding:0!important;
+    margin:0!important;
+    place-items:center!important;
+    z-index:25!important;
+  }
+}
