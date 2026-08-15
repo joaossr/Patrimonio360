@@ -1,19 +1,17 @@
-const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+import { normalizeUserText } from './text-normalizer.js';
 
 export function detectIntent(question, memory = {}) {
-  const q = norm(question);
+  const q = normalizeUserText(question);
   const previous = [...(memory.recent || [])].reverse().find(x => x.role === 'user')?.content || '';
   const hasHistory = Boolean(previous);
 
   if (/diagnost|analise completa|saude financeira|situacao financeira|raio.?x/.test(q)) return 'diagnosis';
   if (/sal[aá]rio|renda|receit/.test(q) && /janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
 
-  // Explicit comparison between liquidity/saving and investing.
   if (/(guardar|poupar|economizar|deixar.*conta|deixar.*parado|reserva).*(investir|investimento|aplicar|aplicacao|carteira)|(?:investir|investimento|aplicar|aplicacao|carteira).*(guardar|poupar|economizar|reserva)|\bguardo\b.*\binvisto\b|\binvisto\b.*\bguardo\b/.test(q)) return 'save_vs_invest';
 
-  // Goal creation, contribution planning and projection.
-  if (/(preciso ter|quero ter|pretendo atingir|quero formar|meu objetivo e|meu objetivo é|objetivo de|meta de|quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar)/.test(q)) return 'goal';
-  if (/(quanto .*guardar|quanto .*poupar|quanto .*economizar|quanto .*aportar|qual aporte|quanto falta.*meta|quanto falta.*objetivo|quando.*(chegar|atingir|alcan[cç]ar).*meta|projec[aã]o.*meta|projetar.*meta|em quanto tempo.*meta|quanto tempo.*meta|quanto tempo.*5 mil|quanto .*ate dezembro|quanto .*até dezembro)/.test(q)) return 'goal';
+  if (/(preciso ter|quero ter|pretendo atingir|quero formar|meu objetivo e|objetivo de|meta de|quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar|formar uma reserva|juntar dinheiro)/.test(q)) return 'goal';
+  if (/(quanto .*guardar|quanto .*poupar|quanto .*economizar|quanto .*aportar|qual aporte|quanto falta.*meta|quanto falta.*objetivo|quando.*(chegar|atingir|alcan[cç]ar).*meta|projec[aã]o.*meta|projetar.*meta|em quanto tempo.*meta|quanto tempo.*meta|quanto .*ate dezembro|quanto .*até dezembro|aporte.*preciso|preciso.*aporte)/.test(q)) return 'goal';
 
   if (/posso comprar|vale a pena comprar|comprar|compra|posso gastar|simule uma compra|celular|viol[aã]o|produto|posso parcelar|parcelar|parcelado|fazer em \d+|em \d+x/.test(q)) return 'purchase';
   if (/\b\d+\s*x\b|\d+\s*(?:vezes|parcelas?)|parcelado/.test(q)) return 'purchase';
