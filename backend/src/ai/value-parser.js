@@ -5,10 +5,8 @@ export function normalizeMoney(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   let s = String(value ?? '').trim().replace(/\s/g, '').replace(/^r\$/i, '');
   if (!s) return 0;
-  // pt-BR: 1.200,50 | 1.200 | 1200,50 | 1200
   if (/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
   else if (/^\d+(?:,\d{1,2})?$/.test(s)) s = s.replace(',', '.');
-  // Do not reinterpret 1.200 as 1.2: a three-digit decimal-looking suffix is thousands in this app.
   else if (/^\d+\.\d{3}$/.test(s)) s = s.replace('.', '');
   else if (!/^\d+(?:\.\d{1,2})?$/.test(s)) return 0;
   const n = Number(s);
@@ -33,7 +31,8 @@ function candidates(text) {
 export function parseInstallments(text) {
   const raw = norm(text);
   for (const pattern of [
-    /(?:em|de|por|parcelado\s+em)\s*(\d{1,3})\s*(?:x|vezes|parcelas?)/,
+    /\bparcelado\s+em\s*(\d{1,3})(?:\s*(?:x|vezes|parcelas?))?\b/,
+    /(?:em|de|por)\s*(\d{1,3})\s*(?:x|vezes|parcelas?)\b/,
     /\b(\d{1,3})\s*x\b/,
     /\b(\d{1,3})\s*(?:vezes|parcelas?)\b/
   ]) {
