@@ -4,8 +4,18 @@
     "public": ".",
     "ignore": [
       "firebase.json",
+      ".firebaserc",
+      ".firebase/**",
+      ".git/**",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "backend/**",
+      "server-local-backup.patch",
+      "**/*.exe",
+      "**/*.dll",
+      "**/*.so",
+      "**/*.dylib",
+      "**/*.node"
     ],
     "rewrites": [
       {
