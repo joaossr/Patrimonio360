@@ -12,13 +12,13 @@ function monthsUntil(deadline, now = new Date()) {
 }
 
 export function simulatePurchase({ analysis = {}, goal = null, purchase = {}, now = new Date() } = {}) {
+  const total = money(purchase.total);
+  const installments = Math.max(1, Math.floor(n(purchase.installments) || 1));
+  const monthly = money(purchase.installmentValue || (installments > 1 ? total / installments : total));
   const income = n(analysis.income?.total);
   const expenses = n(analysis.expenses?.total);
   const reserve = n(analysis.reserve?.current);
   const currentMargin = money(n(analysis.cashflow?.planned ?? income - expenses));
-  const total = money(purchase.total);
-  const installments = Math.max(1, Math.floor(n(purchase.installments) || 1));
-  const monthly = money(installments > 1 ? total / installments : total);
   const simulatedMargin = money(currentMargin - monthly);
   const goalRemaining = goal ? Math.max(0, n(goal.target) - n(goal.current)) : null;
   const deadlineMonths = goal ? monthsUntil(goal.date || goal.deadline, now) : null;
