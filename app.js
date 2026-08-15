@@ -7,7 +7,9 @@ const $$ = (s, root=document) => [...root.querySelectorAll(s)];
 
 const STORAGE_KEY = 'p360-state-v6';
 const DEFAULT_BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787' ? location.origin : 'https://patrimonio360-hqka.onrender.com';
-const AI_BACKEND_URL = (localStorage.getItem('p360-ai-backend') || DEFAULT_BACKEND_URL).replace(/\/$/, '');
+const savedBackend = localStorage.getItem('p360-ai-backend');
+const isLocalBackend = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port === '8787';
+const AI_BACKEND_URL = (isLocalBackend ? (savedBackend || DEFAULT_BACKEND_URL) : DEFAULT_BACKEND_URL).replace(/\/$/, '');
 let currentUser = null;
 let aiBackendStatus = { online:false, checked:false, service:'P360 Intelligence', provider:'p360-neural-engine' };
 
