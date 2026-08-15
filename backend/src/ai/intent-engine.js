@@ -1,4 +1,5 @@
 import { normalizeUserText } from './text-normalizer.js';
+import { datasetIntentHint } from './dataset-v2-knowledge.js';
 
 function hasAny(q, patterns){ return patterns.some(p => p.test(q)); }
 function classifyFallback(q){
@@ -34,9 +35,14 @@ export function detectIntent(question, memory = {}) {
   const q = normalizeUserText(question);
   const previous = [...(memory.recent || [])].reverse().find(x => x.role === 'user')?.content || '';
   const hasHistory = Boolean(previous);
+  const datasetHint = datasetIntentHint(question);
 
   if (/corrig|esta errado|está errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
-  if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
+  if (/^(e se|se eu)\b/.test(q)) {
+    if (/comprar|compra|parcelar|parcelado|parcela/.test(q) && !/\d+(?:[.,]\d+)?\s*(?:mil|reais?)?|r\$|\b\d+\s*x\b/.test(q)) return 'purchase';
+    return 'simulation';
+  }
+  if (/^(simule|simular)\b/.test(q)) return 'simulation';
   if (/diagnost|analise completa|saude financeira|situacao financeira|raio.?x|panorama/.test(q)) return 'diagnosis';
   if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
 
@@ -55,6 +61,6 @@ export function detectIntent(question, memory = {}) {
   if (/gastei|gastos?|despesas?|categoria|onde gasto|cortar|gastando demais|gasto mais|torrei|paguei/.test(q)) return 'expenses';
   if (/saldo|contas bancarias|dinheiro disponivel|quanto dinheiro|quanto tenho no banco|quanto tenho nas contas|quanto tenho em conta/.test(q)) return 'accounts';
   if (/memoria|lembra|esqueceu/.test(q)) return 'memory';
-  if (hasHistory && /^(e|entao|mas|se|quanto|qual|como|isso|esse|essa|ele|ela|nesse caso|e se)\b/.test(q)) return 'continuation';
-  return classifyFallback(q)||'general';
+  if (hasHistory && /^(e|entao|mas|se|quanto|qual|como|isso|esse|essa|ele|ela|nesse caso|e se)\b/.test(q)) return datasetHint === 'purchase' ? 'purchase' : 'continuation';
+  return datasetHint || classifyFallback(q)||'general';
 }
