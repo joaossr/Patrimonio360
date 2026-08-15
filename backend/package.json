@@ -1,14 +1,23 @@
 {
   "name": "patrimonio360-own-ai-backend",
-  "version": "2.1.0",
+  "version": "2.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "train:neural": "node src/ml/train.js",
+    "train:financial": "node src/ml/train-financial-model.js",
+    "train:brazil": "node src/ml/train-financial-model.js",
+    "dataset:brazil": "node -e \"import('./src/ml/brazilian-dataset-v3.js').then(async m=>console.log(JSON.stringify(await m.buildTrainingManifest(),null,2)))\"",
+    "evaluate:financial": "node src/ml/evaluate-financial-model.js",
     "doctor": "node src/doctor.js",
-    "test:ai": "node src/ai/self-test.js"
+    "test:ai": "node src/ai/self-test.js",
+    "test:ai:regression": "node src/ai/regression-suite.js",
+    "test:ai:large": "node src/ai/large-regression-suite.js",
+    "test:ai:natural": "node src/ai/natural-language-stress-suite.js",
+    "test:ai:natural:large": "node src/ai/natural-language-large-suite.js",
+    "test:ai:all": "node src/ai/ai-quality-gate.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
