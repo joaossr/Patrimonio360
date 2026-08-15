@@ -20,18 +20,14 @@ const commands = [
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function npmCommand() {
-  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
-}
-
 function run(command) {
   return new Promise((resolve) => {
-    const child = spawn(npmCommand(), ['run', command], {
+    const child = spawn(`npm run ${command}`, {
       cwd: process.cwd(),
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
-      shell: false
+      shell: true
     });
     let stdout = '';
     let stderr = '';
