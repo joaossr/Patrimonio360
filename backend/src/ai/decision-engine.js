@@ -1,13 +1,47 @@
 import { parseFinancialValue } from './value-parser.js';
 const n=v=>Number(v||0),money=v=>n(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),percent=v=>`${(n(v)*100).toFixed(1).replace('.',',')}%`;
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+function goalScore(goal, question, memory={}) {
+ const q=norm(question), name=norm(goal?.name), scoreBase=Number(goal?.priorityScore||0);
+ let score=scoreBase;
+ // A goal explicitly mentioned in the current question is always the strongest match.
+ if(name && q.includes(name)) score+=1000;
+ if(name && /(celular|telefone|moto|motocicleta|carro|viagem|casa|reserva|emergencia|investimento|meta|objetivo)/.test(q)){
+   const words=name.split(/\s+/).filter(w=>w.length>3);
+   if(words.some(w=>q.includes(w))) score+=300;
+ }
+ // Goals created/confirmed most recently in the conversation take precedence over stale goals.
+ const recentGoals=(memory.goals||[]);
+ const idx=recentGoals.findIndex(g=>String(g.id||'')===String(goal.id||'') || (Number(g.target||0)===Number(goal.target||0)&&String(g.name||'')===String(goal.name||'')));
+ if(idx>=0) score+=500+(recentGoals.length-idx);
+ const created=Date.parse(goal.createdAt||goal.updatedAt||'');
+ if(Number.isFinite(created)) score+=Math.min(250,Math.max(0,(created-Date.now()+30*86400000)/(86400000)));
+ // Active goals are preferred to completed ones; then prefer the smaller remaining gap.
+ if(n(goal.remaining)>0) score+=50;
+ if(n(goal.target)>0 && n(goal.current)>=n(goal.target)) score-=500;
+ return score;
+}
+
+export function selectRelevantGoal(goals=[], question='', memory={}) {
+ const active=(goals||[]).filter(g=>n(g.target)>0 && n(g.remaining)>0);
+ if(!active.length) return null;
+ return [...active].sort((a,b)=>goalScore(b,question,memory)-goalScore(a,question,memory))[0]||null;
+}
+
 export function evaluatePurchase(question,context,memory={}){
  const parsed=parseFinancialValue(question),value=parsed.total,installments=parsed.installments||1,monthly=parsed.installmentValue;if(!value)return{ok:false,reason:'Valor da compra não identificado. Informe o valor, por exemplo: R$ 1.200 ou 1200.'};
- const current=context.current||{},budgetRemaining=context.budget?.remaining??null,future=context.future||{pay:0,receive:0,net:0},reserve=n(context.reserve),goals=(context.goals||[]).filter(g=>n(g.remaining)>0).sort((a,b)=>(b.priority==='Alta')-(a.priority==='Alta')||a.remaining-b.remaining),goal=goals[0]||null,reasons=[];
+ const current=context.current||{},budgetRemaining=context.budget?.remaining??null,future=context.future||{pay:0,receive:0,net:0},reserve=n(context.reserve),goals=context.goals||[],goal=selectRelevantGoal(goals,question,memory),reasons=[];
  if(budgetRemaining!=null&&monthly>budgetRemaining)reasons.push(`a margem do orçamento é ${money(budgetRemaining)} e o impacto mensal seria ${money(monthly)}`);
  if(current.planned-monthly<0)reasons.push(`o resultado planejado do período ficaria negativo em ${money(Math.abs(current.planned-monthly))}`);
  if(future.net<0&&future.net-monthly<0)reasons.push(`os próximos 30 dias já têm fluxo líquido negativo de ${money(Math.abs(future.net))}`);
  if(installments===1&&value>reserve&&reserve>0)reasons.push(`a compra à vista supera sua reserva atual de ${money(reserve)}`);
- let goalImpact=null;if(goal){const share=goal.remaining?value/goal.remaining:0;goalImpact={name:goal.name,remaining:goal.remaining,share};if(share>=.1)reasons.push(`a compra consome ${percent(share)} do valor que ainda falta para a meta ${goal.name}`);}
+ let goalImpact=null;
+ if(goal){
+   const share=goal.remaining?value/goal.remaining:0;
+   goalImpact={name:goal.name,remaining:goal.remaining,share,target:goal.target,current:goal.current};
+   if(share>=.1)reasons.push(`a compra consome ${percent(share)} do valor que ainda falta para a meta ${goal.name}`);
+ }
  const risk=reasons.length>=3||current.planned-monthly<0?'crítico':reasons.length===2?'elevado':reasons.length===1?'atenção':'baixo',verdict=risk==='crítico'?'Eu evitaria agora.':risk==='elevado'?'Eu teria bastante cautela.':risk==='atenção'?'É possível, mas eu faria com cautela.':'Pelos dados disponíveis, parece administrável.';
  return{ok:true,value,installments,monthly,risk,verdict,reasons,goalImpact,budgetRemaining,future,reserve};
 }
