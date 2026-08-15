@@ -22,13 +22,14 @@ const REPLACEMENTS = [
   [/\bsobra\b/g, 'sobrou'], [/\bsobrouu\b/g, 'sobrou'],
   [/\bdinherio\b/g, 'dinheiro'], [/\bsaldao\b/g, 'saldo'], [/\bsaldp\b/g, 'saldo'],
   [/\bcontaa\b/g, 'conta'], [/\bcontasb\b/g, 'contas'], [/\bdespess?as\b/g, 'despesas'],
-  [/\bmesn?al\b/g, 'mensal'], [/\bfinancas\b/g, 'financas'], [/\bdisponivel\b/g, 'disponivel'], [/\bparcelas?\b/g, 'parcelas']
+  [/\bmesn?al\b/g, 'mensal'], [/\bfinancas\b/g, 'financas'], [/\bdisponivel\b/g, 'disponivel'],
+  [/\bparcelas?\b/g, 'parcelas']
 ];
 
 const DOMAIN_WORDS = [
   'quanto','qual','como','quando','guardar','poupar','economizar','juntar','aporte','aportar','investir','investimento','aplicar','aplicacao',
   'reserva','emergencia','orcamento','despesas','gastos','gastei','dinheiro','saldo','conta','contas','banco','disponivel','recebi','renda','salario',
-  'receita','meta','objetivo','chegar','atingir','projecao','comprar','compra','parcelar','parcelado','parcela','cartao','fatura','limite',
+  'receita','meta','objetivo','chegar','atingir','projecao','comprar','compra','parcelar','parcelado','parcela','parcelas','cartao','fatura','limite',
   'pagar','receber','vencimento','compromissos','fluxo','diagnostico','financeira','financas','saude','analise','situacao','categoria','mes','mensal'
 ];
 
@@ -58,22 +59,12 @@ function fuzzyDomainCorrection(value){
 }
 
 export function normalizeUserText(text) {
-  let value = String(text ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[“”]/g, '"')
-    .replace(/[’]/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-  for (const [pattern, replacement] of REPLACEMENTS) value = value.replace(pattern, replacement);
-  value = fuzzyDomainCorrection(value);
-  return value.replace(/\s+/g, ' ').trim();
+  let value=String(text??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[“”]/g,'"').replace(/[’]/g,"'").replace(/\s+/g,' ').trim();
+  for(const [pattern,replacement] of REPLACEMENTS) value=value.replace(pattern,replacement);
+  value=fuzzyDomainCorrection(value);
+  return value.replace(/\s+/g,' ').trim();
 }
-
-export function autocorrectFinancialText(text) {
-  const original = String(text ?? '');
-  const normalized = normalizeUserText(original);
-  const baseline = original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
-  return { original, normalized, changed: normalized !== baseline };
+export function autocorrectFinancialText(text){
+  const original=String(text??''),normalized=normalizeUserText(original),baseline=original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  return {original,normalized,changed:normalized!==baseline};
 }
