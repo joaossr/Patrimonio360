@@ -1,19 +1,17 @@
-/* P360 v37 — header mobile: menu + pesquisa + 3 ações */
+/* P360 — mobile header: hamburger + flexible search + 3 actions */
 @media (max-width: 430px) {
   .topbar {
     display: grid !important;
-    grid-template-columns: 42px minmax(0, 1fr) auto !important;
+    grid-template-columns: 42px minmax(0, 1fr) 142px !important;
     align-items: center !important;
     column-gap: 8px !important;
     width: 100% !important;
     min-width: 0 !important;
-    padding-left: 10px !important;
-    padding-right: 10px !important;
+    box-sizing: border-box !important;
+    padding: 0 8px !important;
     overflow: hidden !important;
   }
 
-  /* O container antigo deixa de criar uma segunda coluna de layout.
-     Seus dois filhos passam a participar diretamente do grid do header. */
   .top-left {
     display: contents !important;
   }
@@ -24,19 +22,17 @@
     display: grid !important;
     place-items: center !important;
     position: static !important;
-    visibility: visible !important;
-    opacity: 1 !important;
     width: 42px !important;
     min-width: 42px !important;
     max-width: 42px !important;
     height: 42px !important;
     min-height: 42px !important;
     max-height: 42px !important;
-    flex: 0 0 42px !important;
     margin: 0 !important;
     padding: 0 !important;
+    flex: 0 0 42px !important;
     transform: none !important;
-    z-index: 2 !important;
+    z-index: 10 !important;
   }
 
   .topbar .search {
@@ -44,18 +40,24 @@
     grid-row: 1 !important;
     display: flex !important;
     align-items: center !important;
+    justify-content: flex-start !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
     height: 42px !important;
+    box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 10px !important;
     overflow: hidden !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .topbar .search input {
-    min-width: 0 !important;
+    display: block !important;
     width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
     font-size: 12px !important;
   }
 
@@ -65,47 +67,29 @@
     display: flex !important;
     align-items: center !important;
     justify-content: flex-end !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
+    gap: 7px !important;
+    width: 142px !important;
+    min-width: 142px !important;
+    max-width: 142px !important;
     height: 42px !important;
-    flex: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    gap: 8px !important;
+    flex: 0 0 142px !important;
     flex-wrap: nowrap !important;
     overflow: visible !important;
     position: static !important;
     transform: none !important;
   }
 
-  .top-actions .icon-btn {
+  .top-actions .icon-btn,
+  #hideBtn,
+  #themeBtn,
+  #quickBtn {
     display: grid !important;
     place-items: center !important;
     position: static !important;
     visibility: visible !important;
     opacity: 1 !important;
-    width: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    max-height: 42px !important;
-    flex: 0 0 42px !important;
-    flex-shrink: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    transform: none !important;
-  }
-
-  #hideBtn,
-  #themeBtn,
-  #quickBtn {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: static !important;
-    float: none !important;
     width: 42px !important;
     min-width: 42px !important;
     max-width: 42px !important;
@@ -123,35 +107,21 @@
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .topbar {
-    grid-template-columns: 40px minmax(0, 1fr) auto !important;
-    column-gap: 7px !important;
-    padding-left: 7px !important;
-    padding-right: 7px !important;
+    grid-template-columns: 40px minmax(0, 1fr) 130px !important;
+    column-gap: 6px !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
   }
 
-  #menuBtn.mobile-menu {
-    width: 40px !important;
-    min-width: 40px !important;
-    max-width: 40px !important;
-    height: 40px !important;
-    min-height: 40px !important;
-    max-height: 40px !important;
-    flex-basis: 40px !important;
-  }
-
-  .topbar .search {
-    height: 40px !important;
-    padding-left: 9px !important;
-    padding-right: 9px !important;
-  }
-
+  #menuBtn.mobile-menu,
+  .topbar .search,
   .top-actions {
     height: 40px !important;
-    gap: 7px !important;
   }
 
+  #menuBtn.mobile-menu,
   .top-actions .icon-btn,
   #hideBtn,
   #themeBtn,
@@ -163,5 +133,13 @@
     min-height: 40px !important;
     max-height: 40px !important;
     flex-basis: 40px !important;
+  }
+
+  .top-actions {
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
+    flex-basis: 130px !important;
+    gap: 5px !important;
   }
 }
