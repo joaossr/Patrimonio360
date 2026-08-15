@@ -17,7 +17,8 @@
     "test:ai:large": "node src/ai/large-regression-suite.js",
     "test:ai:natural": "node src/ai/natural-language-stress-suite.js",
     "test:ai:natural:large": "node src/ai/natural-language-large-suite.js",
-    "test:ai:all": "node src/ai/ai-quality-gate.js"
+    "test:ai:all": "node src/ai/ai-quality-gate.js",
+    "ai:quality-loop": "node src/ai/quality-loop.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
