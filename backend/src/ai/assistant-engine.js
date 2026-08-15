@@ -10,9 +10,9 @@ const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'B
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 function purchaseQuestion(question,memory={}){const parsed=parseFinancialValue(question),q=norm(question);const continuation=/^(e|entao|mas|se|e se|quanto|qual|como|isso|nesse caso)\b|^\d+\s*x\b|^em\s+\d+\s*(?:x|vezes|parcelas?)/i.test(q);if(!continuation)return question;const previous=[...(memory.recent||[])].reverse().find(x=>x.role==='user'&&parseFinancialValue(x.content||'').total>0)?.content;if(!previous)return question;const prior=parseFinancialValue(previous);if(prior.total>0&&parsed.installments>1&&(parsed.total===0||parsed.total===parsed.installments))return `${previous} em ${parsed.installments}x`;if(prior.total>0&&/parcel|vezes|\bx\b/.test(q))return `${previous} em ${parsed.installments||prior.installments}x`;return question;}
 
-export async function respondV2({question,state,currentMonth,memory,analysis,risk,profile,insights}){
+export function respondV2({question,state,currentMonth,memory,analysis,risk,profile,insights}){
  const intent=detectIntent(question,memory),month=resolveRequestedMonth(question,currentMonth);const context=buildFinancialContext(state,month,memory);context.analysis=analysis;context.risk=risk;context.budget=analysis?.budget||null;
- const financialModel=await scoreFinancialContext({analysis,goals:state.goals||[],reserve:analysis?.reserve?.current||0},{});context.financialModel=financialModel;
+ const financialModel=scoreFinancialContext({analysis,goals:state.goals||[],reserve:analysis?.reserve?.current||0},{});context.financialModel=financialModel;
  const memoryPatch=extractMemoryFromMessage(question);let answer=null,mutation=null;
  if(intent==='historical_income'){const h=historicalContext(state,month);answer=!h.found?`Não encontrei receitas cadastradas em ${month}. Não vou substituir esse período pelos dados de outro mês.`:`Em ${month}, encontrei ${money(h.income)} em receitas registradas. Desse valor, ${money(h.received)} já consta como recebido e ${money(h.income-h.received)} está pendente.`;}
  else if(intent==='purchase'){answer=explainPurchase(evaluatePurchase(purchaseQuestion(question,memory),context,memory));}
