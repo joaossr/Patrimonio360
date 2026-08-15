@@ -1,6 +1,11 @@
 const MONTHS = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+const NUMBER_WORDS = new Map([
+  ['um', 1], ['uma', 1], ['dois', 2], ['duas', 2], ['tres', 3], ['quatro', 4], ['cinco', 5],
+  ['seis', 6], ['sete', 7], ['oito', 8], ['nove', 9], ['dez', 10]
+]);
+
 export function normalizeMoney(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   let s = String(value ?? '').trim().replace(/\s/g, '').replace(/^r\$/i, '');
@@ -50,10 +55,14 @@ export function parseMoney(text) {
     const base = normalizeMoney(thousand[1]);
     if (base) return base * 1000;
   }
+
+  const wordThousand = norm(raw).match(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\s+mil\b/);
+  if (wordThousand) return (NUMBER_WORDS.get(wordThousand[1]) || 0) * 1000;
+
   const list = candidates(raw);
   if (!list.length) return 0;
   const explicit = list.find(x => /r\$|reais?|real\b/i.test(raw.slice(Math.max(0, x.index - 18), x.index + 40)));
-  const semantic = list.find(x => /compr|gastar|gasto|custa|pre[cç]o|valor|coloc|invest|sal[aá]rio|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir/i.test(raw.slice(Math.max(0, x.index - 28), x.index + 48)));
+  const semantic = list.find(x => /compr|gastar|gasto|custa|pre[cç]o|valor|coloc|invest|sal[aá]rio|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir|sobrou|entrou|torrei/i.test(raw.slice(Math.max(0, x.index - 28), x.index + 48)));
   return (explicit || semantic || list[0])?.value || 0;
 }
 
@@ -65,7 +74,7 @@ export function parseFinancialValue(text) {
 
 export function parseGoal(text, currentDate = new Date()) {
   const raw = String(text || ''), normalized = norm(raw);
-  if (!(/(quero|pretendo|preciso|meta|objetivo).*(chegar|atingir|guardar|juntar|ter|economizar)/.test(normalized) || /(chegar|atingir|guardar|juntar|economizar).*(meta|r\$|reais|\d)/.test(normalized))) return null;
+  if (!(/(quero|pretendo|preciso|meta|objetivo).*(chegar|atingir|guardar|juntar|ter|economizar)/.test(normalized) || /(chegar|atingir|guardar|juntar|economizar).*(meta|r\$|reais|\d|mil)/.test(normalized))) return null;
   const target = parseMoney(raw);
   if (!target) return null;
   const monthIndex = MONTHS.findIndex(m => normalized.includes(m));
