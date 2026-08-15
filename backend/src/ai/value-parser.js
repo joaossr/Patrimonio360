@@ -18,9 +18,10 @@ function candidates(text) {
   const re = /(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)/gi;
   for (const m of raw.matchAll(re)) {
     const token = m[1], start = m.index ?? 0, end = start + m[0].length;
-    const before = raw.slice(Math.max(0, start - 18), start);
-    const after = raw.slice(end, end + 20);
+    const before = raw.slice(Math.max(0, start - 24), start);
+    const after = raw.slice(end, end + 24);
     if (/^\s*(?:x|vezes|parcelas?)\b/i.test(after)) continue;
+    if (/parcelado\s+em\s*$/i.test(before)) continue;
     if (/^\d{4}$/.test(token) && Number(token) >= 1900 && Number(token) <= 2100) continue;
     if (/\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/.test(raw.slice(Math.max(0, start - 5), end + 5))) continue;
     out.push({ value: normalizeMoney(token), raw: token, index: start, before, after });
@@ -51,8 +52,8 @@ export function parseMoney(text) {
   }
   const list = candidates(raw);
   if (!list.length) return 0;
-  const explicit = list.find(x => /r\$|reais?|real\b/i.test(raw.slice(Math.max(0,x.index-18), x.index+40)));
-  const semantic = list.find(x => /compr|gastar|gasto|custa|pre[cç]o|valor|coloc|invest|sal[aá]rio|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir/i.test(raw.slice(Math.max(0,x.index-28), x.index+48)));
+  const explicit = list.find(x => /r\$|reais?|real\b/i.test(raw.slice(Math.max(0, x.index - 18), x.index + 40)));
+  const semantic = list.find(x => /compr|gastar|gasto|custa|pre[cç]o|valor|coloc|invest|sal[aá]rio|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir/i.test(raw.slice(Math.max(0, x.index - 28), x.index + 48)));
   return (explicit || semantic || list[0])?.value || 0;
 }
 
@@ -83,7 +84,7 @@ export function parseDateMonth(text, currentDate = new Date()) {
   if (numeric) return `${numeric[1]}-${String(Number(numeric[2])).padStart(2, '0')}`;
   const monthOnly = MONTHS.findIndex(m => raw.includes(m));
   if (monthOnly >= 0) return `${currentDate.getFullYear()}-${String(monthOnly + 1).padStart(2, '0')}`;
-  if (/mes passado/.test(raw)) { const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
-  if (/proximo mes|mes que vem/.test(raw)) { const d = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+  if (/mes passado/.test(raw)) { const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+  if (/proximo mes|mes que vem/.test(raw)) { const d = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
   return null;
 }
