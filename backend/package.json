@@ -13,7 +13,8 @@
     "evaluate:financial": "node src/ml/evaluate-financial-model.js",
     "doctor": "node src/doctor.js",
     "test:ai": "node src/ai/self-test.js",
-    "test:ai:regression": "node src/ai/regression-suite.js"
+    "test:ai:regression": "node src/ai/regression-suite.js",
+    "test:ai:large": "node src/ai/large-regression-suite.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
