@@ -14,7 +14,8 @@
     "doctor": "node src/doctor.js",
     "test:ai": "node src/ai/self-test.js",
     "test:ai:regression": "node src/ai/regression-suite.js",
-    "test:ai:large": "node src/ai/large-regression-suite.js"
+    "test:ai:large": "node src/ai/large-regression-suite.js",
+    "test:ai:all": "node src/ai/ai-quality-gate.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
