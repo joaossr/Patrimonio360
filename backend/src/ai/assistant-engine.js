@@ -36,7 +36,11 @@ export function respondV2({question,state,currentMonth,memory,analysis,risk,prof
     const existing=parsed?.target?(state.goals||[]).find(g=>Math.abs(Number(g.target||0)-parsed.target)<0.01&&(!parsed.deadline||String(g.date||g.deadline||'').startsWith(parsed.deadline))):null;
     if(parsed?.target){
       if(existing) answer=`Já existe uma meta oficial de ${money(parsed.target)} cadastrada. Vou usá-la como referência nas próximas análises.`;
-      else{mutation={type:'createGoal',goal:{id:Date.now(),name:`Meta de ${money(parsed.target)}`,current:0,target:parsed.target,date:parsed.deadline||'',priority:'Alta'}};answer=`Registrei a meta de ${money(parsed.target)}${parsed.deadline?` até ${parsed.deadline}`:''}. Ela passa a ser considerada nas análises de compras, aportes e fluxo.`;}
+      else{
+        const createdAt=new Date().toISOString();
+        mutation={type:'createGoal',goal:{id:Date.now(),name:`Meta de ${money(parsed.target)}`,current:0,target:parsed.target,date:parsed.deadline||'',priority:'Alta',createdAt,updatedAt:createdAt}};
+        answer=`Registrei a meta de ${money(parsed.target)}${parsed.deadline?` até ${parsed.deadline}`:''}. Ela passa a ser considerada nas análises de compras, aportes e fluxo.`;
+      }
     }else answer='Posso acompanhar a meta, mas preciso do valor-alvo. Exemplo: “Quero chegar a R$ 5.000 até dezembro”.';
   } else if(intent==='diagnosis'){
     const d=completeDiagnosis(context,analysis,profile,insights);answer=`**Diagnóstico financeiro**\n\nRisco: **${d.risk.level}** (${d.risk.score}/100). ${d.risk.explanation||''}\n\n**3 prioridades:**\n${d.topProblems.map((p,i)=>`${i+1}. **${p.title}** — ${p.reason}\n   Primeiro passo: ${p.action}`).join('\n')||'Não encontrei três problemas sustentados pelos dados atuais.'}`;
