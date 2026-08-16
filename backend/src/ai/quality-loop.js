@@ -9,7 +9,10 @@ const args = new Map(process.argv.slice(2).map((arg) => {
 const cyclesArg = args.get('cycles');
 const cycles = cyclesArg == null ? 1 : Number(cyclesArg);
 const intervalMs = Number(args.get('interval') ?? 5000);
+const parallel = args.get('parallel') !== 'false';
+const concurrency = Math.max(1, Number(args.get('concurrency') ?? 3));
 const stopOnFailure = args.get('stop-on-failure') !== 'false';
+const stopAfter = Math.max(0, Number(args.get('stop-after') ?? 0));
 const commands = [
   ['test:ai', 'self-test'],
   ['test:ai:regression', 'regression'],
@@ -22,12 +25,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function run(command) {
   return new Promise((resolve) => {
-    const child = spawn(`npm run ${command}`, {
+    const child = spawn('npm.cmd', ['run', command], {
       cwd: process.cwd(),
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
-      shell: true
+      shell: false
     });
     let stdout = '';
     let stderr = '';
@@ -58,32 +61,75 @@ function summarize(result, label) {
   };
 }
 
+async function runSuiteBatch() {
+  if (!parallel) {
+    const results = [];
+    for (const [command, label] of commands) results.push(summarize(await run(command), label));
+    return results;
+  }
+
+  const results = [];
+  let next = 0;
+  const workerCount = Math.min(concurrency, commands.length);
+  async function worker() {
+    while (next < commands.length) {
+      const index = next++;
+      const [command, label] = commands[index];
+      results[index] = summarize(await run(command), label);
+    }
+  }
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  return results;
+}
+
+function scoreCycle(results) {
+  const weighted = results.filter((r) => r.passRate != null);
+  if (!weighted.length) return 0;
+  return weighted.reduce((sum, r) => sum + r.passRate, 0) / weighted.length;
+}
+
 async function main() {
   const continuous = cycles === 0;
-  if ((!Number.isInteger(cycles) || cycles < 0) || !Number.isFinite(intervalMs) || intervalMs < 0) {
-    console.error('Uso: npm run ai:quality-loop -- --cycles=1 [--interval=5000] [--stop-on-failure=false]');
+  if ((!Number.isInteger(cycles) || cycles < 0) || !Number.isFinite(intervalMs) || intervalMs < 0 ||
+      !Number.isInteger(concurrency) || concurrency < 1 || !Number.isFinite(stopAfter) || stopAfter < 0) {
+    console.error('Uso: npm run ai:quality-loop -- --cycles=1 [--interval=5000] [--parallel=true] [--concurrency=3]');
     console.error('Use --cycles=0 para execução contínua.');
     process.exitCode = 2;
     return;
   }
 
   const maxCycles = continuous ? Number.POSITIVE_INFINITY : cycles;
-  const report = { suite: 'P360 AI Quality Loop', startedAt: new Date().toISOString(), cycles: [] };
+  const report = {
+    suite: 'P360 AI Quality Loop',
+    startedAt: new Date().toISOString(),
+    config: { cycles, intervalMs, parallel, concurrency, stopOnFailure, stopAfter },
+    cycles: []
+  };
+  let bestScore = -Infinity;
+  let stableCycles = 0;
 
   for (let cycle = 1; cycle <= maxCycles; cycle++) {
     console.log(`\n=== P360 AI QUALITY LOOP — ciclo ${cycle}${continuous ? ' (contínuo)' : `/${cycles}`} ===\n`);
-    const results = [];
-    let failed = false;
+    const results = await runSuiteBatch();
+    const failed = results.some((result) => result.exitCode !== 0);
+    const score = scoreCycle(results);
 
-    for (const [command, label] of commands) {
-      const result = await run(command);
-      const summary = summarize(result, label);
-      results.push(summary);
-      if (result.code !== 0) failed = true;
-      if (failed && stopOnFailure) break;
+    if (score > bestScore) {
+      bestScore = score;
+      stableCycles = 0;
+    } else {
+      stableCycles += 1;
     }
 
-    const cycleReport = { cycle, finishedAt: new Date().toISOString(), failed, results };
+    const cycleReport = {
+      cycle,
+      finishedAt: new Date().toISOString(),
+      failed,
+      score,
+      bestScore,
+      stableCycles,
+      results
+    };
     report.cycles.push(cycleReport);
     await mkdir('reports', { recursive: true });
     await writeFile('reports/ai-quality-loop.json', JSON.stringify(report, null, 2));
@@ -94,8 +140,14 @@ async function main() {
       return;
     }
 
+    if (stopAfter > 0 && stableCycles >= stopAfter) {
+      console.log(`\nP360 AI QUALITY LOOP: parado após ${stableCycles} ciclos sem melhoria.`);
+      return;
+    }
+
     if (!continuous && cycle >= maxCycles) break;
-    console.log(`\nPróximo ciclo em ${intervalMs} ms...\n`);
+    console.log(`\nScore médio: ${(score * 100).toFixed(2)}% | melhor: ${(bestScore * 100).toFixed(2)}%`);
+    console.log(`Próximo ciclo em ${intervalMs} ms...\n`);
     await sleep(intervalMs);
   }
 
