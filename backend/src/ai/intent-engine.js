@@ -11,7 +11,7 @@ function classifyFallback(q){
   const budget=/orcamento|margem|folga|quanto posso gastar|quanto ainda posso|quanto sobra/;
   const cash=/a pagar|a receber|vencimento|compromissos?|fluxo|proximo mes|proximos dias/;
   const accounts=/saldo|conta|banco|dinheiro disponivel|quanto dinheiro|quanto tenho/;
-  const cards=/cartao|fatura|limite/;
+  const cards=/cartao|cartoes|cartao de credito|cartoes de credito|fatura|faturas|limite|limites/;
   const purchase=/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|\b\d+\s*x\b/;
   const diagnosis=/diagnostico|saude financeira|raio x|analise completa|panorama|situacao financeira/;
   const goal=/meta|objetivo|chegar|atingir|juntar|aportar|aporte|ate dezembro|até dezembro/;
@@ -19,7 +19,7 @@ function classifyFallback(q){
   if (hasAny(q,[diagnosis])) return 'diagnosis';
   if (hasAny(q,[cards])) return 'cards';
   if (hasAny(q,[goal])) return 'goal';
-  if (hasAny(q,[save, invest]) && save.test(q)&&invest.test(q)) return 'save_vs_invest';
+  if (save.test(q)&&invest.test(q)) return 'save_vs_invest';
   if (invest.test(q) && !purchase.test(q)) return 'save_vs_invest';
   if (save.test(q) && !purchase.test(q)) return 'save_vs_invest';
   if (hasAny(q,[purchase])) return 'purchase';
@@ -39,6 +39,14 @@ export function detectIntent(question, memory = {}) {
 
   if (/corrig|esta errado|está errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
 
+  // Explicit task requests must be resolved before generic continuation, neural
+  // routing, or dataset hints. These phrases describe the task directly.
+  if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura/.test(q)) return 'cards';
+  if (/o que tenho para (?:pagar|receber)|o que tenho.*(?:pagar|receber)|a pagar|a receber|proximas semanas|proximos dias|proximo mes|compromissos|vencimentos/.test(q)) return 'cashflow';
+  if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento/.test(q)) return 'budget';
+  if (/analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|onde gasto|cortar gastos/.test(q)) return 'expenses';
+  if (/quanto tenho.*(?:conta|contas|banco)|saldo.*(?:conta|contas|banco)|dinheiro disponivel|saldo das contas/.test(q)) return 'accounts';
+
   const purchaseFollowUp = hasHistory && /^(e se|se eu|e|entao|mas|quanto|qual|como|isso|esse|essa|nesse caso)\b/.test(q) && /comprar|compra|parcelar|parcelado|parcela|\b\d+\s*x\b|vezes|parcelas/.test(`${q} ${normalizeUserText(previous)}`);
   if (purchaseFollowUp) return 'purchase';
 
@@ -52,8 +60,6 @@ export function detectIntent(question, memory = {}) {
   const goalProjection=/(quanto|qual|como|quando|prazo|tempo).*(guardar|poupar|economizar|aportar|aporte|meta|objetivo)|quanto falta.*(meta|objetivo)|projec[aã]o|em quanto tempo.*(chego|atingir|alcan[cç]ar)|ate dezembro|até dezembro/;
   const goalCreation=/(meta|objetivo|quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar|formar uma reserva)/;
 
-  // High-confidence semantic guards: explicit goal language and save-vs-invest
-  // comparisons must win before generic dataset hints or purchase aliases.
   if (goalProjection.test(q) || goalCreation.test(q)) return 'goal';
   if (save.test(q) && invest.test(q)) return 'save_vs_invest';
   if (/(deixar|manter).*(conta|parado).*(ou|versus|vs).*(investir|aplicar)|investir.*(ou|versus|vs).*(guardar|deixar.*conta|poupar)/.test(q)) return 'save_vs_invest';
