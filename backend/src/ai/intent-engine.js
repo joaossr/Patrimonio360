@@ -37,18 +37,18 @@ export function detectIntent(question, memory = {}) {
   const previous = [...(memory.recent || [])].reverse().find(x => x.role === 'user')?.content || '';
   const hasHistory = Boolean(previous);
 
-  if (/corrig|esta errado|está errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
+  if (/corrig|esta errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
 
-  // High-confidence explicit comparisons must win before generic purchase aliases.
+  // Explicit comparisons must beat both purchase aliases and generic save/invest terms.
   if (/\b(?:deixo|deixar|mantenho|manter)\b.*\b(?:conta|banco|parado)\b.*\b(?:ou|versus|vs)\b.*\b(?:aplicar|inv?estir|investimento|rendimento|render)\b/.test(q)) return 'save_vs_invest';
   if (/\b(?:aplicar|investir|investimento|rendimento|render)\b.*\b(?:ou|versus|vs)\b.*\b(?:guardar|poupar|deixar|manter)\b/.test(q)) return 'save_vs_invest';
 
-  // Explicit task requests must be resolved before generic continuation, neural routing, or dataset hints.
+  // High-confidence domain requests are resolved before generic words such as "compra", "conta" or "meta".
   if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura/.test(q)) return 'cards';
   if (/o que tenho para (?:pagar|receber)|o que tenho.*(?:pagar|receber)|a pagar|a receber|proximas semanas|proximos dias|proximo mes|compromissos|vencimentos/.test(q)) return 'cashflow';
-  if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento/.test(q)) return 'budget';
-  if (/analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|onde gasto|cortar gastos/.test(q)) return 'expenses';
-  if (/quanto tenho.*(?:conta|contas|banco)|saldo.*(?:conta|contas|banco)|dinheiro disponivel|saldo das contas/.test(q)) return 'accounts';
+  if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento|quanto (?:posso|ainda posso) gastar|qual minha margem|quanto sobra no orcamento|tenho margem para uma compra|tenho espaco no orcamento|meu orcamento aguenta|quanto posso comprometer/.test(q)) return 'budget';
+  if (/analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|quanto gastei/.test(q)) return 'expenses';
+  if (/quanto tenho.*(?:conta|contas|banco)|saldo.*(?:conta|contas|banco)|dinheiro disponivel|saldo das contas|quanto tenho no banco|quanto tenho nas contas/.test(q)) return 'accounts';
 
   const purchaseFollowUp = hasHistory && /^(e se|se eu|e|entao|mas|quanto|qual|como|isso|esse|essa|nesse caso)\b/.test(q) && /comprar|compra|parcelar|parcelado|parcela|\b\d+\s*x\b|vezes|parcelas/.test(`${q} ${normalizeUserText(previous)}`);
   if (purchaseFollowUp) return 'purchase';
