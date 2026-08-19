@@ -22,6 +22,9 @@ const goal=parseGoal('Quero chegar a R$ 5.000 até dezembro',new Date('2026-08-1
 test('goal-parse-5000-dec',()=>{eq(goal.target,5000);eq(goal.deadline,'2026-12')});
 test('intent-goal-projection',()=>eq(detectIntent('Quanto eu preciso guardar por mês para chegar nessa meta?'),'goal'));
 test('intent-save-vs-invest',()=>eq(detectIntent('É melhor guardar ou investir?'),'save_vs_invest'));
+test('intent-save-vs-invest-account-apply',()=>eq(detectIntent('É melhor deixar na conta ou aplicar?'),'save_vs_invest'));
+test('intent-save-vs-invest-parado',()=>eq(detectIntent('Vale mais deixar o dinheiro parado ou investir?'),'save_vs_invest'));
+test('intent-goal-natural',()=>eq(detectIntent('Pretendo guardar R$ 5.000 até dezembro'),'goal'));
 test('intent-priority-feedback',()=>eq(detectIntent('Minha prioridade agora é chegar aos R$ 5.000 até dezembro'),'feedback'));
 
 // Explicit task routing: these must never fall through to the generic financial reasoner.
