@@ -25,6 +25,15 @@ const REPLACEMENTS = [
   [/\bmesn?al\b/g, 'mensal'], [/\bfinancas\b/g, 'financas'], [/\bdisponivel\b/g, 'disponivel']
 ];
 
+// Some generated/legacy fixtures contain UTF-8 text decoded as Latin-1/Windows-1252
+// (for example "orÃ§amento" or "prÃ³ximos"). Repair these forms before normalizing accents.
+const MOJIBAKE_REPLACEMENTS = [
+  [/Ã§/g, 'ç'], [/Ã£/g, 'ã'], [/Ã¡/g, 'á'], [/Ã©/g, 'é'], [/Ãª/g, 'ê'],
+  [/Ã­/g, 'í'], [/Ã³/g, 'ó'], [/Ã´/g, 'ô'], [/Ãµ/g, 'õ'], [/Ãº/g, 'ú'],
+  [/Ã§/g, 'ç'], [/Ã‰/g, 'É'], [/ÃŠ/g, 'Ê'], [/Ã“/g, 'Ó'], [/Ãš/g, 'Ú'],
+  [/Â/g, ''], [/â€™/g, "'"], [/â€œ|â€/g, '"'], [/â€“|â€”/g, '-']
+];
+
 const DOMAIN_WORDS = new Set([
   'quanto','qual','como','quando','guardar','poupar','economizar','juntar','aporte','aportar','investir','investimento','aplicar','aplicacao',
   'reserva','emergencia','orcamento','despesas','gastos','gastei','dinheiro','saldo','conta','contas','banco','disponivel','recebi','renda','salario',
@@ -58,7 +67,9 @@ function fuzzyDomainCorrection(value){
 }
 
 export function normalizeUserText(text){
-  let value=String(text??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[“”]/g,'"').replace(/[’]/g,"'").replace(/\s+/g,' ').trim();
+  let value=String(text??'').toLowerCase();
+  for(const [pattern,replacement] of MOJIBAKE_REPLACEMENTS)value=value.replace(pattern,replacement);
+  value=value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[“”]/g,'"').replace(/[’]/g,"'").replace(/\s+/g,' ').trim();
   for(const [pattern,replacement] of REPLACEMENTS)value=value.replace(pattern,replacement);
   value=fuzzyDomainCorrection(value);
   return value.replace(/\s+/g,' ').trim();
