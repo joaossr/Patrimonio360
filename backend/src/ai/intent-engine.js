@@ -9,7 +9,7 @@ function classifyFallback(q){
   const reserve=/reserva|emergencia|caixinha/;
   const expense=/gastei|gastos?|despesas?|torrei|paguei|gastando/;
   const budget=/orcamento|margem|folga|quanto posso gastar|quanto ainda posso|quanto sobra/;
-  const cash=/a pagar|a receber|vencimento|compromissos?|fluxo|proximo mes|proximos dias/;
+  const cash=/a pagar|a receber|o que (?:vou )?(?:pagar|receber)|tenho (?:para|a) (?:pagar|receber)|vencimento|compromiss?|fluxo|proximo mes|proximos dias|este mes/;
   const accounts=/saldo|conta|banco|dinheiro disponivel|quanto dinheiro|quanto tenho/;
   const cards=/cartao|cartoes|cartao de credito|cartoes de credito|fatura|faturas|limite|limites/;
   const purchase=/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|\b\d+\s*x\b/;
@@ -39,22 +39,23 @@ export function detectIntent(question, memory = {}) {
 
   if (/corrig|esta errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
 
-  // Explicit comparisons must beat both purchase aliases and generic save/invest terms.
+  // Explicit save-vs-invest comparisons must always beat purchase aliases.
   if (/\b(?:deixo|deixar|mantenho|manter)\b.*\b(?:conta|banco|parado)\b.*\b(?:ou|versus|vs)\b.*\b(?:aplicar|inv?estir|investimento|rendimento|render)\b/.test(q)) return 'save_vs_invest';
   if (/\b(?:aplicar|investir|investimento|rendimento|render)\b.*\b(?:ou|versus|vs)\b.*\b(?:guardar|poupar|deixar|manter)\b/.test(q)) return 'save_vs_invest';
 
   // High-confidence domain requests are resolved before generic words such as "compra", "conta" or "meta".
-  if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura/.test(q)) return 'cards';
-  if (/o que tenho para (?:pagar|receber)|o que tenho.*(?:pagar|receber)|a pagar|a receber|proximas semanas|proximos dias|proximo mes|compromissos|vencimentos/.test(q)) return 'cashflow';
-  if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento|quanto (?:posso|ainda posso) gastar|qual minha margem|quanto sobra no orcamento|tenho margem para uma compra|tenho espaco no orcamento|meu orcamento aguenta|quanto posso comprometer/.test(q)) return 'budget';
-  if (/analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|quanto gastei/.test(q)) return 'expenses';
-  if (/quanto tenho.*(?:conta|contas|banco)|saldo.*(?:conta|contas|banco)|dinheiro disponivel|saldo das contas|quanto tenho no banco|quanto tenho nas contas/.test(q)) return 'accounts';
+  if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura|como.*cart(?:ao|oes)|qual.*fatura|quanto.*fatura|quando.*fatura/.test(q)) return 'cards';
+  if (/o que (?:tenho|vou|irei)?\s*(?:para|a)?\s*(?:pagar|receber)|o que (?:recebo|pago|vou receber|vou pagar)\b|a pagar|a receber|proximas semanas|proximos dias|proximo mes|este mes|compromissos?|vencimentos?/.test(q)) return 'cashflow';
+  if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento|qual (?:e|é|meu|o meu)\s*orcamento|quanto (?:posso|ainda posso) gastar|qual minha margem|quanto sobra no orcamento|tenho margem para uma compra|tenho espaco no orcamento|meu orcamento aguenta|quanto posso comprometer|como esta meu orcamento/.test(q)) return 'budget';
+  if (/analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|quais (?:sao|são) meus (?:maiores )?gastos|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|quanto gastei|meus gastos estao altos/.test(q)) return 'expenses';
+  if (/quanto tenho.*(?:conta|contas|banco)|saldo.*(?:conta|contas|banco)|dinheiro disponivel|saldo das contas|quanto tenho no banco|quanto tenho nas contas|qual meu saldo|quanto dinheiro tenho|quanto tenho disponivel/.test(q)) return 'accounts';
+  if (/fa[çc]a um diagn[oó]stico|diagnostico|analise completa|analise.*situacao|analise.*saude|saude financeira|situacao financeira|raio.?x|panorama|como esta minha situacao financeira|como voce avalia minhas financas/.test(q)) return 'diagnosis';
+  if (/quanto tenho na reserva|como esta minha reserva|minha reserva esta boa|quanto falta para minha reserva|quero montar uma reserva|quero formar reserva|como construir minha reserva|quanto devo deixar na reserva|devo priorizar a reserva/.test(q)) return 'reserve';
 
   const purchaseFollowUp = hasHistory && /^(e se|se eu|e|entao|mas|quanto|qual|como|isso|esse|essa|nesse caso)\b/.test(q) && /comprar|compra|parcelar|parcelado|parcela|\b\d+\s*x\b|vezes|parcelas/.test(`${q} ${normalizeUserText(previous)}`);
   if (purchaseFollowUp) return 'purchase';
 
   if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
-  if (/diagnost|analise completa|saude financeira|situacao financeira|raio.?x|panorama/.test(q)) return 'diagnosis';
   if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
 
   const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|deixar.*conta|deixar.*parado|reserva|caixinha|dinheiro parado/;
@@ -76,7 +77,7 @@ export function detectIntent(question, memory = {}) {
   if (purchase.test(q)) return 'purchase';
   if (/cartao|fatura|limite/.test(q)) return 'cards';
   if (/orcamento|quanto posso gastar|margem|folga|quanto ainda posso|quanto sobra/.test(q)) return 'budget';
-  if (/a pagar|a receber|vencimento|compromiss|fluxo|proximo mes|proximos dias|o que tenho para pagar|o que tenho para receber/.test(q)) return 'cashflow';
+  if (/a pagar|a receber|vencimento|compromiss|fluxo|proximo mes|proximos dias|o que tenho para pagar|o que tenho para receber|o que recebo|o que pago/.test(q)) return 'cashflow';
   if (/reserva|emergencia/.test(q)) return 'reserve';
   if (/gastei|gastos?|despesas?|categoria|onde gasto|cortar|gastando demais|gasto mais|torrei|paguei/.test(q)) return 'expenses';
   if (/saldo|contas bancarias|dinheiro disponivel|quanto dinheiro|quanto tenho no banco|quanto tenho nas contas|quanto tenho em conta/.test(q)) return 'accounts';
