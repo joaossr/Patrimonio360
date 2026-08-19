@@ -70,8 +70,18 @@ export function parseMoney(text){
   return word?wordNumber(word[1]):0;
 }
 
+// Plain four-digit amounts in receiving/payment statements are valid financial values.
+function parsePlainReceivedAmount(text){
+  const raw=norm(text);
+  const m=raw.match(/\b(?:recebi|me pagaram|pagaram|entrou|ganhei)\s+(\d{4})\b/);
+  if(!m)return 0;
+  const value=Number(m[1]);
+  if(value>=1900&&value<=2100)return value;
+  return value;
+}
+
 export function parseFinancialValue(text){
-  const total=parseMoney(text),installments=parseInstallments(text)||1;
+  const total=parseMoney(text)||parsePlainReceivedAmount(text),installments=parseInstallments(text)||1;
   return{total,installments,installmentValue:total&&installments>1?total/installments:total,raw:String(text||'')};
 }
 
