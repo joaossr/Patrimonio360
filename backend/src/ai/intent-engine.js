@@ -39,8 +39,11 @@ export function detectIntent(question, memory = {}) {
 
   if (/corrig|esta errado|está errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
 
-  // Explicit task requests must be resolved before generic continuation, neural
-  // routing, or dataset hints. These phrases describe the task directly.
+  // High-confidence explicit comparisons must win before generic purchase aliases.
+  if (/\b(?:deixo|deixar|mantenho|manter)\b.*\b(?:conta|banco|parado)\b.*\b(?:ou|versus|vs)\b.*\b(?:aplicar|inv?estir|investimento|rendimento|render)\b/.test(q)) return 'save_vs_invest';
+  if (/\b(?:aplicar|investir|investimento|rendimento|render)\b.*\b(?:ou|versus|vs)\b.*\b(?:guardar|poupar|deixar|manter)\b/.test(q)) return 'save_vs_invest';
+
+  // Explicit task requests must be resolved before generic continuation, neural routing, or dataset hints.
   if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura/.test(q)) return 'cards';
   if (/o que tenho para (?:pagar|receber)|o que tenho.*(?:pagar|receber)|a pagar|a receber|proximas semanas|proximos dias|proximo mes|compromissos|vencimentos/.test(q)) return 'cashflow';
   if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento/.test(q)) return 'budget';
