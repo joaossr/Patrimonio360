@@ -44,16 +44,19 @@ export function detectIntent(question, memory = {}) {
   if (/\b(?:aplicar|investir|investimento|rendimento|render)\b.*\b(?:ou|versus|vs)\b.*\b(?:guardar|poupar|deixar|manter)\b/.test(q)) return 'save_vs_invest';
 
   // High-confidence domain requests are resolved before generic words such as "compra", "conta" or "meta".
-  if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura|como.*cart(?:ao|oes)|qual.*fatura|quanto.*fatura|quando.*fatura/.test(q)) return 'cards';
-  if (/o que (?:tenho|vou|irei)?\s*(?:para|a)?\s*(?:pagar|receber)|o que (?:recebo|pago|vou receber|vou pagar)\b|a pagar|a receber|proximas semanas|proximos dias|proximo mes|este mes|compromissos?|vencimentos?/.test(q)) return 'cashflow';
+  if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura|como.*cart(?:ao|oes)|qual.*fatura|quanto.*fatura|quando.*fatura|quanto.*(?:disponivel).*cart(?:ao|oes)/.test(q)) return 'cards';
+  if (/quanto gastei|quanto.*gastei.*(?:mes|m[eê]s)|analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|quais (?:sao|são) meus (?:maiores )?gastos|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|meus gastos estao altos/.test(q)) return 'expenses';
   if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento|qual (?:e|é|meu|o meu)\s*orcamento|quanto (?:posso|ainda posso) gastar|qual minha margem|quanto sobra no orcamento|tenho margem para uma compra|tenho espaco no orcamento|meu orcamento aguenta|quanto posso comprometer|como esta meu orcamento/.test(q)) return 'budget';
-  if (/analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|quais (?:sao|são) meus (?:maiores )?gastos|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|quanto gastei|meus gastos estao altos/.test(q)) return 'expenses';
+  if (/o que (?:tenho|vou|irei)?\s*(?:para|a)?\s*(?:pagar|receber)|o que (?:recebo|pago|vou receber|vou pagar)\b|a pagar|a receber|proximas semanas|proximos dias|proximo mes|este mes|compromissos?|vencimentos?|quais contas vencem|quanto vou pagar.*(?:proximos|meses)|o que vence este mes|o que recebo este mes|quanto tenho a pagar|quanto tenho a receber/.test(q)) return 'cashflow';
   if (/quanto tenho.*(?:conta|contas|banco)|saldo.*(?:conta|contas|banco)|dinheiro disponivel|saldo das contas|quanto tenho no banco|quanto tenho nas contas|qual meu saldo|quanto dinheiro tenho|quanto tenho disponivel/.test(q)) return 'accounts';
   if (/fa[çc]a um diagn[oó]stico|diagnostico|analise completa|analise.*situacao|analise.*saude|saude financeira|situacao financeira|raio.?x|panorama|como esta minha situacao financeira|como voce avalia minhas financas/.test(q)) return 'diagnosis';
   if (/quanto tenho na reserva|como esta minha reserva|minha reserva esta boa|quanto falta para minha reserva|quero montar uma reserva|quero formar reserva|como construir minha reserva|quanto devo deixar na reserva|devo priorizar a reserva/.test(q)) return 'reserve';
 
   const purchaseFollowUp = hasHistory && /^(e se|se eu|e|entao|mas|quanto|qual|como|isso|esse|essa|nesse caso)\b/.test(q) && /comprar|compra|parcelar|parcelado|parcela|\b\d+\s*x\b|vezes|parcelas/.test(`${q} ${normalizeUserText(previous)}`);
   if (purchaseFollowUp) return 'purchase';
+
+  // "E se eu fizer em 5 parcelas?" is a purchase/instalment question, not a generic simulation.
+  if (/^e se\b.*\b(?:fazer|parcelar|parcelado|parcela)\b.*(?:parcelas?|\d+\s*x)/.test(q)) return 'purchase';
 
   if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
   if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
@@ -62,7 +65,7 @@ export function detectIntent(question, memory = {}) {
   const invest=/investir|invisto|investimento|aplicar|aplico|aplicacao|carteira/;
   const purchase=/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|posso gastar.*compra|vale a pena comprar|simule.*compra|\b\d+\s*x\b/;
   const goalProjection=/(quanto|qual|como|quando|prazo|tempo).*(guardar|poupar|economizar|aportar|aporte|meta|objetivo)|quanto falta.*(meta|objetivo)|projec[aã]o|em quanto tempo.*(chego|atingir|alcan[cç]ar)|ate dezembro|até dezembro/;
-  const goalCreation=/(meta|objetivo|quero chegar|quero atingir|quero juntar|vou economizar|pretendo guardar|quero guardar|preciso guardar|formar uma reserva)/;
+  const goalCreation=/(meta|objetivo|preciso ter|quero ter|quero chegar|quero atingir|quero juntar|vou economizar|pretendo atingir|pretendo guardar|quero guardar|preciso guardar|formar uma reserva)/;
 
   if (goalProjection.test(q) || goalCreation.test(q)) return 'goal';
   if (save.test(q) && invest.test(q)) return 'save_vs_invest';
