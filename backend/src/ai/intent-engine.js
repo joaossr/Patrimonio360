@@ -37,20 +37,15 @@ export function detectIntent(question, memory = {}) {
   const previous = [...(memory.recent || [])].reverse().find(x => x.role === 'user')?.content || '';
   const hasHistory = Boolean(previous);
 
-  // Explicit feedback/correction always wins.
   if (/corrig|esta errado|nao e|n[aã]o [eé]|interpretei|quis dizer|nao foi isso|n[aã]o foi isso|minha prioridade/.test(q)) return 'feedback';
 
-  // Memory questions must beat goal words such as "meta".
   if (/\b(?:voce|vc)\b.*\b(?:lembra|lembrar|recorda|recordar)\b|\b(?:lembra|lembrar|recorda|recordar)\b.*\b(?:minha|meu|sobre|da|do)\b|\b(?:o que|qual)\b.*\b(?:voce|vc)\b.*\b(?:lembra|recorda)\b|\bmemoria\b|\blembra\b|\besqueceu\b/.test(q)) return 'memory';
 
-  // Explicit historical income questions must beat generic account/amount detection.
   if (/(?:quanto|qual).*\b(?:ganhei|recebi|minha renda|sal[aá]rio|receita)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2})\b|\b(?:ganhei|recebi|minha renda|sal[aá]rio|receita)\b.*\b(?:em|no|na)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b.*\b20\d{2}\b/.test(q)) return 'historical_income';
 
-  // Explicit save-vs-invest comparisons must always beat purchase aliases.
   if (/\b(?:deixo|deixar|mantenho|manter)\b.*\b(?:conta|banco|parado)\b.*\b(?:ou|versus|vs)\b.*\b(?:aplicar|inv?estir|investimento|rendimento|render)\b/.test(q)) return 'save_vs_invest';
   if (/\b(?:aplicar|investir|investimento|rendimento|render)\b.*\b(?:ou|versus|vs)\b.*\b(?:guardar|poupar|deixar|manter)\b/.test(q)) return 'save_vs_invest';
 
-  // High-confidence domain requests are resolved before generic words such as "compra", "conta" or "meta".
   if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura|como.*cart(?:ao|oes)|qual.*fatura|quanto.*fatura|quando.*fatura|quanto.*(?:disponivel).*cart(?:ao|oes)/.test(q)) return 'cards';
   if (/quanto gastei|quanto.*gastei.*(?:mes|m[eê]s)|analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|quais (?:sao|são) meus (?:maiores )?gastos|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|meus gastos estao altos/.test(q)) return 'expenses';
   if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento|qual (?:e|é|meu|o meu)\s*orcamento|quanto (?:posso|ainda posso) gastar|qual minha margem|quanto sobra no orcamento|tenho margem para uma compra|tenho espaco no orcamento|meu orcamento aguenta|quanto posso comprometer|como esta meu orcamento/.test(q)) return 'budget';
@@ -61,9 +56,20 @@ export function detectIntent(question, memory = {}) {
 
   const purchaseFollowUp = hasHistory && /^(e se|se eu|e|entao|mas|quanto|qual|como|isso|esse|essa|nesse caso)\b/.test(q) && /comprar|compra|parcelar|parcelado|parcela|\b\d+\s*x\b|vezes|parcelas/.test(`${q} ${normalizeUserText(previous)}`);
   if (purchaseFollowUp) return 'purchase';
-
-  // Installment wording is a purchase task even when phrased as an "e se" question.
   if (/^e se\b.*\bfizer\b.*\b\d+\s*(?:parcelas?|vezes)\b/.test(q)) return 'purchase';
+
+  // Contextual follow-ups inherit a strong domain from the previous user turn.
+  if (hasHistory) {
+    const prev = normalizeUserText(previous);
+    if (/meta|objetivo|chegar|atingir|juntar|guardar|economizar|aportar|ate dezembro|até dezembro/.test(prev) && /^(quanto falta|quanto|qual|quando|em quanto tempo|e por mes|e por mês|por mes|por mês)\b/.test(q)) return 'goal';
+    if (/reserva|emergencia|caixinha/.test(prev) && /^(quanto|qual|como|devo|preciso)\b/.test(q)) return 'reserve';
+    if (/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto/.test(prev) && /^(quanto|qual|como|posso|e se|em \d+\s*x\??|em \d+\s*vezes\??|essa|isso|esse)\b/.test(q)) return 'purchase';
+    if (/gastei|gastos?|despesas?|gastando|paguei/.test(prev) && /^(onde|quanto|qual|como)\b/.test(q)) return 'expenses';
+    if (/orcamento|margem|folga|quanto posso gastar|quanto ainda posso/.test(prev) && /^(quanto|qual|como|tenho)\b/.test(q)) return 'budget';
+    if (/cartao|fatura|limite/.test(prev) && /^(quanto|qual|como|quando|tenho)\b/.test(q)) return 'cards';
+    if (/a pagar|a receber|vencimento|compromiss|fluxo/.test(prev) && /^(quanto|qual|como|o que|quando)\b/.test(q)) return 'cashflow';
+    if (/saldo|conta|banco|dinheiro disponivel|quanto dinheiro/.test(prev) && /^(quanto|qual|como)\b/.test(q)) return 'accounts';
+  }
 
   if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
   if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
