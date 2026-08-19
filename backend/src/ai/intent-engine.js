@@ -55,8 +55,8 @@ export function detectIntent(question, memory = {}) {
   const purchaseFollowUp = hasHistory && /^(e se|se eu|e|entao|mas|quanto|qual|como|isso|esse|essa|nesse caso)\b/.test(q) && /comprar|compra|parcelar|parcelado|parcela|\b\d+\s*x\b|vezes|parcelas/.test(`${q} ${normalizeUserText(previous)}`);
   if (purchaseFollowUp) return 'purchase';
 
-  // "E se eu fizer em 5 parcelas?" is a purchase/instalment question, not a generic simulation.
-  if (/^e se\b.*\b(?:fazer|parcelar|parcelado|parcela)\b.*(?:parcelas?|\d+\s*x)/.test(q)) return 'purchase';
+  // Installment wording is a purchase task even when phrased as an "e se" question.
+  if (/^e se\b.*\bfizer\b.*\b\d+\s*(?:parcelas?|vezes)\b/.test(q)) return 'purchase';
 
   if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
   if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
