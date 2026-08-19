@@ -37,7 +37,14 @@ export function detectIntent(question, memory = {}) {
   const previous = [...(memory.recent || [])].reverse().find(x => x.role === 'user')?.content || '';
   const hasHistory = Boolean(previous);
 
-  if (/corrig|esta errado|nao e|não é|interpretei|quis dizer|nao foi isso|não foi isso|minha prioridade/.test(q)) return 'feedback';
+  // Explicit feedback/correction always wins.
+  if (/corrig|esta errado|nao e|n[aã]o [eé]|interpretei|quis dizer|nao foi isso|n[aã]o foi isso|minha prioridade/.test(q)) return 'feedback';
+
+  // Memory questions must beat goal words such as "meta".
+  if (/\b(?:voce|vc)\b.*\b(?:lembra|lembrar|recorda|recordar)\b|\b(?:lembra|lembrar|recorda|recordar)\b.*\b(?:minha|meu|sobre|da|do)\b|\b(?:o que|qual)\b.*\b(?:voce|vc)\b.*\b(?:lembra|recorda)\b|\bmemoria\b|\blembra\b|\besqueceu\b/.test(q)) return 'memory';
+
+  // Explicit historical income questions must beat generic account/amount detection.
+  if (/(?:quanto|qual).*\b(?:ganhei|recebi|minha renda|sal[aá]rio|receita)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2})\b|\b(?:ganhei|recebi|minha renda|sal[aá]rio|receita)\b.*\b(?:em|no|na)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b.*\b20\d{2}\b/.test(q)) return 'historical_income';
 
   // Explicit save-vs-invest comparisons must always beat purchase aliases.
   if (/\b(?:deixo|deixar|mantenho|manter)\b.*\b(?:conta|banco|parado)\b.*\b(?:ou|versus|vs)\b.*\b(?:aplicar|inv?estir|investimento|rendimento|render)\b/.test(q)) return 'save_vs_invest';
