@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -9,10 +8,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const sourcePath = path.join(here, 'expanded-5000-evaluation-suite-v3.js');
 const source = fs.readFileSync(sourcePath, 'utf8');
 
-// The v3 corpus is intentionally kept intact. Its only current problem is that
-// generation produces 5030 cases before the exact-5000 assertion. Normalize the
-// generated corpus deterministically at the assertion boundary; do not modify
-// the AI engine or any financial calculation.
+// Keep v3 and the AI engine untouched. Only normalize the generated corpus
+// immediately before its exact-size assertion.
 const assertion = /assert\.equal\(scenarios\.length,5000,[\s\S]*?\);/;
 assert.match(source, assertion, 'A v3 não contém a asserção esperada de 5000 cenários.');
 
@@ -29,10 +26,7 @@ assert.equal(
 );`
 );
 
-const tempPath = path.join(
-  os.tmpdir(),
-  `p360-expanded-5000-${process.pid}-${Date.now()}.mjs`
-);
+const tempPath = path.join(here, `.p360-expanded-5000-${process.pid}-${Date.now()}.js`);
 
 try {
   fs.writeFileSync(tempPath, normalized, 'utf8');
@@ -43,10 +37,7 @@ try {
 
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
-
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
-  }
+  assert.equal(result.status, 0, 'A suíte expandida falhou na execução.');
 
   console.log(JSON.stringify({
     suite: 'P360 expanded AI evaluation v3 fixed runner',
