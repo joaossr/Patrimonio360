@@ -66,11 +66,11 @@ export function parseMoney(text){
     const semantic=list.find(x=>/compr|gastar|gasto|custa|preco|valor|coloc|invest|salario|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir|sobrou|entrou|torrei|tenho|poss?o/.test(raw.slice(Math.max(0,x.index-34),x.index+52)));
     return(explicit||semantic||list[0])?.value||0;
   }
-  const word=raw.match(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa)\b/);
-  return word?wordNumber(word[1]):0;
+  // Do not treat article words such as "um" in "um celular" as money.
+  // Written-out monetary amounts remain supported when followed by "mil".
+  return 0;
 }
 
-// Plain four-digit amounts in receiving/payment statements are valid financial values.
 function parsePlainReceivedAmount(text){
   const raw=norm(text);
   const m=raw.match(/\b(?:recebi|me pagaram|pagaram|entrou|ganhei)\s+(\d{4})\b/);
