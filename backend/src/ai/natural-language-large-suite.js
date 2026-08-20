@@ -26,6 +26,61 @@ const goals=[['quero chegar a 5 mil ate dezembro',5000],['quero juntar R$ 5.000 
 for(const [text,want] of goals)for(const mutate of mutations.slice(0,6))tests.push({kind:'goal',text:mutate(text),want,group:'goal'});
 const installments=[['comprei por 1200 em 5x',5],['comprei por 1200 em 5 vezes',5],['parcelado em 10x',10],['quero fazer em 12 parcelas',12],['em 6x',6]];
 for(const [text,want] of installments)for(const mutate of mutations.slice(0,4))tests.push({kind:'installment',text:mutate(text),want,group:'purchase'});
-let passed=0;const failures=[];
-for(const t of tests)try{if(t.kind==='intent')assert.equal(detectIntent(t.text),t.want);if(t.kind==='money')assert.equal(parseFinancialValue(t.text).total,t.want);if(t.kind==='goal')assert.equal(parseGoal(t.text,new Date('2026-08-15T12:00:00Z'))?.target,t.want);if(t.kind==='installment')assert.equal(parseFinancialValue(t.text).installments,t.want);passed++;}catch(error){failures.push({group:t.group,want:t.want,got:error.actual??error.message});}
-const changed=tests.filter(t=>normalizeUserText(t.text)!==t.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim()).length;const byGroup={};for(const f of failures)byGroup[f.group]=(byGroup[f.group]||0)+1;const total=tests.length;console.log(JSON.stringify({suite:'P360 natural language large stress',scenarios:total,passed,failed:failures.length,passRate:Number((passed/total).toFixed(4)),autocorrection:{enabled:true,scenariosChanged:changed,changeRate:Number((changed/total).toFixed(4))},failuresByGroup:byGroup},null,2));if(failures.length)process.exitCode=1;
+let passed = 0;
+const failures = [];
+
+for (const t of tests) {
+  try {
+    if (t.kind === 'intent') {
+      assert.equal(detectIntent(t.text), t.want);
+    }
+    if (t.kind === 'money') {
+      assert.equal(parseFinancialValue(t.text).total, t.want);
+    }
+    if (t.kind === 'goal') {
+      assert.equal(parseGoal(t.text, new Date('2026-08-15T12:00:00Z'))?.target, t.want);
+    }
+    if (t.kind === 'installment') {
+      assert.equal(parseFinancialValue(t.text).installments, t.want);
+    }
+    passed++;
+  } catch (error) {
+    failures.push({
+      kind: t.kind,
+      group: t.group,
+      text: t.text,
+      want: t.want,
+      got: error.actual ?? error.message
+    });
+  }
+}
+
+const changed = tests.filter(
+  t =>
+    normalizeUserText(t.text) !==
+    t.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim()
+).length;
+
+const byGroup = {};
+for (const failure of failures) {
+  byGroup[failure.group] = (byGroup[failure.group] || 0) + 1;
+}
+
+const total = tests.length;
+
+console.log(JSON.stringify({
+  suite: 'P360 natural language large stress',
+  scenarios: total,
+  passed,
+  failed: failures.length,
+  passRate: Number((passed / total).toFixed(4)),
+  autocorrection: {
+    enabled: true,
+    scenariosChanged: changed,
+    changeRate: Number((changed / total).toFixed(4))
+  },
+  failuresByGroup: byGroup,
+  failures
+}, null, 2));
+
+if (failures.length) process.exitCode = 1;

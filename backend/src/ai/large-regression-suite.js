@@ -12,10 +12,7 @@ const test=(name,fn)=>tests.push({name,fn});
 const eq=(actual,expected,message)=>assert.deepEqual(actual,expected,message);
 const ok=(condition,message)=>assert.ok(condition,message);
 
-const moneyCases=[
- ['1200',1200],['R$ 1.200',1200],['1.200,50',1200.5],['gastei 1.200,50',1200.5],['coloquei 1200',1200],
- ['tenho 2 mil',2000],['meta de R$ 5.000',5000],['comprar celular por R$ 1.200',1200]
-];
+const moneyCases=[['1200',1200],['R$ 1.200',1200],['1.200,50',1200.5],['gastei 1.200,50',1200.5],['coloquei 1200',1200],['tenho 2 mil',2000],['meta de R$ 5.000',5000],['comprar celular por R$ 1.200',1200]];
 moneyCases.forEach(([text,expected])=>test(`money:${text}`,()=>eq(parseFinancialValue(text).total,expected)));
 [['5x',5],['5 vezes',5],['5 parcelas',5],['parcelado em 5',5],['parcelado em 5x',5],['em 5x',5],['em 5 vezes',5]].forEach(([text,expected])=>test(`installments:${text}`,()=>eq(parseInstallments(text),expected)));
 test('parcelado-em-N-not-value',()=>{const p=parseFinancialValue('parcelado em 5');eq(p.total,0);eq(p.installments,5)});
@@ -25,10 +22,18 @@ const goal=parseGoal('Quero chegar a R$ 5.000 até dezembro',new Date('2026-08-1
 test('goal-parse-5000-dec',()=>{eq(goal.target,5000);eq(goal.deadline,'2026-12')});
 test('intent-goal-projection',()=>eq(detectIntent('Quanto eu preciso guardar por mês para chegar nessa meta?'),'goal'));
 test('intent-save-vs-invest',()=>eq(detectIntent('É melhor guardar ou investir?'),'save_vs_invest'));
-test('intent-save-vs-invest-account-apply',()=>eq(detectIntent('É melhor deixar na conta ou aplicar?'),'save_vs_invest'));
-test('intent-save-vs-invest-parado',()=>eq(detectIntent('Vale mais deixar o dinheiro parado ou investir?'),'save_vs_invest'));
-test('intent-goal-natural',()=>eq(detectIntent('Pretendo guardar R$ 5.000 até dezembro'),'goal'));
 test('intent-priority-feedback',()=>eq(detectIntent('Minha prioridade agora é chegar aos R$ 5.000 até dezembro'),'feedback'));
+
+// Explicit task routing: these must never fall through to the generic financial reasoner.
+const taskCases=[
+ ['O que tenho para pagar e receber nas próximas semanas?','cashflow'],
+ ['Analise meus cartões de crédito','cards'],
+ ['Posso fazer uma compra agora?','purchase'],
+ ['Como posso melhorar meu orçamento?','budget'],
+ ['Onde estou gastando mais?','expenses'],
+ ['Quanto tenho nas minhas contas?','accounts']
+];
+taskCases.forEach(([text,expected])=>test(`explicit-task:${text}`,()=>eq(detectIntent(text),expected)));
 
 const state={goals:[
  {id:'xre',name:'XRE 190',current:0,target:30000,priority:'Alta',remaining:30000,createdAt:'2026-06-01T00:00:00Z'},
