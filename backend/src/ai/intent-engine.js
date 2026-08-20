@@ -7,7 +7,7 @@ function classifyFallback(q){
   const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|guardar dinheiro|deixar.*conta|deixar.*parado/;
   const invest=/investir|invisto|investimento|aplicar|aplico|aplicacao|carteira/;
   const reserve=/reserva|emergencia|caixinha/;
-  const expense=/gastei|gastos?|despesas?|torrei|paguei|gastando/;
+  const expense=/gastei|gastos?|despesas?|torrei|paguei|gastando|gasto/;
   const budget=/orcamento|margem|folga|quanto posso gastar|quanto ainda posso|quanto sobra/;
   const cash=/a pagar|a receber|o que (?:vou )?(?:pagar|receber)|tenho (?:para|a) (?:pagar|receber)|vencimento|compromiss?|fluxo|proximo mes|proximos dias|este mes/;
   const accounts=/saldo|conta|banco|dinheiro disponivel|quanto dinheiro|quanto tenho/;
@@ -37,13 +37,23 @@ export function detectIntent(question, memory = {}) {
   const previous = [...(memory.recent || [])].reverse().find(x => x.role === 'user')?.content || '';
   const hasHistory = Boolean(previous);
 
+  // Conversational intents must win before financial fallbacks. A greeting is not a
+  // financial query just because the account has financial data available.
+  if (/^(oi|ola|bom dia|boa tarde|boa noite|e ai|fala|tudo bem|tudo certo|como voce esta|como voce vai|como esta voce|oi tudo certo)[!?. ,]*$/.test(q)) return 'greeting';
+  if (/^(o que voce consegue fazer|o que voce pode fazer|o que voce faz|como voce pode me ajudar|quais sao suas funcoes|quais suas funcoes|como voce funciona|no que voce pode ajudar)[!?. ,]*$/.test(q)) return 'capabilities';
+
   if (/corrig|esta errado|nao e|n[aã]o [eé]|interpretei|quis dizer|nao foi isso|n[aã]o foi isso|minha prioridade/.test(q)) return 'feedback';
   if (/\b(?:voce|vc)\b.*\b(?:lembra|lembrar|recorda|recordar)\b|\b(?:lembra|lembrar|recorda|recordar)\b.*\b(?:minha|meu|sobre|da|do)\b|\b(?:o que|qual)\b.*\b(?:voce|vc)\b.*\b(?:lembra|recorda)\b|\bmemoria\b|\blembra\b|\besqueceu\b/.test(q)) return 'memory';
+
+  // Explicit historical expense queries must use only the requested month. They
+  // must never fall through to the current-period financial summary.
+  if (/(quanto|qual|onde).*\b(?:gastei|gasto|despesa|despesas|gastos)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2})\b|\b(?:gastei|gasto|despesas?|gastos?)\b.*\b(?:em|no|na)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b.*\b20\d{2}\b/.test(q)) return 'historical_expenses';
+
   if (/(?:quanto|qual).*\b(?:ganhei|recebi|minha renda|sal[aá]rio|receita)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2})\b|\b(?:ganhei|recebi|minha renda|sal[aá]rio|receita)\b.*\b(?:em|no|na)\b.*\b(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b.*\b20\d{2}\b/.test(q)) return 'historical_income';
   if (/\b(?:deixo|deixar|mantenho|manter)\b.*\b(?:conta|banco|parado)\b.*\b(?:ou|versus|vs)\b.*\b(?:aplicar|inv?estir|investimento|rendimento|render)\b/.test(q)) return 'save_vs_invest';
   if (/\b(?:aplicar|investir|investimento|rendimento|render)\b.*\b(?:ou|versus|vs)\b.*\b(?:guardar|poupar|deixar|manter)\b/.test(q)) return 'save_vs_invest';
   if (/analise.*cart(?:ao|oes)|analis[ae].*cart(?:ao|oes)|fatura.*cart(?:ao|oes)|limite.*cart(?:ao|oes)|cart(?:ao|oes).*credito|cart(?:ao|oes).*fatura|como.*cart(?:ao|oes)|qual.*fatura|quanto.*fatura|quando.*fatura|quanto.*(?:disponivel).*cart(?:ao|oes)/.test(q)) return 'cards';
-  if (/quanto gastei|quanto.*gastei.*(?:mes|m[eê]s)|analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|quais (?:sao|são) meus (?:maiores )?gastos|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|meus gastos estao altos/.test(q)) return 'expenses';
+  if (/quanto gastei|quanto.*gastei.*(?:mes|m[eê]s)|qto.*gastei|qnto.*gastei|analise.*(?:gastos|despesas)|analisar.*(?:gastos|despesas)|meus gastos|minhas despesas|quais (?:sao|são) meus (?:maiores )?gastos|onde gasto|cortar gastos|estou gastando demais|onde posso economizar|meus gastos estao altos/.test(q)) return 'expenses';
   if (/como posso melhorar.*orcamento|melhorar.*orcamento|organizar.*orcamento|como.*orcamento|qual (?:e|é|meu|o meu)\s*orcamento|quanto (?:posso|ainda posso) gastar|qual minha margem|quanto sobra no orcamento|tenho margem para uma compra|tenho espaco no orcamento|meu orcamento aguenta|quanto posso comprometer|como esta meu orcamento/.test(q)) return 'budget';
   if (/o que (?:tenho|vou|irei)?\s*(?:para|a)?\s*(?:pagar|receber)|o que (?:recebo|pago|vou receber|vou pagar)\b|a pagar|a receber|proximas semanas|proximos dias|proximo mes|este mes|compromissos?|vencimentos?|quais contas vencem|quanto vou pagar.*(?:proximos|meses)|o que vence este mes|o que recebo este mes|quanto tenho a pagar|quanto tenho a receber/.test(q)) return 'cashflow';
   if (/quanto tenho.*(?:conta|contas|banco)|saldo.*(?:conta|contas|banco)|dinheiro disponivel|saldo das contas|quanto tenho no banco|quanto tenho nas contas|qual meu saldo|quanto dinheiro tenho|quanto tenho disponivel/.test(q)) return 'accounts';
@@ -64,8 +74,6 @@ export function detectIntent(question, memory = {}) {
     if (/saldo|conta|banco|dinheiro disponivel|quanto dinheiro/.test(prev) && /^(quanto|qual|como)\b/.test(q)) return 'accounts';
   }
   if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
-  // Current receipt statements should be treated as account updates. Historical income
-  // is reserved for explicitly time-qualified income questions.
   const currentReceipt=/\b(?:recebi|ganhei|me pagaram|entrou|caiu)\b.*\b(?:sal[aá]rio|renda|dinheiro|grana|bico|freela|freelance|pix|pagamento|trabalho|venda|vendas|cliente|clientes)\b.*\b(?:hoje|agora|ontem|essa semana|este mes|neste mes)\b/;
   if (currentReceipt.test(q)) return 'accounts';
   const informalIncome=/\b(?:recebi|ganhei|me pagaram|entrou|caiu)\b.*\b(?:sal[aá]rio|renda|dinheiro|grana|bico|freela|freelance|pix|pagamento|trabalho|venda|vendas|cliente|clientes)\b/;
@@ -88,7 +96,7 @@ export function detectIntent(question, memory = {}) {
   if (/orcamento|quanto posso gastar|margem|folga|quanto ainda posso|quanto sobra/.test(q)) return 'budget';
   if (/a pagar|a receber|vencimento|compromiss|fluxo|proximo mes|proximos dias|o que tenho para pagar|o que tenho para receber|o que recebo|o que pago/.test(q)) return 'cashflow';
   if (/reserva|emergencia/.test(q)) return 'reserve';
-  if (/gastei|gastos?|despesas?|categoria|onde gasto|cortar|gastando demais|gasto mais|torrei|paguei/.test(q)) return 'expenses';
+  if (/gastei|gastos?|despesas?|categoria|onde gasto|cortar|gastando demais|gasto mais|torrei|paguei|gasto/.test(q)) return 'expenses';
   if (/saldo|contas bancarias|dinheiro disponivel|quanto dinheiro|quanto tenho no banco|quanto tenho nas contas|quanto tenho em conta/.test(q)) return 'accounts';
   if (/memoria|lembra|esqueceu/.test(q)) return 'memory';
   if (hasHistory && /^(e|entao|mas|se|quanto|qual|como|isso|esse|essa|ele|ela|nesse caso|e se)\b/.test(q)) return 'continuation';
