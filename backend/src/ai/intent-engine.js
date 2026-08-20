@@ -64,7 +64,9 @@ export function detectIntent(question, memory = {}) {
     if (/saldo|conta|banco|dinheiro disponivel|quanto dinheiro/.test(prev) && /^(quanto|qual|como)\b/.test(q)) return 'accounts';
   }
   if (/^(e se|se eu|se minha|se eu receber|se eu aumentar|se eu reduzir|simule|simular)\b/.test(q)) return 'simulation';
-  if (/salario|renda|receit|ganhei|recebi|me pagaram|entrou|fatur/.test(q)) return 'historical_income';
+  const informalIncome=/\b(?:recebi|ganhei|me pagaram|entrou|caiu)\b.*\b(?:sal[aá]rio|renda|dinheiro|grana|bico|freela|freelance|pix|pagamento|trabalho|venda|vendas|cliente|clientes)\b/;
+  if (informalIncome.test(q)) return 'historical_income';
+  if (/salario|renda|receit/.test(q) && /janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d{2}|\d{4}[-/]\d{1,2}/.test(q)) return 'historical_income';
   const save=/guardar|guardo|poupar|poupo|economizar|economizo|juntar|junto|separar|deixar.*conta|deixar.*parado|reserva|caixinha|dinheiro parado/;
   const invest=/investir|invisto|investimento|aplicar|aplico|aplicacao|carteira/;
   const purchase=/comprar|compra|parcelar|parcelado|parcela|celular|tv|notebook|produto|posso gastar.*compra|vale a pena comprar|simule.*compra|\b\d+\s*x\b/;
