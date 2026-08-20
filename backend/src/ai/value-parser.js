@@ -42,6 +42,12 @@ function candidates(text){
   return out.filter(x=>x.value>0);
 }
 
+function parseInstallmentCountToken(token){
+  const numeric=Number(token);
+  if(Number.isFinite(numeric)&&numeric>0)return numeric;
+  return wordNumber(token);
+}
+
 export function parseInstallments(text){
   const raw=norm(text);
   for(const pattern of [
@@ -49,11 +55,31 @@ export function parseInstallments(text){
     /(?:em|de|por)\s*(\d{1,3})\s*(?:x|vezes|parcelas?)\b/,
     /\b(\d{1,3})\s*x\b/,
     /\b(\d{1,3})\s*(?:vezes|parcelas?)\b/,
-    /\b(\d{1,3})\s*parcela?s?\b/
+    /\b(\d{1,3})\s*parcela?s?\b/,
+    /\b(?:durante|por)\s*(\d{1,3})\s*meses?\b/
   ]){
     const m=raw.match(pattern);if(m)return Math.max(1,Number(m[1]));
   }
+  const wordPattern=new RegExp(`\\b(${Array.from(NUMBER_WORDS.keys()).filter(k=>k!=='zero').join('|')})\\s*(?:x|vezes|parcelas?)\\b`);
+  const wordMatch=raw.match(wordPattern);
+  if(wordMatch)return Math.max(1,parseInstallmentCountToken(wordMatch[1]));
+  const wordMonths=raw.match(new RegExp(`\\b(?:durante|por)\\s*(${Array.from(NUMBER_WORDS.keys()).filter(k=>k!=='zero').join('|')})\\s*meses?\\b`));
+  if(wordMonths)return Math.max(1,parseInstallmentCountToken(wordMonths[1]));
   return 0;
+}
+
+function parseInstallmentPhrase(text){
+  const raw=norm(text);
+  const amountPattern='(?:r\\$\\s*)?(\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?|\\d+(?:[.,]\\d{1,2})?)';
+  const numeric=new RegExp(`\\b(\\d{1,3})\\s*(?:x|vezes|parcelas?)\\s*(?:de|no valor de)\\s*${amountPattern}\\b`,'i').exec(raw);
+  if(numeric){const count=Number(numeric[1]),amount=normalizeMoney(numeric[2]);return count>0&&amount>0?{total:count*amount,installments:count}:null;}
+  const word=new RegExp(`\\b(${Array.from(NUMBER_WORDS.keys()).filter(k=>k!=='zero').join('|')})\\s*(?:x|vezes|parcelas?)\\s*(?:de|no valor de)\\s*${amountPattern}\\b`,'i').exec(raw);
+  if(word){const count=parseInstallmentCountToken(word[1]),amount=normalizeMoney(word[2]);return count>0&&amount>0?{total:count*amount,installments:count}:null;}
+  const monthly=new RegExp(`\\b(?:pago|pagarei|pago de)\\s*${amountPattern}\\s*(?:por mes|mensalmente).*?\\b(?:durante|por)\\s*(\\d{1,3})\\s*meses?\\b`,'i').exec(raw);
+  if(monthly){const amount=normalizeMoney(monthly[1]),count=Number(monthly[2]);return amount>0&&count>0?{total:amount*count,installments:count}:null;}
+  const monthlyWord=new RegExp(`\\b(?:pago|pagarei|pago de)\\s*${amountPattern}\\s*(?:por mes|mensalmente).*?\\b(?:durante|por)\\s*(${Array.from(NUMBER_WORDS.keys()).filter(k=>k!=='zero').join('|')})\\s*meses?\\b`,'i').exec(raw);
+  if(monthlyWord){const amount=normalizeMoney(monthlyWord[1]),count=parseInstallmentCountToken(monthlyWord[2]);return amount>0&&count>0?{total:amount*count,installments:count}:null;}
+  return null;
 }
 
 export function parseMoney(text){
@@ -70,7 +96,6 @@ export function parseMoney(text){
   return word?wordNumber(word[1]):0;
 }
 
-// Plain four-digit amounts in receiving/payment statements are valid financial values.
 function parsePlainReceivedAmount(text){
   const raw=norm(text);
   const m=raw.match(/\b(?:recebi|me pagaram|pagaram|entrou|ganhei)\s+(\d{4})\b/);
@@ -81,7 +106,9 @@ function parsePlainReceivedAmount(text){
 }
 
 export function parseFinancialValue(text){
-  const total=parseMoney(text)||parsePlainReceivedAmount(text),installments=parseInstallments(text)||1;
+  const phrase=parseInstallmentPhrase(text);
+  const total=phrase?.total||parseMoney(text)||parsePlainReceivedAmount(text);
+  const installments=phrase?.installments||parseInstallments(text)||1;
   return{total,installments,installmentValue:total&&installments>1?total/installments:total,raw:String(text||'')};
 }
 
