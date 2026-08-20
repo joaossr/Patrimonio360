@@ -12,7 +12,7 @@ const ok = (condition, message) => assert.ok(condition, message);
 // typos, and short follow-ups.
 
 const cases = [
-  ['receita-informal', 'recebi meu salario hoje', 'accounts'],
+  ['receita-informal', 'recebi meu salario hoje', 'historical_income'],
   ['receita-natural', 'caiu 1950 na minha conta', 'accounts'],
   ['despesa-natural', 'gastei 180 no mercado', 'expenses'],
   ['compra-direta', 'posso comprar um celular de 1200?', 'purchase'],
