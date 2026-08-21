@@ -56,18 +56,35 @@ export function parseInstallments(text){
   return 0;
 }
 
+function parseInstallmentPair(text){
+  const raw=norm(text);
+  const patterns=[
+    /\b(\d{1,3})\s*x\s*(?:de|por)\s*(?:r\$\s*)?([\d.]+(?:,\d{1,2})?)\b/,
+    /\b(\d{1,3})\s*(?:vezes|parcelas?)\s*(?:de|por)\s*(?:r\$\s*)?([\d.]+(?:,\d{1,2})?)\b/,
+    /\b(?:parcelado\s+em\s*)?(\d{1,3})\s*(?:parcelas?|vezes|x)\s*(?:de|por)\s*(?:r\$\s*)?([\d.]+(?:,\d{1,2})?)\b/
+  ];
+  for(const pattern of patterns){
+    const m=raw.match(pattern);
+    if(m){
+      const installments=Math.max(1,Number(m[1]));
+      const installmentValue=normalizeMoney(m[2]);
+      if(installments>1&&installmentValue>0)return{installments,installmentValue,total:installments*installmentValue};
+    }
+  }
+  return null;
+}
+
 export function parseMoney(text){
   const raw=norm(text),thousand=raw.match(/(\d+(?:[.,]\d+)?)\s*mil\b/i);
   if(thousand){const base=normalizeMoney(thousand[1]);if(base)return base*1000;}
   const wordThousand=raw.match(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|vinte)\s+mil\b/);
   if(wordThousand)return(wordNumber(wordThousand[1])||0)*1000;
+  const pair=parseInstallmentPair(raw);if(pair)return pair.total;
   const list=candidates(raw);if(list.length){
     const explicit=list.find(x=>/r\$|reais?|real\b/i.test(raw.slice(Math.max(0,x.index-24),x.index+48)));
     const semantic=list.find(x=>/compr|gastar|gasto|custa|preco|valor|coloc|invest|salario|renda|meta|objetivo|receb|ganh|pag|aporte|chegar|atingir|sobrou|entrou|torrei|tenho|poss?o/.test(raw.slice(Math.max(0,x.index-34),x.index+52)));
     return(explicit||semantic||list[0])?.value||0;
   }
-  // Do not treat article words such as "um" in "um celular" as money.
-  // Written-out monetary amounts remain supported when followed by "mil".
   return 0;
 }
 
@@ -81,8 +98,11 @@ function parsePlainReceivedAmount(text){
 }
 
 export function parseFinancialValue(text){
-  const total=parseMoney(text)||parsePlainReceivedAmount(text),installments=parseInstallments(text)||1;
-  return{total,installments,installmentValue:total&&installments>1?total/installments:total,raw:String(text||'')};
+  const pair=parseInstallmentPair(text);
+  const total=pair?.total||parseMoney(text)||parsePlainReceivedAmount(text);
+  const installments=pair?.installments||parseInstallments(text)||1;
+  const installmentValue=pair?.installmentValue||(total&&installments>1?total/installments:total);
+  return{total,installments,installmentValue,raw:String(text||'')};
 }
 
 export function parseGoal(text,currentDate=new Date()){
