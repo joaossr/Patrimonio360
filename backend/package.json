@@ -19,6 +19,7 @@
     "test:ai:natural:large": "node src/ai/natural-language-large-suite.js",
     "test:ai:real-world": "node src/ai/real-world-evaluation-suite.js",
     "test:ai:expanded": "node src/ai/expanded-5000-evaluation-suite.js",
+    "test:ai:targeted": "node src/ai/targeted-regression-suite.js",
     "test:ai:all": "node src/ai/ai-quality-gate.js",
     "ai:quality-loop": "node src/ai/quality-loop.js"
   },
