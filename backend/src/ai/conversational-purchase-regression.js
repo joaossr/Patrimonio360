@@ -31,21 +31,21 @@ for (const [question, expected] of cases) {
 }
 
 const values = [
-  ['1200', 1200],
-  ['1.200', 1200],
-  ['1.200,50', 1200.50],
-  ['1,2 mil', 1200],
-  ['1200 em 5x', 1200],
-  ['5x de 240', 240]
+  ['1200', { total: 1200 }],
+  ['1.200', { total: 1200 }],
+  ['1.200,50', { total: 1200.50 }],
+  ['1,2 mil', { total: 1200 }],
+  ['1200 em 5x', { total: 1200, installments: 5, installmentValue: 240 }],
+  ['5x de 240', { total: 1200, installments: 5, installmentValue: 240 }]
 ];
 
-for (const [input, expectedMinimum] of values) {
+for (const [input, expected] of values) {
   const parsed = parseFinancialValue(input);
-  if (parsed.total === expectedMinimum || parsed.installmentValue === expectedMinimum || parsed.monthly === expectedMinimum) passed++;
-  else failures.push({ input, expectedMinimum, parsed });
+  const ok = Object.entries(expected).every(([key, value]) => parsed[key] === value);
+  if (ok) passed++;
+  else failures.push({ input, expected, parsed });
 }
 
-// New conversation behavior: a fresh question must not inherit purchase intent.
 const afterPurchase = user(
   'Quero comprar um celular.',
   'Ele custa R$ 1.200 em 5x.'
