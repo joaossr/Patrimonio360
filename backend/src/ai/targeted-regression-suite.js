@@ -41,4 +41,85 @@ const contextualExpenseMemory={recent:[{role:'user',content:'gastei 100 hoje'}]}
 assert.equal(detectIntent('quanto gastei esse mês',contextualExpenseMemory),'expenses');
 assert.equal(detectIntent('onde estou gastando mais?',contextualExpenseMemory),'expenses');
 
+
+
+// ============================================================
+// Context leak regression
+// ============================================================
+
+const purchaseThenOtherQuestions = {
+  recent: [
+    { role: 'user', content: 'Quero comprar um celular.' },
+    { role: 'assistant', content: 'Qual o valor?' },
+    { role: 'user', content: 'Ele custa R$ 1.200.' },
+    { role: 'assistant', content: 'Entendido.' },
+    { role: 'user', content: 'Em 5x.' },
+    { role: 'assistant', content: 'Entendido.' }
+  ]
+};
+
+assert.equal(
+  detectIntent('qto gastei esse m?s', purchaseThenOtherQuestions),
+  'expenses',
+  'context-leak-after-purchase-expenses'
+);
+
+assert.equal(
+  detectIntent('onde estou gastando mais?', purchaseThenOtherQuestions),
+  'expenses',
+  'context-leak-after-purchase-expenses-ranking'
+);
+
+assert.equal(
+  detectIntent('analise meus cart?es de cr?dito', purchaseThenOtherQuestions),
+  'cards',
+  'context-leak-after-purchase-cards'
+);
+
+assert.equal(
+  detectIntent('o que tenho para pagar e receber nas pr?ximas semanas?', purchaseThenOtherQuestions),
+  'cashflow',
+  'context-leak-after-purchase-cashflow'
+);
+
+assert.equal(
+  detectIntent('como posso melhorar meu or?amento?', purchaseThenOtherQuestions),
+  'budget',
+  'context-leak-after-purchase-budget'
+);
+
+assert.equal(
+  detectIntent('fa?a um diagn?stico completo da minha vida financeira', purchaseThenOtherQuestions),
+  'diagnosis',
+  'context-leak-after-purchase-diagnosis'
+);
+
+assert.equal(
+  detectIntent('mostre esse diagn?stico', {
+    recent: [
+      { role: 'user', content: 'Fa?a um diagn?stico completo da minha vida financeira.' }
+    ]
+  }),
+  'diagnosis',
+  'diagnosis-follow-up'
+);
+
+// Compra continua funcionando.
+assert.equal(
+  detectIntent('Posso comprar?', purchaseThenOtherQuestions),
+  'purchase',
+  'purchase-context-preserved'
+);
+
+assert.equal(
+  detectIntent('Em 5x', {
+    recent: [
+      { role: 'user', content: 'Quero comprar um celular.' },
+      { role: 'user', content: 'Ele custa R$ 1.200.' }
+    ]
+  }),
+  'purchase',
+  'installment-context-preserved'
+);
+
 console.log(JSON.stringify({suite:'P360 targeted AI regression',passed:cases.length+intentCases.length+8,failed:0,passRate:1},null,2));

@@ -1,0 +1,79 @@
+{
+  "suite": "P360 AI Quality Loop",
+  "startedAt": "2026-08-19T18:32:33.126Z",
+  "config": {
+    "cycles": 1,
+    "intervalMs": 5000,
+    "parallel": true,
+    "concurrency": 5,
+    "cpuCount": 12,
+    "execution": "direct-node",
+    "stopOnFailure": false,
+    "stopAfter": 0,
+    "maxFailures": 0
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "finishedAt": "2026-08-19T18:32:33.306Z",
+      "failed": true,
+      "failureCount": 1,
+      "score": 1,
+      "bestScore": 1,
+      "stableCycles": 0,
+      "consecutiveFailureCycles": 1,
+      "results": [
+        {
+          "label": "self-test",
+          "command": "test:ai",
+          "exitCode": 0,
+          "passed": 24,
+          "total": 24,
+          "failed": null,
+          "passRate": 1,
+          "failures": []
+        },
+        {
+          "label": "regression",
+          "command": "test:ai:regression",
+          "exitCode": 0,
+          "passed": 5,
+          "total": 5,
+          "failed": null,
+          "passRate": 1,
+          "failures": []
+        },
+        {
+          "label": "large-regression",
+          "command": "test:ai:large",
+          "exitCode": 1,
+          "passed": null,
+          "total": null,
+          "failed": null,
+          "passRate": null,
+          "failures": []
+        },
+        {
+          "label": "natural-language-large",
+          "command": "test:ai:natural:large",
+          "exitCode": 0,
+          "passed": 907,
+          "total": 907,
+          "failed": 0,
+          "passRate": 1,
+          "failures": []
+        },
+        {
+          "label": "financial-model",
+          "command": "evaluate:financial",
+          "exitCode": 0,
+          "passed": 3,
+          "total": 3,
+          "failed": null,
+          "passRate": 1,
+          "failures": []
+        }
+      ]
+    }
+  ]
+}
