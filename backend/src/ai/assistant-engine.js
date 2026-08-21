@@ -25,7 +25,49 @@ function conversationalGreeting(question){const q=norm(question);if(/^bom dia/.t
 function capabilitiesAnswer(){return 'Posso ajudar a controlar receitas e despesas, analisar compras e parcelas, acompanhar metas e reserva, analisar seu fluxo de caixa, identificar riscos, fazer simulações e usar seu histórico financeiro para personalizar as recomendações.';}
 function historicalExpenseAnswer(state,month,question){const tx=transactionsForMonth(state,month);const expenses=tx.filter(t=>t.type==='expense');if(!expenses.length)return `Não encontrei despesas cadastradas em ${month}. Não vou substituir esse período pelos dados de outro mês.`;const categoryMatch=norm(question).match(/(?:com|de|em)\s+([a-z0-9áàâãéêíóôõúç ]+?)(?:\s+em\s+|\s+no\s+|\s+na\s+|\s+de\s+20\d{2}|\?|$)/);let selected=expenses;if(categoryMatch){const needle=categoryMatch[1].trim();const filtered=expenses.filter(t=>norm(t.category||'').includes(needle));if(filtered.length)selected=filtered;else return `Não encontrei despesas de ${categoryMatch[1].trim()} em ${month}. Não vou usar outra categoria ou outro período para preencher essa informação.`;}const total=selected.reduce((s,t)=>s+Number(t.value||0),0);const label=categoryMatch?.[1]?.trim();return label?`Em ${month}, encontrei ${selected.length} despesa(s) de ${label}, totalizando **${money(total)}**.`:`Em ${month}, você teve ${selected.length} despesa(s), totalizando **${money(total)}**.`;}
 function currentExpenseAnswer(state,month,question){const q=norm(question);if(!/quanto|qto|qnto|total|soma|gastei/.test(q))return null;const expenses=transactionsForMonth(state,month).filter(t=>t.type==='expense');if(!expenses.length)return `Não encontrei despesas cadastradas em ${month}. Se quiser, posso analisar outro período.`;const total=expenses.reduce((s,t)=>s+Number(t.value||0),0);return `Até agora, em ${month}, você gastou **${money(total)}** em ${expenses.length} despesa(s).`}
-function purchaseClarification(question,memory={}){const q=norm(question),purchaseInContext=Boolean(recentPurchaseContext(memory));const installmentOnly=/^(em\s+)?\d+\s*(?:x|vezes|parcelas?)\b/.test(q);if(installmentOnly&&recentPurchaseValue(memory)?.parsed.total>0)return null;const hasPurchase=purchaseInContext||/comprar|compra|celular|tv|notebook|produto|eletronico/.test(q);if(!hasPurchase)return null;const parsed=parseFinancialValue(question);if(parsed.total>0)return null;if(/comprar|compra|celular|tv|notebook|produto|eletronico|vale a pena|posso/.test(q)||purchaseInContext)return 'Claro. Qual é o valor da compra que você quer avaliar? Pode me passar à vista ou parcelado, por exemplo: “R$ 1.200 em 5x”.';return null;}
+function purchaseClarification(question,memory={}){
+  const q=norm(question);
+
+  const directPurchase=
+    /comprar|compra|celular|tv|notebook|produto|eletronico|eletronico|vale a pena|posso comprar|posso parcelar/.test(q);
+
+  const previousPurchase=recentPurchaseContext(memory);
+
+  const continuation=
+    Boolean(previousPurchase) &&
+    /^(e|entao|ent?o|mas|se|e se|quanto|qual|como|isso|esse|essa|ele|ela|nesse caso|em)\\b/.test(q);
+
+  const installmentOnly=
+    /^(em\\s+)?\\d+\\s*(?:x|vezes|parcelas?)\\b/.test(q);
+
+  /*
+   * Regra principal:
+   * mem?ria de compra s? pode influenciar a mensagem atual
+   * quando a mensagem atual tamb?m parece ser continua??o
+   * daquela compra.
+   */
+  const purchaseContextActive=
+    directPurchase ||
+    (Boolean(previousPurchase) && (continuation || installmentOnly));
+
+  if(!purchaseContextActive) return null;
+
+  const parsed=parseFinancialValue(question);
+
+  if(parsed.total>0) return null;
+
+  if(
+    directPurchase ||
+    continuation ||
+    installmentOnly ||
+    previousPurchase
+  ){
+    return 'Claro. Qual ? o valor da compra que voc? quer avaliar? Pode me passar ? vista ou parcelado, por exemplo: ?R$ 1.200 em 5x?.';
+  }
+
+  return null;
+}
+
 function simulationAnswer(question,analysis,goal){const q=norm(question),parsed=parseFinancialValue(question);if(/compr|celular|tv|notebook|produto|compra|parcel/.test(q)&&parsed.total>0){const sim=simulatePurchase({analysis,goal,purchase:parsed});return `**Simulação — sem alterar seus dados**\n\nCompra de **${money(sim.total)}** em **${sim.installments}x de ${money(sim.monthly)}**.\n\nSua margem passaria de **${money(sim.currentMargin)}** para **${money(sim.simulatedMargin)}** por mês.\n${sim.goal?`\nA meta **${sim.goal.name}** continuaria ativa. ${sim.goal.projectedMonthly!=null?`O aporte mensal necessário subiria de ${money(sim.goal.baselineMonthly)} para ${money(sim.projectedMonthly)}.`:`O impacto mensal estimado sobre a capacidade de aporte é de ${money(sim.goal.impact)}.`}`:''}\n\n**Premissas:** ${sim.assumptions.join(' ')}`;}if(/renda.*(cair|diminuir|reduzir|menos)|salario.*(cair|diminuir|reduzir|menos)/.test(q)&&parsed.total>0){const sim=simulateIncomeChange({analysis,delta:-parsed.total});return `**Simulação — renda ${money(sim.delta)} menor**\n\nRenda estimada: **${money(sim.simulatedIncome)}**.\nMargem estimada: **${money(sim.simulatedMargin)}** (antes: ${money(sim.currentMargin)}).\n\nNenhum dado real foi alterado.`;}if(/receber|extra|aumentar.*renda|renda.*aumentar/.test(q)&&parsed.total>0){const sim=simulateExtraIncome({analysis,amount:parsed.total});return `**Simulação — renda extra de ${money(sim.delta)}**\n\nRenda estimada: **${money(sim.simulatedIncome)}**.\nMargem estimada: **${money(sim.simulatedMargin)}**.\n\nNenhum dado real foi alterado.`;}if(/aporte|guardar|poupar|economizar|juntar/.test(q)&&parsed.total>0){const sim=simulateContribution({analysis,goal,amount:parsed.total});return `**Simulação de aporte de ${money(sim.amount)}**\n\nMargem após o aporte: **${money(sim.simulatedMargin)}**.\nReserva projetada: **${money(sim.reserveAfter)}**.\n${sim.goal?`\nMeta **${sim.goal.name}**: faltariam ${money(sim.goal.remainingAfter)}.`:''}\n\nNenhum dado real foi alterado.`;}return 'Consigo simular esse cenário, mas preciso de um valor ou mudança concreta. Exemplo: “E se eu comprar por R$ 1.200 em 5x?”';}
 export async function respondV2({question,state,currentMonth,memory,analysis,risk,profile,insights}){
  const inferred=inferredIntent(question,memory);const explicit=explicitTaskIntent(question);const baseIntent=detectIntent(question,memory);const n=neuralIntent(question,memory);const clarification=purchaseClarification(question,memory);const deterministicIntent=clarification?'purchase':inferred||explicit||(baseIntent&&!['general','continuation'].includes(baseIntent)?baseIntent:null);const intent=deterministicIntent||((n.score>=0.8)?n.intent:baseIntent||'general');const month=resolveRequestedMonth(question,currentMonth);const context=buildFinancialContext(state,month,memory);context.analysis=analysis;context.risk=risk;context.budget=analysis?.budget||null;context.neuralIntent=n;context.dataset=buildDatasetContext(question);
