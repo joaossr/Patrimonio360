@@ -1,0 +1,1 @@
+Legacy AI and local ML components are intentionally absent from feat/deepseek-ai-clean. The runtime uses only the deterministic Financial Engine and DeepSeek.
