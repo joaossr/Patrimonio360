@@ -1,1 +1,0 @@
-Legacy AI components were removed in favor of the DeepSeek-only architecture. Financial calculations live in backend/src/financial-engine.
