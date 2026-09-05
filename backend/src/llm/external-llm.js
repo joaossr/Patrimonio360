@@ -1,7 +1,9 @@
 const GEMINI_BASE='https://generativelanguage.googleapis.com/v1beta';
 const DEEPSEEK_BASE='https://api.deepseek.com';
 
-const provider=String(process.env.P360_LLM_PROVIDER||'gemini').toLowerCase();
+// O provedor é controlado por uma única variável: P360_LLM_PROVIDER.
+// Valores aceitos: deepseek ou gemini. DeepSeek é o padrão atual.
+const provider=String(process.env.P360_LLM_PROVIDER||'deepseek').toLowerCase();
 const enabled=String(process.env.P360_LLM_ENABLED||'true').toLowerCase()==='true';
 
 function compact(value,max=18000){
@@ -67,7 +69,7 @@ async function callDeepSeek(prompt){
 }
 
 export function externalLLMStatus(){
-  const configured=provider==='deepseek'?Boolean(process.env.DEEPSEEK_API_KEY):Boolean(process.env.GEMINI_API_KEY);
+  const configured=provider==='deepseek'?Boolean(process.env.DEEPSEEK_API_KEY):provider==='gemini'?Boolean(process.env.GEMINI_API_KEY):false;
   return {enabled,provider,configured,model:provider==='deepseek'?(process.env.DEEPSEEK_MODEL||'deepseek-v4-flash'):(process.env.GEMINI_MODEL||'gemini-3.1-flash-lite')};
 }
 
