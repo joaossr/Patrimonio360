@@ -1,1 +1,0 @@
-The legacy AI source tree is being removed. Keep calculations in financial-engine and generation in llm/external-llm.js (DeepSeek only).
