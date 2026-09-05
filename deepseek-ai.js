@@ -8,22 +8,15 @@ let panel=null;
 function cleanLegacyUI(){
   document.querySelectorAll('.nav-item[data-page="assistente"]').forEach(el=>el.remove());
   document.querySelectorAll('.ai-status-badge').forEach(el=>{
-    el.textContent='✦ DeepSeek';
+    if(el.textContent.trim()!=='✦ DeepSeek')el.textContent='✦ DeepSeek';
     el.classList.remove('red');
-  });
-  document.querySelectorAll('*').forEach(el=>{
-    if(el.children.length) return;
-    const text=el.textContent?.trim();
-    if(text==='P360 Intelligence online')el.textContent='DeepSeek online';
-    if(text==='P360 Intelligence offline')el.textContent='DeepSeek offline';
   });
 }
 
 function injectNav(){
   const menu=document.querySelector('.sidebar .menu');
-  if(!menu||menu.querySelector('[data-deepseek-nav]'))return;
-  const old=menu.querySelector('.nav-item[data-page="assistente"]');
-  if(old)old.remove();
+  if(!menu||menu.querySelector('[data-deepseek-nav]'))return false;
+  menu.querySelector('.nav-item[data-page="assistente"]')?.remove();
   const button=document.createElement('button');
   button.className='nav-item';
   button.dataset.deepseekNav='1';
@@ -32,6 +25,7 @@ function injectNav(){
   const intelligence=labels.find(x=>x.textContent.trim()==='Inteligência');
   if(intelligence)intelligence.after(button);else menu.appendChild(button);
   button.onclick=openPanel;
+  return true;
 }
 
 function openPanel(){
@@ -70,8 +64,12 @@ async function send(text){
 
 function boot(){
   cleanLegacyUI();
-  injectNav();
-  const app=document.getElementById('app')||document.body;
-  new MutationObserver(()=>{cleanLegacyUI();injectNav()}).observe(app,{childList:true,subtree:true});
+  if(injectNav())return;
+  let attempts=0;
+  const timer=setInterval(()=>{
+    attempts+=1;
+    cleanLegacyUI();
+    if(injectNav()||attempts>=40)clearInterval(timer);
+  },250);
 }
 boot();
