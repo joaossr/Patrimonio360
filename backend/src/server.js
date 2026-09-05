@@ -11,20 +11,112 @@ import { analyzeFinancialState } from './financial-engine/analyzer.js';
 import { calculateFinancialRisk } from './financial-engine/risk-engine.js';
 import { buildFinancialProfile } from './financial-engine/profile-engine.js';
 import { generateInsights } from './financial-engine/insight-engine.js';
-import { loadAIMemory, saveAIMemory, saveFinancialProfile, saveInsights, mergeMemory } from './memory/financial-memory.js';
 import { generateExternalResponse, externalLLMStatus } from './llm/external-llm.js';
 import { createTelegramLinkCode } from './telegram/link-code.js';
 
-let firebaseReady=false;let firebaseInitError=null;
-function resolveServiceAccountPath(){const configured=process.env.GOOGLE_APPLICATION_CREDENTIALS||'./service-account.json';return path.isAbsolute(configured)?configured:path.resolve(process.cwd(),configured);}
-try{if(!getApps().length){const serviceAccountJson=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;let credential;if(serviceAccountJson)credential=cert(JSON.parse(serviceAccountJson));else{const serviceAccountPath=resolveServiceAccountPath();if(!fs.existsSync(serviceAccountPath))throw new Error(`Credencial Firebase nao encontrada em: ${serviceAccountPath}`);credential=cert(JSON.parse(fs.readFileSync(serviceAccountPath,'utf8')));}initializeApp({credential,projectId:process.env.FIREBASE_PROJECT_ID});}firebaseReady=true;}catch(error){firebaseInitError=error;console.error('P360 Firebase nao inicializou:',error.message);}
-const db=firebaseReady?getFirestore():null;const app=express();const __filename=fileURLToPath(import.meta.url);const __dirname=path.dirname(__filename);const PROJECT_ROOT=path.resolve(__dirname,'../..');app.use(cors({origin:true}));app.use(express.json({limit:'1mb'}));app.use(express.static(PROJECT_ROOT,{extensions:['html'],index:'index.html'}));
-async function authUser(req,res,next){if(!firebaseReady)return res.status(503).json({error:'Firebase Admin não configurado.'});try{const header=req.headers.authorization||'';if(!header.startsWith('Bearer '))return res.status(401).json({error:'Autenticação necessária.'});req.user=await getAuth().verifyIdToken(header.slice(7),true);next();}catch{return res.status(401).json({error:'Sessão inválida.'});}}
-async function loadState(uid){const snapshot=await db.doc(`users/${uid}/app/state`).get();return snapshot.exists?snapshot.data().state||{}:{};}
-function backendStatus(){const llm=externalLLMStatus();return{ok:firebaseReady&&llm.enabled&&llm.configured,service:'P360 Intelligence',backend:{port:Number(process.env.PORT||8787)},firebase:{ready:firebaseReady,projectId:process.env.FIREBASE_PROJECT_ID||null,error:firebaseInitError?.message||null},telegram:{configured:Boolean(process.env.TELEGRAM_BOT_TOKEN),username:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot',polling:false},provider:'deepseek',externalLLM:llm,financialEngine:'v2',memoryEngine:'v2',localAI:false};}
+let firebaseReady=false;
+let firebaseInitError=null;
+function resolveServiceAccountPath(){
+  const configured=process.env.GOOGLE_APPLICATION_CREDENTIALS||'./service-account.json';
+  return path.isAbsolute(configured)?configured:path.resolve(process.cwd(),configured);
+}
+try{
+  if(!getApps().length){
+    const serviceAccountJson=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    let credential;
+    if(serviceAccountJson) credential=cert(JSON.parse(serviceAccountJson));
+    else{
+      const serviceAccountPath=resolveServiceAccountPath();
+      if(!fs.existsSync(serviceAccountPath)) throw new Error(`Credencial Firebase não encontrada em: ${serviceAccountPath}`);
+      credential=cert(JSON.parse(fs.readFileSync(serviceAccountPath,'utf8')));
+    }
+    initializeApp({credential,projectId:process.env.FIREBASE_PROJECT_ID});
+  }
+  firebaseReady=true;
+}catch(error){
+  firebaseInitError=error;
+  console.error('P360 Firebase não inicializou:',error.message);
+}
+
+const db=firebaseReady?getFirestore():null;
+const app=express();
+const __filename=fileURLToPath(import.meta.url);
+const __dirname=path.dirname(__filename);
+const PROJECT_ROOT=path.resolve(__dirname,'../..');
+app.use(cors({origin:true}));
+app.use(express.json({limit:'1mb'}));
+app.use(express.static(PROJECT_ROOT,{extensions:['html'],index:'index.html'}));
+
+async function authUser(req,res,next){
+  if(!firebaseReady) return res.status(503).json({error:'Firebase Admin não configurado.'});
+  try{
+    const header=req.headers.authorization||'';
+    if(!header.startsWith('Bearer ')) return res.status(401).json({error:'Autenticação necessária.'});
+    req.user=await getAuth().verifyIdToken(header.slice(7),true);
+    next();
+  }catch{
+    return res.status(401).json({error:'Sessão inválida.'});
+  }
+}
+
+async function loadState(uid){
+  const snapshot=await db.doc(`users/${uid}/app/state`).get();
+  return snapshot.exists?snapshot.data().state||{}:{};
+}
+
+function backendStatus(){
+  const llm=externalLLMStatus();
+  return {
+    ok:firebaseReady&&llm.enabled&&llm.configured,
+    service:'Patrimônio 360 — Nova IA DeepSeek',
+    backend:{port:Number(process.env.PORT||8787)},
+    firebase:{ready:firebaseReady,projectId:process.env.FIREBASE_PROJECT_ID||null,error:firebaseInitError?.message||null},
+    telegram:{configured:Boolean(process.env.TELEGRAM_BOT_TOKEN),username:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot',polling:false},
+    provider:'deepseek',
+    externalLLM:llm,
+    financialEngine:'v2',
+    localAI:false
+  };
+}
+
 app.get('/api/config',(req,res)=>res.json({ok:true,telegram:!!process.env.TELEGRAM_BOT_TOKEN,botUsername:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot',backendOrigin:`${req.protocol}://${req.get('host')}`,ai:externalLLMStatus()}));
 app.get('/api/status',(req,res)=>{const status=backendStatus();res.status(status.ok?200:503).json(status);});
 app.get('/health',(req,res)=>{const status=backendStatus();res.status(status.ok?200:503).json(status);});
-app.post('/api/telegram/link-code',authUser,async(req,res)=>{try{res.json(await createTelegramLinkCode(db,req.user.uid));}catch(error){console.error('Telegram link-code error:',error.message);res.status(500).json({error:'Não foi possível gerar o código do Telegram.'});}});
-app.post('/api/ai/chat',authUser,async(req,res)=>{try{const message=String(req.body.message||'').trim().slice(0,4000);if(!message)return res.status(400).json({error:'Mensagem vazia.'});const state=await loadState(req.user.uid);const currentMonth=String(req.body.selectedMonth||state.selectedMonth||new Date().toISOString().slice(0,7));const analysis=analyzeFinancialState(state,currentMonth);const risk=calculateFinancialRisk(analysis);const profile=buildFinancialProfile(state);const storedMemory=await loadAIMemory(db,req.user.uid);const clientRecent=Array.isArray(req.body.recent)?req.body.recent.slice(-20):[];const memory=mergeMemory(storedMemory,{recent:clientRecent.length?clientRecent:(storedMemory.recent||[])});const insights=generateInsights(analysis,risk,{},profile);const recent=[...(memory.recent||[]).slice(-18),{role:'user',content:message}];const answer=await generateExternalResponse({question:message,analysis,risk,profile,insights,memory:{...memory,recent},financialContext:{currentMonth},state});const enriched=mergeMemory(memory,{recent:[...recent,{role:'assistant',content:answer}],context:{...(memory.context||{}),lastQuestion:message,lastMonth:currentMonth,updatedAt:new Date().toISOString()},goals:(state.goals||[]).map(g=>({id:g.id,name:g.name,target:g.target,date:g.date,source:'official-state'}))});await Promise.all([saveAIMemory(db,req.user.uid,enriched),saveFinancialProfile(db,req.user.uid,profile),saveInsights(db,req.user.uid,insights)]);res.json({answer,intent:'deepseek',month:currentMonth,engine:{version:'deepseek-only',analysis,risk,profile,insights,memory:{recentCount:recent.length,facts:enriched.facts?.length||0,goals:enriched.goals?.length||0},externalLLM:externalLLMStatus(),localAI:false}});}catch(error){console.error('P360 DeepSeek chat error:',error.message);const status=externalLLMStatus();const message=String(error.message||'');let code=502;if(message.includes('DEEPSEEK_API_KEY'))code=503;res.status(code).json({error:status.configured?'Não foi possível consultar a IA no momento. Tente novamente em alguns instantes.':'DeepSeek não está configurado no backend.',provider:'deepseek',localAI:false});}});
-app.listen(Number(process.env.PORT||8787),()=>console.log(`P360 DeepSeek backend em http://localhost:${process.env.PORT||8787}`));
+
+app.post('/api/telegram/link-code',authUser,async(req,res)=>{
+  try{res.json(await createTelegramLinkCode(db,req.user.uid));}
+  catch(error){console.error('Telegram link-code error:',error.message);res.status(500).json({error:'Não foi possível gerar o código do Telegram.'});}
+});
+
+app.post('/api/ai/chat',authUser,async(req,res)=>{
+  try{
+    const message=String(req.body.message||'').trim().slice(0,4000);
+    if(!message) return res.status(400).json({error:'Mensagem vazia.'});
+    const state=await loadState(req.user.uid);
+    const currentMonth=String(req.body.selectedMonth||state.selectedMonth||new Date().toISOString().slice(0,7));
+    const analysis=analyzeFinancialState(state,currentMonth);
+    const risk=calculateFinancialRisk(analysis);
+    const profile=buildFinancialProfile(state);
+    const insights=generateInsights(analysis,risk,{},profile);
+    const recent=Array.isArray(req.body.recent)?req.body.recent.slice(-20):[];
+    const answer=await generateExternalResponse({
+      question:message,
+      analysis,
+      risk,
+      profile,
+      insights,
+      memory:{recent},
+      financialContext:{currentMonth},
+      state
+    });
+    res.json({answer,intent:'deepseek',month:currentMonth,engine:{version:'deepseek-financial-engine-v1',analysis,risk,profile,insights,recentCount:recent.length,externalLLM:externalLLMStatus(),localAI:false}});
+  }catch(error){
+    console.error('P360 DeepSeek chat error:',error.message);
+    const status=externalLLMStatus();
+    const message=String(error.message||'');
+    const code=message.includes('DEEPSEEK_API_KEY')?503:502;
+    res.status(code).json({error:status.configured?'Não foi possível consultar a nova IA agora. Tente novamente em alguns instantes.':'DeepSeek não está configurado no backend.',provider:'deepseek',localAI:false});
+  }
+});
+
+app.listen(Number(process.env.PORT||8787),()=>console.log(`Patrimônio 360 — DeepSeek backend em http://localhost:${process.env.PORT||8787}`));
