@@ -2,8 +2,22 @@ import { waitForUser, getBackendAuthToken } from './firebase-state.js';
 
 const localHost=location.hostname==='localhost'||location.hostname==='127.0.0.1';
 const BACKEND=(localHost&&location.port==='8787')?location.origin:'https://patrimonio360-hqka.onrender.com';
-
 const esc=value=>String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+let panel=null;
+
+function cleanLegacyUI(){
+  document.querySelectorAll('.nav-item[data-page="assistente"]').forEach(el=>el.remove());
+  document.querySelectorAll('.ai-status-badge').forEach(el=>{
+    el.textContent='✦ DeepSeek';
+    el.classList.remove('red');
+  });
+  document.querySelectorAll('*').forEach(el=>{
+    if(el.children.length) return;
+    const text=el.textContent?.trim();
+    if(text==='P360 Intelligence online')el.textContent='DeepSeek online';
+    if(text==='P360 Intelligence offline')el.textContent='DeepSeek offline';
+  });
+}
 
 function injectNav(){
   const menu=document.querySelector('.sidebar .menu');
@@ -20,12 +34,11 @@ function injectNav(){
   button.onclick=openPanel;
 }
 
-let panel=null;
 function openPanel(){
   if(panel){panel.hidden=false;panel.querySelector('textarea')?.focus();return;}
   panel=document.createElement('div');
   panel.className='deepseek-overlay';
-  panel.innerHTML=`<div class="deepseek-panel" role="dialog" aria-modal="true" aria-label="Nova IA DeepSeek"><div class="deepseek-head"><div><span class="deepseek-kicker">NOVA IA</span><h2>Assistente Financeiro DeepSeek</h2><p>Conversação com DeepSeek + dados calculados pelo Motor Financeiro.</p></div><button class="deepseek-close" aria-label="Fechar">×</button></div><div class="deepseek-status"><span class="deepseek-dot"></span>DeepSeek conectado ao Patrimônio 360</div><div class="deepseek-messages"><div class="deepseek-message assistant">Olá! Sou a nova IA do Patrimônio 360. Uso o Motor Financeiro para consultar seus dados e o DeepSeek para conversar com você. Não existe IA local como fallback.</div></div><div class="deepseek-suggestions"><button>Como estão minhas finanças?</button><button>Analise meus gastos.</button><button>Estou no caminho da minha meta?</button><button>Posso fazer uma compra?</button></div><form><textarea rows="2" placeholder="Pergunte à nova IA DeepSeek..."></textarea><button type="submit">Enviar</button></form></div>`;
+  panel.innerHTML=`<div class="deepseek-panel" role="dialog" aria-modal="true" aria-label="Nova IA DeepSeek"><div class="deepseek-head"><div><span class="deepseek-kicker">NOVA IA</span><h2>Assistente Financeiro DeepSeek</h2><p>Conversação com DeepSeek + dados calculados pelo Motor Financeiro.</p></div><button class="deepseek-close" aria-label="Fechar">×</button></div><div class="deepseek-status"><span class="deepseek-dot"></span>DeepSeek conectado ao Patrimônio 360</div><div class="deepseek-messages"><div class="deepseek-message assistant">Olá! Sou a nova IA do Patrimônio 360. Uso o Motor Financeiro como fonte dos números e o DeepSeek para conversar, explicar e analisar sua situação. Não uso IA local.</div></div><div class="deepseek-suggestions"><button>Como estão minhas finanças?</button><button>Analise meus gastos.</button><button>Estou no caminho da minha meta?</button><button>Posso fazer uma compra?</button></div><form><textarea rows="2" placeholder="Pergunte à nova IA DeepSeek..."></textarea><button type="submit">Enviar</button></form></div>`;
   document.body.appendChild(panel);
   const close=()=>{panel.hidden=true};
   panel.querySelector('.deepseek-close').onclick=close;
@@ -56,8 +69,9 @@ async function send(text){
 }
 
 function boot(){
+  cleanLegacyUI();
   injectNav();
   const app=document.getElementById('app')||document.body;
-  new MutationObserver(()=>injectNav()).observe(app,{childList:true,subtree:true});
+  new MutationObserver(()=>{cleanLegacyUI();injectNav()}).observe(app,{childList:true,subtree:true});
 }
 boot();
