@@ -6,22 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "train:neural": "node src/ml/train.js",
-    "train:financial": "node src/ml/train-financial-model.js",
-    "train:brazil": "node src/ml/train-financial-model.js",
-    "dataset:brazil": "node -e \"import('./src/ml/brazilian-dataset-v3.js').then(async m=>console.log(JSON.stringify(await m.buildTrainingManifest(),null,2)))\"",
-    "evaluate:financial": "node src/ml/evaluate-financial-model.js",
-    "doctor": "node src/doctor.js",
-    "test:ai": "node src/ai/self-test.js",
-    "test:ai:regression": "node src/ai/regression-suite.js",
-    "test:ai:large": "node src/ai/large-regression-suite.js",
-    "test:ai:natural": "node src/ai/natural-language-stress-suite.js",
-    "test:ai:natural:large": "node src/ai/natural-language-large-suite.js",
-    "test:ai:real-world": "node src/ai/real-world-evaluation-suite.js",
-    "test:ai:expanded": "node src/ai/expanded-5000-evaluation-suite.js",
-    "test:ai:targeted": "node src/ai/targeted-regression-suite.js",
-    "test:ai:all": "node src/ai/ai-quality-gate.js",
-    "ai:quality-loop": "node src/ai/quality-loop.js"
+    "doctor": "node src/doctor.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
