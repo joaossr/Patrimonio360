@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Patrimônio 360 - Login</title>
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="assets/css/variables.css">
+
+    <link rel="stylesheet"
+          href="assets/css/reset.css">
+
+    <link rel="stylesheet"
+          href="assets/css/global.css">
+
+    <link rel="stylesheet"
+          href="assets/css/login.css">
+
+</head>
+
+<body>
+
+<div class="login-page">
+
+    <!-- Lado Esquerdo -->
+
+    <div class="login-left">
+
+        <form
+            id="loginForm"
+            class="login-card">
+
+            <h1>
+
+                Entrar
+
+            </h1>
+
+            <p>
+
+                Faça login para acessar sua conta.
+
+            </p>
+
+            <div class="form-group">
+
+                <label>Email</label>
+
+                <input
+
+                    id="email"
+
+                    type="email"
+
+                    placeholder="Digite seu email"
+
+                    required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Senha</label>
+
+                <input
+
+                    id="password"
+
+                    type="password"
+
+                    placeholder="Digite sua senha"
+
+                    required>
+
+            </div>
+
+            <button
+                class="btn-login"
+                type="submit">
+
+                Entrar
+
+            </button>
+
+            <button
+
+                id="btnRegister"
+
+                type="button"
+
+                class="btn-secondary">
+
+                Criar Conta
+
+            </button>
+
+            <button
+
+                id="btnForgot"
+
+                type="button"
+
+                class="btn-link">
+
+                Esqueci minha senha
+
+            </button>
+
+            <div class="forgot-panel" id="forgotPanel"><p>Informe seu e-mail e enviaremos um link para redefinir sua senha.</p><div class="forgot-row"><input id="forgotEmail" type="email" placeholder="seu@email.com"><button id="sendReset" type="button">Enviar link</button></div></div><span id="message"></span>
+
+        </form>
+
+    </div>
+
+    <!-- Lado Direito -->
+
+    <div class="login-right">
+
+        <img
+
+            src="assets/images/logo_1.png"
+
+            alt="Patrimônio 360"
+
+            class="brand-logo">
+
+        <h2>
+
+            Sua vida financeira em um só lugar.
+
+        </h2>
+
+        <p>
+
+            Controle receitas, despesas, cartões, investimentos e patrimônio em um único sistema inteligente.
+
+        </p>
+
+    </div>
+
+</div>
+
+<script
+type="module"
+src="assets/js/auth/login.js">
+</script>
+
+</body>
+
+</html>

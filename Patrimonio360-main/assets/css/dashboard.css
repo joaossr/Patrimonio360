@@ -1,0 +1,254 @@
+/*
+==========================================================
+
+ Patrimônio 360 v2
+
+ Dashboard
+
+==========================================================
+*/
+
+.dashboard-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:24px;
+
+    margin-bottom:24px;
+
+}
+
+.grid-2{
+
+    display:grid;
+
+    grid-template-columns:2fr 1fr;
+
+    gap:24px;
+
+    margin-bottom:24px;
+
+}
+
+.dashboard-left,
+
+.dashboard-right{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+
+}
+
+.dashboard-bottom{
+
+    display:grid;
+
+    grid-template-columns:2fr 1fr;
+
+    gap:24px;
+
+}
+
+.dashboard-card-svg{
+    width:28px !important;
+    height:28px !important;
+    min-width:28px;
+    min-height:28px;
+    display:block;
+    color:#fff;
+}
+
+.dashboard-page{
+    width:100%;
+    padding-top:25px;
+}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:28px;
+    margin-bottom:30px;
+}
+
+.card-header{
+
+    padding:18px 22px;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.card-header h3{
+
+    color:#FFF;
+
+    font-size:17px;
+
+    font-weight:600;
+
+}
+
+.card-body{
+
+    padding:22px;
+
+}
+
+.dashboard-panel{
+
+    padding:24px;
+
+}
+
+.dashboard-panel h3{
+
+    margin-bottom:20px;
+
+    color:#FFF;
+
+    font-size:18px;
+
+}
+
+.dashboard-info{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:14px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+}
+
+.dashboard-info:last-child{
+
+    border-bottom:none;
+
+}
+
+.dashboard-info strong{
+
+    color:#CBD5E1;
+
+    font-weight:600;
+
+}
+
+.dashboard-info span{
+
+    color:#7F3DFF;
+
+    font-size:17px;
+
+    font-weight:700;
+
+}
+
+canvas{
+
+    width:100% !important;
+
+    height:320px !important;
+
+}
+
+#ultimasMovimentacoes,
+
+#listaVencimentos{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.mov-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:12px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+}
+
+.mov-item:last-child{
+
+    border-bottom:none;
+
+}
+
+.empty-state{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    min-height:260px;
+
+    color:#94A3B8;
+
+    font-size:15px;
+
+    text-align:center;
+
+}
+
+@media(max-width:1400px){
+
+    .dashboard-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+}
+
+@media(max-width:1200px){
+
+    .grid-2{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .dashboard-bottom{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+@media(max-width:768px){
+
+    .dashboard-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+}

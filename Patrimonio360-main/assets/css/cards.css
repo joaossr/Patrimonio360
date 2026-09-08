@@ -1,0 +1,113 @@
+/*
+==========================================================
+
+Patrimônio 360 v2
+
+Cards
+
+==========================================================
+*/
+
+.p360-card{
+
+    background:#151C24;
+
+    border:1px solid rgba(255,255,255,.05);
+
+    border-radius:18px;
+
+    padding:24px;
+
+    transition:.25s;
+
+}
+
+.p360-card:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:0 15px 35px rgba(0,0,0,.25);
+
+}
+
+.p360-card-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.card-title{
+
+    color:#94A3B8;
+
+    font-size:14px;
+
+}
+
+.card-value{
+
+    margin-top:8px;
+
+    color:white;
+
+    font-size:32px;
+
+}
+
+.card-footer{
+
+    margin-top:18px;
+
+    color:#94A3B8;
+
+    font-size:13px;
+
+}
+
+.card-icon{
+
+    width:56px;
+
+    height:56px;
+
+    border-radius:16px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:22px;
+
+    color:white;
+
+}
+
+.primary{
+
+    background:#0EA5E9;
+
+}
+
+.success{
+
+    background:#10B981;
+
+}
+
+.warning{
+
+    background:#F59E0B;
+
+}
+
+.danger{
+
+    background:#EF4444;
+
+}

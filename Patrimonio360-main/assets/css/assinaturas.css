@@ -1,0 +1,104 @@
+/*
+==========================================================
+ Patrimônio 360 v3
+ Assinaturas
+==========================================================
+*/
+
+.assinaturas-page{
+    padding-top:25px;
+}
+
+.assinaturas-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom:24px;
+}
+
+.assinaturas-resumo{
+    flex:1;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+}
+
+.assinaturas-resumo .card-body{
+    padding:22px;
+}
+
+.assinaturas-resumo span{
+    color:var(--text-secondary);
+    font-size:13px;
+}
+
+.assinaturas-resumo h2{
+    margin-top:8px;
+    font-size:24px;
+    color:#fff;
+}
+
+.assinaturas-action{
+    display:flex;
+    align-items:center;
+}
+
+.assinaturas-filtros{
+    margin-bottom:24px;
+}
+
+.table-responsive{
+    width:100%;
+    overflow-x:auto;
+}
+
+.assinaturas-table{
+    width:100%;
+}
+
+.assinatura-status{
+    display:inline-flex;
+    align-items:center;
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+}
+
+.assinatura-status.ativa{
+    color:#34d399;
+    background:rgba(16,185,129,.12);
+}
+
+.assinatura-status.inativa{
+    color:#94a3b8;
+    background:rgba(148,163,184,.12);
+}
+
+.assinatura-acoes{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.assinatura-acoes .btn{
+    padding:8px 12px;
+    font-size:12px;
+}
+
+@media(max-width:1000px){
+    .assinaturas-top{
+        flex-direction:column;
+    }
+
+    .assinaturas-resumo{
+        width:100%;
+    }
+}
+
+@media(max-width:700px){
+    .assinaturas-resumo{
+        grid-template-columns:1fr;
+    }
+}

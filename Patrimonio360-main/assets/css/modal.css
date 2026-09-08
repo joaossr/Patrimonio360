@@ -1,0 +1,217 @@
+/*
+==========================================================
+
+ Patrimônio 360 v2
+
+ Modal
+
+==========================================================
+*/
+
+.p360-modal{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:9999;
+
+}
+
+.p360-modal.show{
+
+    display:flex;
+
+}
+
+.p360-modal-overlay{
+
+    position:absolute;
+
+    inset:0;
+
+    background:rgba(0,0,0,.65);
+
+    backdrop-filter:blur(6px);
+
+}
+
+.p360-modal-content{
+
+    position:relative;
+
+    width:650px;
+
+    max-width:95%;
+
+    max-height:90vh;
+
+    display:flex;
+
+    flex-direction:column;
+
+    background:#151C24;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    z-index:2;
+
+}
+
+.p360-modal-header{
+
+    padding:22px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+    flex-shrink:0;
+
+}
+
+.p360-modal-header h2{
+
+    color:#FFF;
+
+    font-size:22px;
+
+    font-weight:600;
+
+}
+
+.modal-close{
+
+    width:38px;
+
+    height:38px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:transparent;
+
+    color:#FFF;
+
+    cursor:pointer;
+
+    font-size:20px;
+
+    transition:.2s;
+
+}
+
+.modal-close:hover{
+
+    background:rgba(255,255,255,.08);
+
+}
+
+.p360-modal-body{
+
+    padding:24px;
+
+    overflow-y:auto;
+
+    flex:1;
+
+}
+
+.p360-modal-footer{
+
+    padding:20px 24px;
+
+    border-top:1px solid rgba(255,255,255,.05);
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    align-items:center;
+
+    gap:12px;
+
+    flex-shrink:0;
+
+    background:#151C24;
+
+}
+
+.p360-modal-footer .btn{
+
+    min-width:170px;
+
+}
+
+.p360-modal-footer button{
+
+    min-width:170px;
+
+}
+
+.p360-modal-body::-webkit-scrollbar{
+
+    width:8px;
+
+}
+
+.p360-modal-body::-webkit-scrollbar-track{
+
+    background:#1A2330;
+
+}
+
+.p360-modal-body::-webkit-scrollbar-thumb{
+
+    background:#2E3A4D;
+
+    border-radius:20px;
+
+}
+
+@media(max-width:768px){
+
+    .p360-modal-content{
+
+        width:95%;
+
+        max-height:95vh;
+
+    }
+
+    .p360-modal-body{
+
+        padding:18px;
+
+    }
+
+    .p360-modal-footer{
+
+        padding:18px;
+
+        flex-direction:column;
+
+    }
+
+    .p360-modal-footer button{
+
+        width:100%;
+
+    }
+
+}

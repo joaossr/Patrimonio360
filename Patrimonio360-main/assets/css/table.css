@@ -1,0 +1,71 @@
+/*
+==========================================================
+
+Patrimônio 360 v2
+
+Table
+
+==========================================================
+*/
+
+.table-container{
+
+    width:100%;
+
+    overflow:auto;
+
+    background:#151C24;
+
+    border-radius:18px;
+
+    border:1px solid rgba(255,255,255,.05);
+
+}
+
+.p360-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.p360-table thead{
+
+    background:#202A36;
+
+}
+
+.p360-table th{
+
+    padding:18px;
+
+    text-align:left;
+
+    color:white;
+
+    font-size:14px;
+
+}
+
+.p360-table td{
+
+    padding:18px;
+
+    color:#CBD5E1;
+
+    border-top:1px solid rgba(255,255,255,.05);
+
+}
+
+.p360-table tbody tr{
+
+    transition:.2s;
+
+}
+
+.p360-table tbody tr:hover{
+
+    background:#1A2430;
+
+}

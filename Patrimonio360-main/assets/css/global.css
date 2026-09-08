@@ -1,0 +1,355 @@
+/* ==========================================================
+   Patrimônio 360 v2
+   Global.css
+========================================================== */
+
+@import url("variables.css");
+@import url("reset.css");
+
+/* ==========================================================
+   Body
+========================================================== */
+
+body{
+
+    background:var(--bg-primary);
+
+    color:var(--text-primary);
+
+    font-family:var(--font-family);
+
+    line-height:1.5;
+
+}
+
+/* ==========================================================
+   Fundo do sistema
+========================================================== */
+
+.app-background{
+
+    position:fixed;
+
+    inset:0;
+
+    overflow:hidden;
+
+    z-index:-1;
+
+    background:
+        radial-gradient(circle at top left,#204c88 0%,transparent 35%),
+        radial-gradient(circle at bottom right,#6d28d9 0%,transparent 30%),
+        radial-gradient(circle at center,#0b7d90 0%,transparent 25%),
+        var(--bg-primary);
+
+}
+
+.blur-circle{
+
+    position:absolute;
+
+    border-radius:50%;
+
+    filter:blur(120px);
+
+    opacity:.18;
+
+}
+
+.blur-blue{
+
+    width:450px;
+    height:450px;
+
+    top:-150px;
+    left:-150px;
+
+    background:#3b82f6;
+
+}
+
+.blur-purple{
+
+    width:500px;
+    height:500px;
+
+    right:-150px;
+    bottom:-180px;
+
+    background:#7c3aed;
+
+}
+
+/* ==========================================================
+   Container
+========================================================== */
+
+.container{
+
+    width:min(1400px,92%);
+
+    margin:auto;
+
+}
+
+/* ==========================================================
+   Títulos
+========================================================== */
+
+h1{
+
+    font-size:2.2rem;
+
+    font-weight:700;
+
+}
+
+h2{
+
+    font-size:1.8rem;
+
+    font-weight:700;
+
+}
+
+h3{
+
+    font-size:1.25rem;
+
+    font-weight:600;
+
+}
+
+p{
+
+    color:var(--text-secondary);
+
+}
+
+/* ==========================================================
+   Cards
+========================================================== */
+
+.card{
+
+    background:var(--card-bg);
+
+    backdrop-filter:blur(20px);
+
+    border:1px solid var(--border-color);
+
+    border-radius:var(--radius-lg);
+
+    padding:var(--space-6);
+
+    box-shadow:var(--shadow-md);
+
+}
+
+/* ==========================================================
+   Botões
+========================================================== */
+
+.btn{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:10px;
+
+    padding:14px 24px;
+
+    border-radius:var(--radius-sm);
+
+    font-weight:600;
+
+    transition:var(--transition-default);
+
+}
+
+.btn-primary{
+
+    background:var(--gradient-primary);
+
+    color:#fff;
+
+}
+
+.btn-primary:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:var(--shadow-lg);
+
+}
+
+.btn-secondary{
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid var(--border-color);
+
+    color:var(--text-primary);
+
+}
+
+.btn-secondary:hover{
+
+    background:rgba(255,255,255,.08);
+
+}
+
+/* ==========================================================
+   Inputs
+========================================================== */
+
+.input{
+
+    width:100%;
+
+    padding:15px 18px;
+
+    border-radius:var(--radius-sm);
+
+    border:1px solid var(--border-color);
+
+    background:rgba(255,255,255,.03);
+
+    color:var(--text-primary);
+
+    transition:var(--transition-default);
+
+}
+
+.input::placeholder{
+
+    color:var(--text-muted);
+
+}
+
+.input:focus{
+
+    border-color:var(--blue);
+
+    box-shadow:0 0 0 3px rgba(59,130,246,.15);
+
+}
+
+/* ==========================================================
+   Labels
+========================================================== */
+
+.label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:.95rem;
+
+    font-weight:600;
+
+}
+
+/* ==========================================================
+   Glass
+========================================================== */
+
+.glass{
+
+    backdrop-filter:blur(20px);
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(255,255,255,.08);
+
+}
+
+/* ==========================================================
+   Grid
+========================================================== */
+
+.grid{
+
+    display:grid;
+
+    gap:24px;
+
+}
+
+/* ==========================================================
+   Flex
+========================================================== */
+
+.flex{
+
+    display:flex;
+
+}
+
+.flex-center{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.flex-between{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+/* ==========================================================
+   Margin Utilities
+========================================================== */
+
+.mt-1{margin-top:8px;}
+.mt-2{margin-top:16px;}
+.mt-3{margin-top:24px;}
+.mt-4{margin-top:32px;}
+
+.mb-1{margin-bottom:8px;}
+.mb-2{margin-bottom:16px;}
+.mb-3{margin-bottom:24px;}
+.mb-4{margin-bottom:32px;}
+
+/* ==========================================================
+   Fade Animation
+========================================================== */
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(20px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+.fade-up{
+
+    animation:fadeUp .5s ease;
+
+}

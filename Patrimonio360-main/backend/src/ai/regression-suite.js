@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { buildContextSnapshot, resolveReference } from './context-manager.js';
+import { validateResponse } from './response-validator.js';
+const memory={preferences:[{key:'activeFinancialGoal',value:'g5'}],recent:[{role:'user',content:'Quero chegar a R$ 5.000 até dezembro.'},{role:'assistant',content:'Meta registrada.'},{role:'user',content:'Quanto eu preciso guardar por mês para chegar nessa meta?'}]};
+const state={goals:[{id:'g5',name:'Meta de R$ 5.000,00',current:1110,target:5000,date:'2026-12',priority:'Alta'}]};
+const context=buildContextSnapshot({state,memory,analysis:{income:{total:1920},expenses:{total:1887.68},cashflow:{planned:32.32},reserve:{current:1110}},risk:{},profile:{},insights:[],question:'Quanto eu preciso guardar por mês para chegar nessa meta?',intent:'goal',month:'2026-08'});
+assert.equal(context.activeGoal.id,'g5');
+assert.equal(resolveReference('essa meta',context).id,'g5');
+assert.equal(validateResponse({answer:'Você precisa guardar R$ 648,33 por mês.',context}).valid,true);
+assert.equal(validateResponse({answer:'Tenho R$ NaN de receitas.',context}).valid,false);
+assert.equal(validateResponse({answer:'Usei dados do BCB.',context}).valid,false);
+console.log(JSON.stringify({passed:5,total:5,passRate:1},null,2));

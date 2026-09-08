@@ -1,0 +1,117 @@
+/*
+==========================================================
+
+ Patrimônio 360 v2
+
+ Forms
+
+==========================================================
+*/
+
+.form-group{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+    margin-bottom:18px;
+
+}
+
+.form-group label{
+
+    color:#CBD5E1;
+
+    font-size:14px;
+
+    font-weight:500;
+
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea{
+
+    width:100%;
+
+    padding:14px 16px;
+
+    border-radius:12px;
+
+    background:#202A36;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    color:white;
+
+    font-size:15px;
+
+    transition:.2s;
+
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+
+    border-color:#0EA5E9;
+
+    outline:none;
+
+}
+
+.form-group textarea{
+
+    min-height:120px;
+
+    resize:vertical;
+
+}
+
+.btn{
+
+    padding:14px 22px;
+
+    border:none;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+    transition:.2s;
+
+}
+
+.btn-primary{
+
+    background:#0EA5E9;
+
+    color:white;
+
+}
+
+.btn-primary:hover{
+
+    background:#0284C7;
+
+}
+
+.btn-danger{
+
+    background:#EF4444;
+
+    color:white;
+
+}
+
+.btn-success{
+
+    background:#10B981;
+
+    color:white;
+
+}

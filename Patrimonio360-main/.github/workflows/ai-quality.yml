@@ -1,0 +1,39 @@
+name: P360 AI Quality
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+    branches:
+      - main
+      - 'feat/**'
+
+permissions:
+  contents: read
+
+jobs:
+  ai-quality:
+    name: AI regression and financial model
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: AI quality gate
+        run: npm run test:ai:all
