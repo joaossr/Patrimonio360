@@ -1,0 +1,23 @@
+/* ==========================================================================
+   Patrimônio 360 v54 — degradê suave nos cards do sistema todo, só com as
+   cores do degradê da marca (--gradient): verde-azulado #0f6976, azul #3f8cff,
+   roxo #8c58e8 e magenta #bd2f72, alternando de card em card.
+   ========================================================================== */
+.main .page .card:not(.ai-insight-card){
+  --tint:rgba(63,140,255,.11);--tint-l:rgba(63,140,255,.08);
+  background:linear-gradient(155deg,var(--tint),transparent 50%),var(--card-solid)!important;
+}
+.main .page .card:not(.ai-insight-card):nth-child(4n+2){--tint:rgba(140,88,232,.12);--tint-l:rgba(140,88,232,.08)}
+.main .page .card:not(.ai-insight-card):nth-child(4n+3){--tint:rgba(189,47,114,.11);--tint-l:rgba(189,47,114,.07)}
+.main .page .card:not(.ai-insight-card):nth-child(4n+4){--tint:rgba(15,105,118,.22);--tint-l:rgba(15,105,118,.10)}
+
+/* Tabelas grandes: degradê mais curto para não tingir as linhas */
+.main .page .card.table-card{background:linear-gradient(170deg,var(--tint),transparent 28%),var(--card-solid)!important}
+
+/* Cards dentro de cards ficam lisos, para não somar degradês */
+.main .page .card .card:not(.ai-insight-card){background:var(--bg-2)!important}
+
+/* Tema claro */
+[data-theme="light"] .main .page .card:not(.ai-insight-card){background:linear-gradient(155deg,var(--tint-l),transparent 50%),#fff!important}
+[data-theme="light"] .main .page .card.table-card{background:linear-gradient(170deg,var(--tint-l),transparent 28%),#fff!important}
+[data-theme="light"] .main .page .card .card:not(.ai-insight-card){background:#f6f8fb!important}

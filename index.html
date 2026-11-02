@@ -26,14 +26,22 @@
   <link rel="stylesheet" href="assets/css/app-v49.css" />
   <link rel="stylesheet" href="assets/css/app-v50.css" />
   <link rel="stylesheet" href="assets/css/app-v51.css" />
+  <link rel="stylesheet" href="assets/css/app-v53.css" />
+  <link rel="stylesheet" href="assets/css/app-v54.css" />
+  <link rel="stylesheet" href="assets/css/app-v55.css" />
+  <link rel="stylesheet" href="assets/css/app-v56.css" />
 </head>
 <body>
   <a class="skip-link" href="#app">Pular para o conteúdo</a>
   <div id="app">
-    <div class="boot-screen" role="status" aria-live="polite">
-      <img src="assets/images/icon-192.png" alt="" width="64" height="64" />
-      <span class="boot-spinner" aria-hidden="true"></span>
-      <p>Carregando seus dados…</p>
+    <div class="boot-skeleton" role="status" aria-label="Carregando">
+      <aside class="sk-rail" aria-hidden="true"><img src="assets/images/logo-mark.png" alt="" width="40" height="40" /><i></i><i></i><i></i><i></i><i></i><i></i></aside>
+      <div class="sk-main" aria-hidden="true">
+        <div class="sk-top"><b class="sk sk-search"></b><b class="sk sk-dot"></b><b class="sk sk-dot"></b><b class="sk sk-chip"></b></div>
+        <b class="sk sk-title"></b><b class="sk sk-sub"></b>
+        <div class="sk-kpis"><b class="sk"></b><b class="sk"></b><b class="sk"></b><b class="sk"></b><b class="sk"></b></div>
+        <div class="sk-row"><b class="sk"></b><b class="sk"></b></div>
+      </div>
     </div>
   </div>
   <div id="toast-root" class="toast-root" role="status" aria-live="polite"></div>

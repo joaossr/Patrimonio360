@@ -60,9 +60,10 @@ export function clearLocalUserData(){
 }
 
 export async function logoutUser(){
-  await flush();
+  // Tenta mandar a última alteração, mas não deixa a saída travar se a rede não responder.
+  try{ await Promise.race([flush(), new Promise(r=>setTimeout(r,3000))]); }catch{}
   clearLocalUserData();
-  await signOut(auth);
+  try{ await signOut(auth); }catch(error){ console.error('Falha ao sair:',error); }
   location.replace('login.html');
 }
 

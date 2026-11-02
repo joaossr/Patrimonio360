@@ -88,8 +88,9 @@ function yAxis(ctx, t, { left, right, top, bottom, h, max, min = 0, ticks = 4, f
 }
 
 // ---- Barras verticais (uma ou mais séries) -----------------------------------------
-export function barChart(canvas, { labels = [], series = [], format = shortMoney, tipFormat = money, empty } = {}) {
+export function barChart(canvas, { labels = [], series = [], format = shortMoney, tipFormat = money, empty, stacked = false, tipExtra } = {}) {
   if (!canvas) return;
+  if (stacked) return stackedBars(canvas, { labels, series, format, tipFormat, empty, tipExtra });
   const { ctx, w, h } = setup(canvas), t = theme();
   const all = series.flatMap(s => s.values.map(Number));
   if (!labels.length || !all.some(v => v)) return emptyState(ctx, w, h, t, empty);
@@ -110,6 +111,48 @@ export function barChart(canvas, { labels = [], series = [], format = shortMoney
     const i = Math.floor((mx - left) / slot); if (i < 0 || i >= labels.length) return null;
     return `<strong>${labels[i]}</strong>${series.map((s, si) => `<span><i style="background:${s.color || PALETTE[si % PALETTE.length]}"></i>${s.name ? s.name + ': ' : ''}${tipFormat(s.values[i])}</span>`).join('')}`;
   });
+}
+
+// Barras empilhadas (ex.: valor aplicado + ganho de capital). Valores negativos descem abaixo do zero.
+function stackedBars(canvas, { labels, series, format, tipFormat, empty, tipExtra }) {
+  const { ctx, w, h } = setup(canvas), t = theme();
+  const pos = labels.map((_, i) => series.reduce((a, s) => a + Math.max(0, Number(s.values[i] || 0)), 0));
+  const neg = labels.map((_, i) => series.reduce((a, s) => a + Math.min(0, Number(s.values[i] || 0)), 0));
+  if (!labels.length || !pos.some(v => v) && !neg.some(v => v)) return emptyState(ctx, w, h, t, empty);
+  const maxV = niceMax(Math.max(...pos, 0)), minN = Math.min(...neg) < 0 ? -niceMax(-Math.min(...neg)) : 0;
+  ctx.font = `500 12px ${t.font}`;
+  const left = Math.max(...[maxV, minN].map(v => ctx.measureText(format(v)).width)) + 16, right = 12, top = 14, bottom = 30;
+  yAxis(ctx, t, { left, right: w - right, top, bottom, h, max: maxV, min: minN, format });
+  const plotW = w - left - right, slot = plotW / labels.length, barW = Math.max(4, Math.min(slot * 0.62, 34));
+  const yOf = v => h - bottom - (h - top - bottom) * ((v - minN) / (maxV - minN || 1));
+  const xs = labels.map((_, i) => left + slot * i + slot / 2);
+  labels.forEach((_, i) => {
+    let up = 0, down = 0;
+    series.forEach((s, si) => {
+      const v = Number(s.values[i] || 0); if (!v) return;
+      const from = v > 0 ? up : down, to = from + v; if (v > 0) up = to; else down = to;
+      const y1 = yOf(Math.max(from, to)), y2 = yOf(Math.min(from, to)), top1 = v > 0 && si === series.length - 1 || v > 0 && !series.slice(si + 1).some(o => Number(o.values[i] || 0) > 0);
+      ctx.fillStyle = s.color || PALETTE[si % PALETTE.length];
+      roundRect(ctx, xs[i] - barW / 2, y1, barW, Math.max(1.5, y2 - y1), top1 ? Math.min(6, barW / 2) : 0); ctx.fill();
+    });
+  });
+  xLabels(ctx, t, labels, xs, h - bottom + 9, slot);
+  interactive(canvas, mx => {
+    const i = Math.floor((mx - left) / slot); if (i < 0 || i >= labels.length) return null;
+    return `<strong>${labels[i]}</strong>${tipExtra ? tipExtra(i) : ''}${series.map((s, si) => `<span><i style="background:${s.color || PALETTE[si % PALETTE.length]}"></i>${s.name ? s.name + ': ' : ''}${tipFormat(s.values[i])}</span>`).join('')}`;
+  });
+}
+
+// Mini linha (sparkline) sem eixos, para os cards.
+export function sparkline(canvas, { values = [], color = '#22c08a' } = {}) {
+  if (!canvas) return;
+  const { ctx, w, h } = setup(canvas);
+  if (values.length < 2) { ctx.strokeStyle = color; ctx.globalAlpha = .5; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(2, h / 2); ctx.lineTo(w - 2, h / 2); ctx.stroke(); ctx.globalAlpha = 1; return; }
+  const min = Math.min(...values), max = Math.max(...values), pad = 4;
+  const xy = values.map((v, i) => [pad + (w - pad * 2) * i / (values.length - 1), h - pad - (h - pad * 2) * ((v - min) / (max - min || 1))]);
+  const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, color + '55'); g.addColorStop(1, color + '00');
+  ctx.beginPath(); xy.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.lineTo(xy[xy.length - 1][0], h); ctx.lineTo(xy[0][0], h); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+  ctx.beginPath(); xy.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
 }
 
 // ---- Linhas / área ---------------------------------------------------------------
@@ -146,6 +189,7 @@ export function donutChart(canvas, { items = [], center, centerLabel = 'Total', 
   const { ctx, w, h } = setup(canvas), t = theme();
   const total = items.reduce((a, x) => a + Math.max(0, Number(x.value || 0)), 0);
   if (!total) { emptyState(ctx, w, h, t, empty || 'Sem gastos'); canvas._segments = []; return []; }
+  if (Math.min(w, h) < 48) { canvas._segments = []; return []; } // escondido ou pequeno demais para desenhar
   const cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 6, thick = Math.max(14, r * 0.3), segs = [];
   let a = -Math.PI / 2;
   items.forEach((x, i) => {
