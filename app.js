@@ -36,7 +36,7 @@ const nav = [
   ['dashboard','dashboard','Dashboard'],['receitas','income','Receitas'],['despesas','expense','Despesas'],['movimentacoes','transfer','Movimentações'],
   ['contas','bank','Contas bancárias'],['cartoes','card','Cartões de crédito'],['orcamento','budget','Orçamento mensal'],['calendario','calendar','Calendário'],
   ['assinaturas','repeat','Assinaturas'],['metas','target','Metas'],['reserva','shield','Reserva de emergência'],['investimentos','invest','Investimentos'],
-  ['assistente','sparkles','IA Financeira'],['relatorios','report','Relatórios'],['simuladores','calculator','Simuladores'],['dados','database','Controle de dados'],['configuracoes','settings','Configurações']
+  ['assistente','sparkles','IA Financeira'],['configuracoes','settings','Configurações']
 ];
 
 function save(){
@@ -157,28 +157,73 @@ function categoryOptions(type='all'){
  return custom.map(c=>`<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`).join('');
 }
 
+// Áreas do menu: páginas relacionadas ficam juntas e viram abas dentro da área.
+const NAV_HUBS=[
+  ['dashboard','dashboard','Início',[['dashboard','Visão geral']]],
+  ['movimentacoes','transfer','Movimentações',[['movimentacoes','Todas'],['receitas','Receitas'],['despesas','Despesas'],['calendario','Calendário']]],
+  ['contas','wallet','Contas e cartões',[['contas','Contas bancárias'],['cartoes','Cartões de crédito']]],
+  ['orcamento','budget','Orçamento',[['orcamento','Orçamento do mês'],['assinaturas','Assinaturas']]],
+  ['metas','target','Metas e reserva',[['metas','Metas'],['reserva','Reserva de emergência']]],
+  ['investimentos','invest','Investimentos',[['investimentos','Carteira']]],
+  ['assistente','sparkles','IA Financeira',[['assistente','Conversa']]]
+];
+const hubOf=page=>NAV_HUBS.find(h=>h[3].some(([p])=>p===page));
+function hubTabs(){
+  const hub=hubOf(state.page);if(!hub||hub[3].length<2)return '';
+  return `<nav class="page-tabs" aria-label="${escapeHTML(hub[2])}">${hub[3].map(([p,l])=>`<button class="page-tab ${p===state.page?'active':''}" data-page="${p}" ${p===state.page?'aria-current="page"':''}>${l}</button>`).join('')}</nav>`;
+}
 function shell(content){
-  const hidden=state.hideValues,pend=pendingCount();
-  const groups={4:'Finanças',6:'Planejamento',12:'Inteligência',13:'Ferramentas'};
-  return `<div class="app-shell ${hidden?'blur-values':''} ${state.sidebarCollapsed?'sidebar-collapsed':''}">
+  const hidden=state.hideValues,pend=pendingCount(),dark=state.theme==='dark';
+  const groups=[[0,3],[3,6],[6,7]];
+  const avatar=safeImage(state.profilePhoto)?`<img src="${escapeHTML(state.profilePhoto)}" alt="">`:escapeHTML(userInitials());
+  const curHub=hubOf(state.page);
+  const item=([p,ic,label])=>{const on=curHub&&curHub[0]===p||state.page===p;return `<button class="nav-item ${on?'active':''}" data-page="${p}" ${on?'aria-current="page"':''} data-tip="${label}" aria-label="${label}"><span class="nav-icon">${icon(ic,{size:22})}</span><span class="nav-text">${label}</span></button>`;};
+  return `<div class="app-shell rail-layout ${hidden?'blur-values':''}">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><img class="brand-logo" src="assets/images/logo-mark.png" alt="" width="32" height="32"><div><h1>Patrimônio 360</h1><span>Gestão financeira</span></div><button class="sidebar-toggle" id="collapseBtn" aria-label="${state.sidebarCollapsed?'Expandir menu':'Recolher menu'}" title="${state.sidebarCollapsed?'Expandir menu':'Recolher menu'}">${icon(state.sidebarCollapsed?'chevronRight':'chevronLeft',{size:16})}</button></div>
+      <div class="brand"><img class="brand-logo" src="assets/images/logo-mark.png" alt="Patrimônio 360" width="38" height="38"><div><h1>Patrimônio 360</h1><span>Gestão financeira</span></div></div>
+      <button class="rail-add" id="railNewTx" data-tip="Nova movimentação" aria-label="Nova movimentação">${icon('plus',{size:22})}<span class="nav-text">Nova movimentação</span></button>
       <nav class="menu" aria-label="Menu principal">
-        <div class="menu-label">Visão geral</div>
-        ${nav.map((n,i)=>`${groups[i]?`<div class="menu-label">${groups[i]}</div>`:''}<button class="nav-item ${state.page===n[0]?'active':''}" data-page="${n[0]}" ${state.page===n[0]?'aria-current="page"':''} title="${n[2]}"><span class="nav-icon">${icon(n[1],{size:19})}</span><span class="nav-text">${n[2]}</span></button>`).join('')}
+        ${groups.map(([a,b])=>`<div class="nav-group">${NAV_HUBS.slice(a,b).map(item).join('')}</div>`).join('')}
       </nav>
-      <div class="sidebar-user"><div class="avatar">${safeImage(state.profilePhoto)?`<img src="${escapeHTML(state.profilePhoto)}" alt="Foto de perfil">`:escapeHTML(userInitials())}</div><div><strong>${escapeHTML(userName())}</strong><small>${escapeHTML(currentUser?.email||'Plano pessoal')}</small></div><button class="logout-mini" id="logoutBtn" title="Sair" aria-label="Sair da conta">${icon('logout',{size:18})}</button></div>
+      <div class="sidebar-footer">
+        <div class="sidebar-user"><div class="avatar">${avatar}</div><div><strong>${escapeHTML(userName())}</strong><small>${escapeHTML(currentUser?.email||'Plano pessoal')}</small></div></div>
+        <div class="rail-actions">${item(['configuracoes','settings','Configurações'])}<button class="nav-item rail-btn" id="themeBtn" data-tip="${dark?'Tema claro':'Tema escuro'}" aria-label="${dark?'Usar tema claro':'Usar tema escuro'}"><span class="nav-icon">${icon(dark?'sun':'moon',{size:22})}</span><span class="nav-text">${dark?'Tema claro':'Tema escuro'}</span></button><button class="nav-item rail-btn rail-logout" id="logoutBtn" data-tip="Sair" aria-label="Sair da conta"><span class="nav-icon">${icon('logout',{size:22})}</span><span class="nav-text">Sair</span></button></div>
+      </div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="top-left"><div class="search" role="search">${icon('search',{size:18})}<input id="globalSearch" type="search" placeholder="Pesquisar movimentações..." aria-label="Pesquisar movimentações" autocomplete="off" /></div></div>
-      <div class="top-actions"><button class="icon-btn" id="hideBtn" title="${hidden?'Mostrar valores':'Ocultar valores'}" aria-label="${hidden?'Mostrar valores':'Ocultar valores'}" aria-pressed="${hidden}">${icon(hidden?'eyeOff':'eye')}</button><button class="icon-btn" id="themeBtn" title="${state.theme==='dark'?'Usar tema claro':'Usar tema escuro'}" aria-label="${state.theme==='dark'?'Usar tema claro':'Usar tema escuro'}">${icon(state.theme==='dark'?'sun':'moon')}</button><button class="icon-btn commitments-btn" id="quickBtn" title="Central de compromissos" aria-label="Central de compromissos${pend?`: ${pend} pendente(s)`:''}">${icon('bell')}${pend?`<b class="notif-dot">${pend>9?'9+':pend}</b>`:''}</button><button class="primary-btn top-new" id="newTransaction">${icon('plus',{size:18})}<span>Nova movimentação</span></button></div></header>
+      <header class="topbar"><div class="top-left"><button class="icon-btn mobile-menu" id="menuBtn" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">${icon('menu')}</button><div class="search" role="search">${icon('search',{size:18})}<input id="globalSearch" type="search" placeholder="Pesquisar movimentações..." aria-label="Pesquisar movimentações" autocomplete="off" /></div></div>
+      <div class="top-actions"><button class="icon-btn" id="hideBtn" title="${hidden?'Mostrar valores':'Ocultar valores'}" aria-label="${hidden?'Mostrar valores':'Ocultar valores'}" aria-pressed="${hidden}">${icon(hidden?'eyeOff':'eye')}</button><button class="icon-btn commitments-btn" id="quickBtn" title="Notificações" aria-label="Notificações${pend?`: ${pend} pendente(s)`:''}">${icon('bell')}${pend?`<b class="notif-dot">${pend>9?'9+':pend}</b>`:''}</button>
+        <div class="user-menu"><button class="user-chip" id="userMenuBtn" aria-haspopup="menu" aria-expanded="false"><span class="avatar">${avatar}</span><span class="user-chip-text"><strong>${escapeHTML(userName().split(' ').slice(0,2).join(' '))}</strong><small>Plano pessoal</small></span>${icon('chevronDown',{size:16})}</button>
+          <div class="user-dropdown" id="userDropdown" role="menu" hidden><div class="user-dropdown-head"><span class="avatar">${avatar}</span><div><strong>${escapeHTML(userName())}</strong><small>${escapeHTML(currentUser?.email||'')}</small></div></div><button role="menuitem" data-user-go="user">${icon('user',{size:18})} Meu perfil</button><button role="menuitem" data-user-go="palette">${icon('palette',{size:18})} Aparência</button><button role="menuitem" data-user-go="report">${icon('report',{size:18})} Relatórios</button><button role="menuitem" data-user-go="database">${icon('database',{size:18})} Backup e dados</button><button role="menuitem" data-user-go="lock">${icon('lock',{size:18})} Segurança</button><hr><button role="menuitem" class="danger" id="userLogout">${icon('logout',{size:18})} Sair</button></div>
+        </div></div></header>
       <div class="sync-banner" id="syncBanner" role="status" hidden></div>
       ${content}
     </main>
     <nav class="bottom-nav" aria-label="Navegação rápida">
-      ${[['dashboard','dashboard','Início'],['movimentacoes','transfer','Movimentos'],['__new','plus','Novo'],['orcamento','budget','Orçamento'],['__menu','menu','Menu']].map(([p,i,l])=>p==='__new'?`<button class="bottom-nav-add" id="bottomNewTx" aria-label="Nova movimentação">${icon('plus',{size:26})}</button>`:p==='__menu'?`<button class="bottom-nav-item" id="bottomMenu" aria-label="Abrir menu completo">${icon(i,{size:22})}<span>${l}</span></button>`:`<button class="bottom-nav-item ${state.page===p?'active':''}" data-page="${p}" ${state.page===p?'aria-current="page"':''}>${icon(i,{size:22})}<span>${l}</span></button>`).join('')}
+      ${[['dashboard','dashboard','Início'],['movimentacoes','transfer','Movimentos'],['__new','plus','Novo'],['orcamento','budget','Orçamento'],['configuracoes','settings','Ajustes']].map(([p,i,l])=>{if(p==='__new')return `<button class="bottom-nav-add" id="bottomNewTx" aria-label="Nova movimentação">${icon('plus',{size:26})}</button>`;const on=p==='configuracoes'?state.page===p:(hubOf(state.page)||[])[0]===p;return `<button class="bottom-nav-item ${on?'active':''}" data-page="${p}" ${on?'aria-current="page"':''}>${icon(i,{size:22})}<span>${l}</span></button>`;}).join('')}
     </nav>
   </div>`;
+}
+// Menu do usuário no topo (perfil, aparência, relatórios, backup, segurança, sair).
+function bindUserMenu(){
+  const rn=$('#railNewTx');if(rn)rn.onclick=()=>{window.P360MobileNavigation?.close();openTransactionModal({type:state.page==='receitas'?'income':'expense'});};
+  $$('.page-tab').forEach(b=>b.onclick=()=>goTo(b.dataset.page));
+  const btn=$('#userMenuBtn'),dd=$('#userDropdown');if(!btn||!dd)return;
+  const close=()=>{dd.hidden=true;btn.setAttribute('aria-expanded','false');};
+  btn.onclick=e=>{e.stopPropagation();const open=dd.hidden;dd.hidden=!open;btn.setAttribute('aria-expanded',String(open));};
+  dd.onclick=e=>e.stopPropagation();
+  $$('[data-user-go]',dd).forEach(b=>b.onclick=()=>{close();settingsTab=b.dataset.userGo;goTo('configuracoes');});
+  const lo=$('#userLogout');if(lo)lo.onclick=()=>{close();if(confirm('Deseja sair da sua conta?'))logoutUser();};
+  if(!window.__p360UserMenuDoc){window.__p360UserMenuDoc=true;document.addEventListener('click',()=>{const d=$('#userDropdown');if(d&&!d.hidden){d.hidden=true;$('#userMenuBtn')?.setAttribute('aria-expanded','false');}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){const d=$('#userDropdown');if(d)d.hidden=true;}});}
+}
+// Card da IA no degradê do sistema: nota de saúde + até 3 pontos de atenção, cada um abre a análise.
+// Faixa de insights da IA no dashboard: nota de saúde + pontos de atenção em uma linha.
+function aiInsightStrip(){
+  let list=[];try{list=getMind().insights(5);}catch{}
+  if(!list.length)return '';
+  const health=list.find(i=>/^Saúde/.test(i.title)),items=list.filter(i=>i!==health).slice(0,3);
+  const score=health?Number((health.title.match(/(\d+)\/100/)||[])[1]||0):null;
+  return `<div class="ai-strip" role="region" aria-label="Insights da IA"><div class="ai-strip-head"><span class="ai-insight-badge">${icon('sparkles',{size:18})}</span><div><strong>Insights da IA</strong><small>${score!=null?`Saúde financeira ${score}/100`:'Com base no seu histórico'}</small></div></div><div class="ai-strip-items">${items.map(i=>`<button class="ai-strip-item lvl-${escapeHTML(i.level)}" data-ask="${escapeHTML(i.ask)}" title="${escapeHTML(i.text)}"><i aria-hidden="true"></i><span><strong>${escapeHTML(i.title)}</strong><small>${escapeHTML(i.text)}</small></span></button>`).join('')||'<span class="ai-strip-empty">Nenhum ponto de atenção no mês. 👏</span>'}</div><button class="ai-strip-cta" data-go="assistente">Conversar ${icon('chevronRight',{size:16})}</button></div>`;
 }
 function safeImage(src){return typeof src==='string'&&/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(src);}
 // Contador do sino: vencidos + o que vence dentro da antecedência escolhida + faturas abertas do mês.
@@ -212,6 +257,7 @@ function dashboard(){
     <div class="grid kpi-grid kpi-5">${kpi('Saldo em contas',accountBalance(),`${state.accounts.length} conta(s)`,'neutral','wallet')}${kpi('Entradas',income,`${count(t=>t.type==='income')} registro(s)`,'positive','income')}${kpi('Saídas',expenses,`${count(t=>t.type==='expense')} registro(s)`,'negative','expense')}${kpi('Aportes',aportes,'Reserva e investimentos','neutral','invest')}${kpi('Resultado do mês',result,result>=0?'Fluxo positivo':'Fluxo negativo',result>=0?'positive':'negative','report')}</div>
     <div class="grid dash-row dash-row-2-1"><div class="card"><div class="card-head"><div><h3>Receitas x despesas</h3><span>Últimos 6 meses</span></div><button class="secondary-btn compact" data-go="relatorios">Relatórios</button></div><div class="chart-wrap"><canvas id="lineChart" aria-label="Gráfico de receitas e despesas dos últimos 6 meses" role="img"></canvas></div></div>
     <div class="card"><div class="card-head"><div><h3>Gastos por categoria</h3><span>${monthLabel}</span></div><button class="secondary-btn compact" data-go="orcamento">Orçamento</button></div><div class="category-pie-layout"><div class="category-pie"><canvas id="donutChart" role="img" aria-label="Gastos por categoria"></canvas></div><div class="legend">${catSpend.length?catSpend.slice(0,6).map((b,i)=>`<button class="legend-row dashboard-category-hover" data-category="${escapeHTML(b[0])}"><i class="dot" style="background:${PALETTE[i%PALETTE.length]}"></i><span>${escapeHTML(b[0])}</span><strong>${money(b[1])}</strong></button>`).join(''):'<p class="muted">Nenhuma despesa neste mês.</p>'}</div></div></div></div>
+    ${aiInsightStrip()}
     <div class="card distribution-card"><div class="card-head"><div><h3>Distribuição da renda</h3><span>Planejado x realizado sobre ${money(income)} de renda</span></div><button class="secondary-btn compact" data-go="configuracoes">Ajustar</button></div><div class="distribution-dashboard">${distPlan.map(d=>{const planned=income*d.percent/100,actual=distributionActual(d.id),pp=planned?actual/planned*100:0,delta=planned-actual;return `<div class="distribution-item"><div class="distribution-item-top"><span><i class="dot" style="background:${d.color}"></i>${escapeHTML(d.name)} <em>${d.percent}%</em></span><strong>${money(actual)}</strong></div><div class="progress-track"><div class="progress-bar" style="width:${Math.min(100,pp)}%;background:${d.color}"></div></div><small>Meta ${money(planned)} · <b class="${delta>=0?'positive':'negative'}">${delta>=0?'sobram':'excedeu'} ${money(Math.abs(delta))}</b></small></div>`}).join('')}</div></div>
     <div class="grid dash-row dash-row-1-2">${dashboardCardDeck()}${dashboardCalendar()}</div>
     <div class="grid dash-row dash-row-1-1"><div class="card"><div class="card-head"><div><h3>Reserva de emergência</h3><span>${money(state.reserve?.current||0)} guardados${state.reserve?.target?` de ${money(state.reserve.target)}`:''}</span></div><button class="secondary-btn compact" data-go="reserva">Abrir</button></div><div class="chart-wrap"><canvas id="reserveChart" role="img" aria-label="Evolução da reserva de emergência"></canvas></div></div><div class="card"><div class="card-head"><div><h3>Metas</h3><span>${(state.goals||[]).length} objetivo(s)</span></div><button class="secondary-btn compact" data-go="metas">Ver metas</button></div><div class="dashboard-goals">${(state.goals||[]).slice(0,3).map(g=>goalRow(g)).join('')||`<div class="empty-state"><p>Nenhuma meta cadastrada.</p><button class="secondary-btn compact" data-go="metas">Criar meta</button></div>`}</div></div></div>
@@ -297,16 +343,26 @@ function cardsPage(){
     <div class="card-actions">${s.inv>0?`<button class="primary-btn compact pay-card" data-id="${escapeHTML(c.id)}">Pagar fatura</button>`:''}<button class="secondary-btn compact edit-card" data-id="${escapeHTML(c.id)}">${icon('edit',{size:16})} Editar</button><button class="danger-btn compact delete-card" data-id="${escapeHTML(c.id)}" aria-label="Remover cartão">${icon('trash',{size:16})}</button></div></div>`}).join('')||'<div class="card empty-state"><h3>Nenhum cartão cadastrado</h3><p>Adicione seu primeiro cartão para acompanhar faturas e limites.</p></div>'}</div></section>`;
 }
 function subscriptionsPage(){const all=state.subscriptions||[],active=all.filter(s=>String(s.status||'Ativa').toLowerCase()==='ativa'),monthly=active.reduce((a,s)=>a+Number(s.monthly||0),0);const rows=all.map(s=>{const inactive=String(s.status||'Ativa').toLowerCase()!=='ativa',start=s.startDate||'',end=s.cancelledAt||new Date().toISOString().slice(0,10);let months=0;if(start){const a=new Date(start+'T12:00:00'),b=new Date(end+'T12:00:00');months=Math.max(1,(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth()+1)}const spent=Number(s.totalSpent||months*Number(s.monthly||0));return `<tr><td><strong>${escapeHTML(s.name)}</strong><small class="table-subline">${inactive?`${months} meses · ${money(spent)} gastos`:'Recorrência ativa'}</small></td><td>${escapeHTML(s.category||'—')}</td><td>${money(s.monthly||0)}</td><td>Dia ${s.dueDay||'—'}</td><td><span class="badge ${inactive?'red':''}">${inactive?'Cancelada':'Ativa'}</span></td><td><div class="row-actions"><button class="secondary-btn compact edit-subscription" data-id="${s.id}">Editar</button><button class="${inactive?'primary-btn':'danger-btn'} compact toggle-subscription" data-id="${s.id}">${inactive?'Ativar':'Cancelar'}</button></div></td></tr>`}).join('');return `<section class="page"><div class="page-header"><div><h2>Assinaturas</h2><p>Controle recorrências, reajustes e histórico sem perder dados.</p></div><button class="primary-btn" id="newSubscription">+ Adicionar assinatura</button></div><div class="grid kpi-grid kpi-3">${kpi('Custo mensal',monthly,`${active.length} ativas`,'negative')}${kpi('Custo anual',monthly*12,'Projeção em 12 meses','negative')}${kpi('Média por assinatura',active.length?monthly/active.length:0,'Custo médio mensal','negative')}</div><div class="grid section-grid"><div class="card"><div class="card-head"><div><h3>Gastos com assinaturas</h3><span>Mensal x anual</span></div></div><div class="chart-wrap"><canvas id="subscriptionChart"></canvas></div></div><div class="card"><div class="card-head"><h3>Resumo</h3></div><div class="progress-list">${active.length?active.map(s=>`<div class="insight"><span class="insight-icon">${icon('repeat',{size:18})}</span><div><strong>${escapeHTML(s.name)}</strong><p>${fmt.format(Number(s.monthly||0))}/mês · dia ${s.dueDay||'—'}</p></div></div>`).join(''):'<div class="empty-state"><p>Nenhuma assinatura ativa.</p></div>'}</div></div></div><div class="card table-card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Assinatura</th><th>Categoria</th><th>Valor mensal</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows||'<tr><td colspan="6"><div class="empty-state"><p>Nenhuma assinatura cadastrada.</p></div></td></tr>'}</tbody></table></div></div></section>`}
+const SETTINGS_SECTIONS=[['user','Perfil'],['palette','Aparência'],['wallet','Preferências'],['budget','Distribuição da renda'],['tag','Categorias'],['bell','Avisos'],['report','Relatórios'],['calculator','Simuladores'],['database','Controle de dados'],['download','Exportar planilha'],['send','Telegram'],['lock','Segurança']];
+let settingsTab='user';
+// Coloca o conteúdo de uma página (sem o cabeçalho) como seção das Configurações.
+function embeddedSettingsPage(key,title,desc,html){
+  const t=document.createElement('template');t.innerHTML=html;
+  const sec=t.content.querySelector('section');if(!sec)return '';
+  const ph=sec.querySelector(':scope > .page-header');let tools='';
+  if(ph){const tb=ph.querySelector('.toolbar');if(tb)tools=tb.outerHTML;ph.remove();}
+  return `<div class="settings-panel settings-panel-page ${sec.className.replace(/\bpage\b/,'').trim()}" data-panel="${key}" ${key===settingsTab?'':'hidden'}><div class="settings-page-head"><span class="settings-icon">${icon(key,{size:20})}</span><div><h3>${title}</h3><p>${desc}</p></div>${tools}</div>${sec.innerHTML}</div>`;
+}
 function settingsPage(){
   const pr=state.preferences||{},d=pr.distribution||{fixed:60,investment:35,leisure:5},distTotal=Number(d.fixed||0)+Number(d.investment||0)+Number(d.leisure||0);
   const seg=(name,opts,cur)=>`<div class="segmented" role="radiogroup">${opts.map(([v,l])=>`<label><input type="radio" name="${name}" value="${v}" ${String(cur)===String(v)?'checked':''}><span>${l}</span></label>`).join('')}</div>`;
   const sw=(id,on)=>`<label class="switch"><input id="${id}" type="checkbox" ${on?'checked':''}><span></span></label>`;
   const row=(title,desc,control)=>`<div class="setting-row"><div><strong>${title}</strong>${desc?`<small>${desc}</small>`:''}</div><div class="setting-control">${control}</div></div>`;
-  const section=(ic,title,desc,body,cls='')=>`<div class="card settings-group ${cls}"><div class="settings-card-title"><span class="settings-icon">${icon(ic,{size:20})}</span><div><h3>${title}</h3><p>${desc}</p></div></div>${body}</div>`;
+  const section=(ic,title,desc,body,cls='')=>`<div class="card settings-group settings-panel" data-panel="${ic}" ${ic===settingsTab?'':'hidden'}><div class="settings-card-title"><span class="settings-icon">${icon(ic,{size:20})}</span><div><h3>${title}</h3><p>${desc}</p></div></div>${body}</div>`;
   const cats=(state.categories||[]).slice().sort((a,b)=>String(a.kind).localeCompare(String(b.kind))||String(a.name).localeCompare(String(b.name),'pt-BR'));
-  return `<section class="page settings-page"><div class="page-header"><div><h2>Configurações</h2><p>Personalize o sistema, suas preferências financeiras e a segurança da conta.</p></div></div><div class="settings-grid-v2">
+  return `<section class="page settings-page"><div class="page-header"><div><h2>Configurações</h2><p>Personalize o sistema, suas preferências financeiras e a segurança da conta.</p></div></div><div class="settings-layout"><nav class="settings-nav" aria-label="Seções das configurações">${SETTINGS_SECTIONS.map(([k,l])=>`<button class="settings-nav-item ${k===settingsTab?'active':''}" data-section="${k}" ${k===settingsTab?'aria-current="true"':''}>${icon(k,{size:18})}<span>${l}</span></button>`).join('')}</nav><div class="settings-panels">
   ${section('user','Perfil','Como você aparece no sistema',`<div class="profile-photo-row"><div class="settings-avatar">${safeImage(state.profilePhoto)?`<img src="${escapeHTML(state.profilePhoto)}" alt="Foto de perfil">`:escapeHTML(userInitials())}</div><div class="profile-actions"><label class="secondary-btn compact photo-upload-btn">${icon('upload',{size:16})} Trocar foto<input id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>${state.profilePhoto?'<button class="danger-btn compact" id="removeProfilePhoto">Remover</button>':''}</div></div>${row('Nome de exibição','Usado na saudação e nos cartões',`<form class="inline-form" id="displayNameForm"><input class="input" id="displayName" maxlength="60" value="${escapeHTML(userName())}" aria-label="Nome de exibição"><button class="secondary-btn compact">Salvar</button></form>`)}`)}
-  ${section('palette','Aparência','Tema, tamanho do texto e privacidade',`${row('Tema','',seg('prefTheme',[['dark','Escuro'],['light','Claro']],state.theme))}${row('Tamanho do texto','Ajusta todas as letras do sistema',seg('prefTextScale',[['0.92','A−'],['1','Padrão'],['1.1','A+'],['1.2','A++']],pr.textScale||1))}${row('Ocultar valores agora','Esconde os valores em locais públicos',sw('prefHide',state.hideValues))}${row('Sempre abrir com valores ocultos','',sw('prefHideOnStart',pr.hideOnStart))}${row('Menu lateral compacto','Só ícones no computador',sw('prefCollapsed',state.sidebarCollapsed))}`)}
+  ${section('palette','Aparência','Tema, tamanho do texto e privacidade',`${row('Tema','',seg('prefTheme',[['dark','Escuro'],['light','Claro']],state.theme))}${row('Tamanho do texto','Ajusta todas as letras do sistema',seg('prefTextScale',[['0.92','A−'],['1','Padrão'],['1.1','A+'],['1.2','A++']],pr.textScale||1))}${row('Ocultar valores agora','Esconde os valores em locais públicos',sw('prefHide',state.hideValues))}${row('Sempre abrir com valores ocultos','',sw('prefHideOnStart',pr.hideOnStart))}`)}
   ${section('wallet','Preferências financeiras','Padrões usados em lançamentos e cálculos',`${row('Conta padrão','Pré-selecionada em novas movimentações',`<select class="select" id="defaultAccount"><option value="">Nenhuma</option>${state.accounts.map(a=>`<option ${pr.defaultAccount===a.name?'selected':''}>${escapeHTML(a.name)}</option>`).join('')}</select>`)}${row('Cartão principal','Aparece primeiro no dashboard',`<select class="select" id="primaryCard"><option value="">Automático</option>${state.cards.map(c=>`<option value="${escapeHTML(c.id)}" ${String(pr.primaryCardId)===String(c.id)?'selected':''}>${escapeHTML(c.name)}</option>`).join('')}</select>`)}${row('Página inicial','Abre ao entrar no sistema',`<select class="select" id="startPage">${nav.filter(n=>!['dados','configuracoes'].includes(n[0])).map(n=>`<option value="${n[0]}" ${(pr.startPage||'dashboard')===n[0]?'selected':''}>${n[2]}</option>`).join('')}</select>`)}${row('Taxa CDI anual (%)','Usada para atualizar CDBs pós-fixados',`<input class="input input-sm" id="cdiAnnual" type="number" min="0" max="50" step="0.05" value="${Number(pr.cdiAnnual||14.15)}">`)}${row('Início da semana','',`<select class="select" id="weekStart"><option value="monday" ${pr.weekStart!=='sunday'?'selected':''}>Segunda-feira</option><option value="sunday" ${pr.weekStart==='sunday'?'selected':''}>Domingo</option></select>`)}`)}
   ${section('budget','Distribuição da renda','Quanto da renda vai para cada grupo. Define os limites de Investimentos e Lazer no orçamento.',`<div class="dist-editor">${[['fixed','Despesas fixas','#ff6670'],['investment','Investimentos','#4c96ff'],['leisure','Lazer','#9a6cff']].map(([k,l,c])=>`<label class="dist-row"><span><i class="dot" style="background:${c}"></i>${l}</span><input type="range" min="0" max="100" step="1" class="dist-range" data-key="${k}" value="${Number(d[k]||0)}" aria-label="${l}"><span class="percent-input"><input class="settings-dist-percent" data-key="${k}" type="number" min="0" max="100" value="${Number(d[k]||0)}" aria-label="${l} em porcentagem"><i>%</i></span></label>`).join('')}</div><div class="distribution-total ${distTotal===100?'':'is-off'}"><span>Total</span><strong id="settingsDistTotal">${distTotal}%</strong></div><div class="dist-presets"><button class="secondary-btn compact" data-preset="60,35,5">60/35/5</button><button class="secondary-btn compact" data-preset="50,20,30">50/20/30</button><button class="secondary-btn compact" data-preset="70,20,10">70/20/10</button></div>`,'settings-wide')}
   ${section('tag','Categorias','Usadas em movimentações, orçamento e relatórios',`<div class="category-admin">${cats.map(c=>`<div class="category-admin-row"><span class="badge ${c.kind==='Receita'?'green':c.kind==='Ambos'?'':'red'}">${escapeHTML(c.kind||'Despesa')}</span><strong>${escapeHTML(c.name)}</strong><small>${(state.transactions||[]).filter(t=>t.category===c.name).length} lançamento(s)</small><button class="icon-btn icon-sm cat-rename" data-name="${escapeHTML(c.name)}" aria-label="Renomear ${escapeHTML(c.name)}">${icon('edit',{size:16})}</button><button class="icon-btn icon-sm cat-delete" data-name="${escapeHTML(c.name)}" aria-label="Excluir ${escapeHTML(c.name)}">${icon('trash',{size:16})}</button></div>`).join('')||'<p class="muted">Nenhuma categoria criada.</p>'}</div><button class="secondary-btn compact" id="newCategory">${icon('plus',{size:16})} Nova categoria</button>`,'settings-wide')}
@@ -314,10 +370,11 @@ function settingsPage(){
   ${section('download','Exportar e dados','Planilhas, backup e importação',`${row('Exportar movimentações (CSV)','Abre no Excel e no Google Planilhas',`<div class="inline-form"><select class="select" id="exportPeriod" aria-label="Período da exportação"><option value="month">${escapeHTML(monthLabelOf(state.selectedMonth))}</option><option value="year">Ano de ${state.selectedMonth.slice(0,4)}</option><option value="all">Todo o período</option></select><button class="primary-btn compact" id="exportCsvSettings">${icon('download',{size:16})} Exportar</button></div>`)}${row('Backup, importação e duplicados','Baixar ou restaurar todos os dados',`<button class="secondary-btn compact" data-go="dados">Abrir</button>`)}`)}
   ${section('send','Telegram','Registre gastos e consulte seu saldo pelo celular',`${row('Conectar @Patrimonio360Bot','Gere um código e envie ao bot',`<button class="secondary-btn compact" id="connectTelegram">Conectar</button>`)}<div id="telegramLinkResult" class="muted telegram-result"></div>`)}
   ${section('lock','Segurança da conta','Acesso e proteção dos seus dados',`${row('E-mail de acesso',`${escapeHTML(currentUser?.email||'—')}${currentUser&&!currentUser.emailVerified?' · não verificado':''}`,'')}${row('Senha','Receba um link seguro por e-mail',`<button class="secondary-btn compact" id="resetPassword">Redefinir</button>`)}${row('Sair desta conta','Remove a cópia local deste navegador',`<button class="danger-btn compact" id="settingsLogout">Sair</button>`)}`)}
-  </div></section>`;
+  ${embeddedSettingsPage('report','Relatórios','Análise do mês e dos últimos 12 meses',reportsPage())}${embeddedSettingsPage('calculator','Simuladores','Juros compostos, metas e financiamentos',simulators())}${embeddedSettingsPage('database','Controle de dados','Backup, importação de planilhas e duplicados',dataPage())}</div></div></section>`;
 }
 function bindSettingsPage(){
   if(!$('.settings-page'))return;
+  $$('.settings-nav-item').forEach(b=>b.onclick=()=>{settingsTab=b.dataset.section;$$('.settings-nav-item').forEach(x=>{const on=x===b;x.classList.toggle('active',on);on?x.setAttribute('aria-current','true'):x.removeAttribute('aria-current');});$$('.settings-panel').forEach(p=>p.hidden=p.dataset.panel!==settingsTab);requestAnimationFrame(drawPageCharts);if(innerWidth<=960)b.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});});
   const pr=state.preferences;
   $$('[name=prefTheme]').forEach(r=>r.onchange=()=>{state.theme=r.value;document.documentElement.dataset.theme=state.theme;save();render();});
   $$('[name=prefTextScale]').forEach(r=>r.onchange=()=>{pr.textScale=Number(r.value);applyTextScale();save();render();});
@@ -325,7 +382,6 @@ function bindSettingsPage(){
   const on=(id,fn)=>{const el=$(id);if(el)el.onchange=()=>fn(el);};
   on('#prefHide',el=>{state.hideValues=el.checked;save();render();});
   on('#prefHideOnStart',el=>{pr.hideOnStart=el.checked;save();});
-  on('#prefCollapsed',el=>{state.sidebarCollapsed=el.checked;save();render();});
   on('#primaryCard',el=>{pr.primaryCardId=el.value||null;save();toast('Cartão principal atualizado.');});
   on('#startPage',el=>{pr.startPage=el.value;save();toast('Página inicial atualizada.');});
   on('#cdiAnnual',el=>{const v=Number(el.value);if(v>=0&&v<=50){pr.cdiAnnual=v;syncDerived();save();toast('Taxa CDI atualizada.');}});
@@ -488,7 +544,7 @@ function reportsPage(){
   const cardTotal=monthTransactions(month).filter(t=>t.type==='expense'&&t.payment==='cartao').reduce((a,t)=>a+Number(t.value||0),0);
   const pending=monthTransactions(month).filter(t=>!txIsSettled(t)).reduce((a,t)=>a+(t.type==='income'?1:-1)*Number(t.value||0),0);
   return `<section class="page reports-page"><div class="page-header"><div><h2>Relatórios</h2><p>Análise de ${escapeHTML(monthLabelOf(month))} e dos últimos 12 meses.</p></div><div class="toolbar"><button class="secondary-btn" id="printReport">Imprimir / PDF</button></div></div>
-  <div class="grid kpi-grid">${kpi('Receitas',inc,'Mês selecionado','positive')}${kpi('Despesas',exp,expDelta==null?'Sem mês anterior para comparar':`${expDelta>0?'+':''}${pct.format(expDelta)}% vs. ${monthLabelOf(prev,{month:'short'}).replace('.','')}`,'negative')}${kpi('Resultado',res,res>=0?'Fluxo positivo':'Fluxo negativo',res>=0?'positive':'negative')}<div class="card kpi-card"><div class="kpi-label">Taxa de poupança</div><div class="kpi-value">${inc?pct.format(savings)+'%':'—'}</div><div class="kpi-footer"><span class="badge ${savings<0?'red':''}">${savings>=20?'↗':'↘'}</span>${inc?(savings>=20?'Acima de 20% da renda':'Meta sugerida: 20% da renda'):'Sem receitas no mês'}</div></div></div>
+  <div class="grid kpi-grid kpi-4">${kpi('Receitas',inc,'Mês selecionado','positive')}${kpi('Despesas',exp,expDelta==null?'Sem mês anterior para comparar':`${expDelta>0?'+':''}${pct.format(expDelta)}% vs. ${monthLabelOf(prev,{month:'short'}).replace('.','')}`,'negative')}${kpi('Resultado',res,res>=0?'Fluxo positivo':'Fluxo negativo',res>=0?'positive':'negative')}${kpi('Taxa de poupança',inc?pct.format(savings)+'%':'—',inc?(savings>=20?'Acima de 20% da renda':'Meta sugerida: 20%'):'Sem receitas no mês',savings>=20?'positive':savings<0?'negative':'neutral','wallet')}
   <div class="grid section-grid"><div class="card"><div class="card-head"><div><h3>Receitas x despesas</h3><span>Últimos meses com movimentação</span></div></div><div class="chart-wrap"><canvas id="reportLineChart"></canvas></div></div>
   <div class="card"><div class="card-head"><div><h3>Destaques do mês</h3><span>${escapeHTML(monthLabelOf(month))}</span></div></div><div class="linked-movements">
     <div class="linked-row"><span>Gastos no cartão de crédito</span><strong>${money(cardTotal)}</strong></div>
@@ -751,7 +807,7 @@ function render(){
  else if(state.page==='dados') content=dataPage();
  else { state.page='dashboard'; content=dashboard(); }
  $('.cal-tooltip-floating')?.remove();$('#dashboardCategoryPopup')?.classList.remove('is-visible');
- $('#app').innerHTML=shell(content); const ph=$('.page > .page-header'),mn=monthNavigator();if(ph&&mn){ph.classList.add('has-period');const actions=ph.children.length>1?ph.lastElementChild:null;actions?actions.insertAdjacentHTML('beforebegin',mn):ph.insertAdjacentHTML('beforeend',mn);} bind(); syncBanner(); document.title=`${pageTitle()} · Patrimônio 360`; requestAnimationFrame(drawPageCharts);
+ $('#app').innerHTML=shell(content); const tabs=hubTabs(),ph0=$('.page > .page-header');if(tabs&&ph0)ph0.insertAdjacentHTML('beforebegin',tabs);const ph=$('.page > .page-header'),mn=monthNavigator();if(ph&&mn){ph.classList.add('has-period');const actions=ph.children.length>1?ph.lastElementChild:null;actions?actions.insertAdjacentHTML('beforebegin',mn):ph.insertAdjacentHTML('beforeend',mn);} bind(); syncBanner(); document.title=`${pageTitle()} · Patrimônio 360`; requestAnimationFrame(drawPageCharts);
 }
 
 function openInvestmentModal(){
@@ -801,7 +857,6 @@ function openGoalContributionModal(id){
 function bind(){
  $$('.nav-item,.bottom-nav-item[data-page]').forEach(b=>b.onclick=()=>{const next=b.dataset.page;window.P360MobileNavigation?.close();if(next===state.page)return;goTo(next);});
  $$('[data-go]').forEach(b=>b.onclick=()=>goTo(b.dataset.go));
- const bm=$('#bottomMenu');if(bm)bm.onclick=()=>window.P360MobileNavigation?.open();
  const bn=$('#bottomNewTx');if(bn)bn.onclick=()=>openTransactionModal();
  $$('.month-step').forEach(b=>b.onclick=()=>{state.selectedMonth=shiftMonth(state.selectedMonth,Number(b.dataset.step));save();render();});
  const gm=$('#globalMonth');if(gm)gm.onchange=()=>{if(/^\d{4}-\d{2}$/.test(gm.value)){state.selectedMonth=gm.value;save();render();}};
@@ -809,7 +864,7 @@ function bind(){
  $$('[data-onboard]').forEach(b=>b.onclick=()=>{const p=b.dataset.onboard;if(p==='__tx')openTransactionModal();else goTo(p);});
  $('#themeBtn').onclick=()=>{state.theme=state.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=state.theme;try{localStorage.setItem('pf-theme',state.theme);}catch{}save();render()};
  $('#hideBtn').onclick=()=>{state.hideValues=!state.hideValues;save();render()};
- const cb=$('#collapseBtn');if(cb)cb.onclick=()=>{state.sidebarCollapsed=!state.sidebarCollapsed;save();render();};
+
  const lo=$('#logoutBtn'); if(lo) lo.onclick=()=>{if(confirm('Deseja sair da sua conta?'))logoutUser();};
  ['#newTransaction','#newTransaction2'].forEach(id=>{const el=$(id);if(el)el.onclick=()=>openTransactionModal({type:state.page==='receitas'?'income':'expense'})});
  const nc=$('#newCard'); if(nc) nc.onclick=()=>openCardModal();
@@ -839,6 +894,7 @@ function bind(){
  const exd=$('#exportCsvDash'); if(exd) exd.onclick=exportCsv;const pr=$('#printReport');if(pr)pr.onclick=()=>window.print();
  const gs=$('#globalSearch');if(gs)gs.onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value;goTo('movimentacoes');setTimeout(()=>{const s=$('#txSearch'),per=$('#txPeriod');if(per)per.value='all';if(s){s.value=q;s.dispatchEvent(new Event('input'))}},0)}};
  bindAI();
+ bindUserMenu();
  bindBudgetPage();
  bindSettingsPage();
 }
@@ -1192,7 +1248,7 @@ function openTransactionEditor(id){
 function monthsBack(n,end=state.selectedMonth){return Array.from({length:n},(_,i)=>shiftMonth(end,i-n+1));}
 const shortMonth=m=>monthLabelOf(m,{month:'short'}).replace('.','');
 function drawPageCharts(){
-  const lc=$('#lineChart');if(lc){const ms=monthsBack(6);barChart(lc,{labels:ms.map(shortMonth),series:[{name:'Receitas',color:'#22c08a',values:ms.map(m=>total('income',m))},{name:'Despesas',color:'#ef5b6b',values:ms.map(m=>total('expense',m))}],empty:'Sem movimentações nos últimos meses'});}
+  const lc=$('#lineChart');if(lc){const ms=monthsBack(6);lineChart(lc,{labels:ms.map(shortMonth),series:[{name:'Receitas',color:'#22c08a',values:ms.map(m=>total('income',m))},{name:'Despesas',color:'#ef5b6b',values:ms.map(m=>total('expense',m))}],area:true,empty:'Sem movimentações nos últimos meses'});}
   const rl=$('#reportLineChart');if(rl){const ms=monthsBack(12);lineChart(rl,{labels:ms.map(shortMonth),series:[{name:'Receitas',color:'#22c08a',values:ms.map(m=>total('income',m))},{name:'Despesas',color:'#ef5b6b',values:ms.map(m=>total('expense',m))}]});}
   const dc=$('#donutChart');if(dc){const items=categoryTotalsForMonth().slice(0,6).map(([label,value],i)=>({label,value,color:PALETTE[i%PALETTE.length]}));const segs=donutChart(dc,{items,centerLabel:'Gastos',tooltip:false});dc._dashboardSegments=segs.map(s=>({...s,category:s.label}));attachDashboardCategoryHover();}
   const rc=$('#reserveChart');if(rc){const ms=monthsBack(12,new Date().toLocaleDateString('en-CA').slice(0,7)),hist=(state.reserve?.history||[]).filter(h=>h.settled);let acc=hist.filter(h=>String(h.date).slice(0,7)<ms[0]).reduce((a,h)=>a+(h.kind==='withdrawal'?-1:1)*Math.abs(Number(h.value||0)),0);const values=ms.map(m=>{acc+=hist.filter(h=>String(h.date).slice(0,7)===m).reduce((a,h)=>a+(h.kind==='withdrawal'?-1:1)*Math.abs(Number(h.value||0)),0);return acc;});lineChart(rc,{labels:ms.map(shortMonth),series:[{name:'Reserva',color:'#4c8dff',values}],empty:'Nenhum aporte confirmado ainda'});}
@@ -1296,6 +1352,7 @@ function hydrate(data){
   if(!state.aiModel&&(old.monthlyIncome||old.essentialExpenses||old.priority))state.aiModel={facts:{income:old.monthlyIncome||undefined,essential:old.essentialExpenses||undefined,priority:old.priority||undefined}};
   ['aiProfile','aiMemory','aiBehavior','aiAlerts','aiAlertSignature','aiPendingQuestion','aiServerMemory'].forEach(k=>delete state[k]);
   mind=null;
+  state.sidebarCollapsed=false;
   if(state.preferences.hideOnStart)state.hideValues=true;
   applyTextScale();
   document.documentElement.dataset.theme=state.theme||'dark';
@@ -1308,8 +1365,11 @@ function syncBanner(){
 }
 // Navegação por hash: permite usar o botão "voltar" do navegador/celular e abrir links diretos.
 const validPages=()=>new Set(nav.map(n=>n[0]));
-function pageFromHash(){const p=decodeURIComponent(location.hash.replace(/^#\/?/,''));return validPages().has(p)?p:null;}
+// Relatórios, Simuladores e Controle de dados agora ficam dentro das Configurações.
+const SETTINGS_PAGES={relatorios:'report',simuladores:'calculator',dados:'database'};
+function pageFromHash(){let p=decodeURIComponent(location.hash.replace(/^#\/?/,''));if(SETTINGS_PAGES[p]){settingsTab=SETTINGS_PAGES[p];p='configuracoes';}return validPages().has(p)?p:null;}
 function goTo(page,{replace=false}={}){
+  if(SETTINGS_PAGES[page]){settingsTab=SETTINGS_PAGES[page];page='configuracoes';}
   if(!validPages().has(page))page='dashboard';
   const changed=state.page!==page;state.page=page;
   const hash=`#/${page}`;if(location.hash!==hash){replace?history.replaceState(null,'',hash):history.pushState(null,'',hash);}

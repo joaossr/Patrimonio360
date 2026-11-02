@@ -1,0 +1,61 @@
+/* ==========================================================================
+   Patrimônio 360 v51 — dashboard: distribuição em faixa horizontal, gráfico
+   sem espaço vazio, faixa de insights da IA e degradê suave nos cards.
+   ========================================================================== */
+
+/* ---------- Distribuição da renda: 3 blocos lado a lado, mais baixos ---------- */
+.dashboard-page .distribution-card{margin-bottom:18px}
+.dashboard-page .distribution-card .card-head{margin-bottom:12px}
+.dashboard-page .distribution-dashboard{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
+.dashboard-page .distribution-item{padding:12px 14px!important;gap:8px!important}
+.dashboard-page .distribution-item-top{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center;gap:10px!important}
+.dashboard-page .distribution-item-top strong{font-size:1.05rem!important;white-space:nowrap}
+.dashboard-page .distribution-item .progress-track{height:6px}
+.dashboard-page .distribution-item small{font-size:.78rem}
+@media (max-width:760px){.dashboard-page .distribution-dashboard{grid-template-columns:1fr!important}}
+
+/* ---------- Receitas x despesas: o gráfico ocupa a altura do card ---------- */
+.dashboard-page .dash-row-2-1>.card{display:flex;flex-direction:column}
+.dashboard-page .dash-row-2-1>.card>.chart-wrap{flex:1 1 auto;height:auto!important;min-height:260px}
+@media (max-width:1100px){.dashboard-page .dash-row-2-1>.card>.chart-wrap{flex:none;height:260px!important}}
+
+/* ---------- Faixa de insights da IA ---------- */
+.ai-strip{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;margin:0 0 18px;padding:12px 14px;border-radius:18px;border:1px solid rgba(139,92,246,.28);
+  background:linear-gradient(100deg,rgba(15,105,118,.20),rgba(63,140,255,.16) 35%,rgba(140,88,232,.16) 70%,rgba(189,47,114,.14)),var(--card-solid)}
+.ai-strip-head{display:flex;align-items:center;gap:10px;min-width:0}
+.ai-strip-head .ai-insight-badge{background:var(--gradient);color:#fff;flex:0 0 36px}
+.ai-strip-head strong{display:block;font-size:.95rem;white-space:nowrap}
+.ai-strip-head small{display:block;font-size:.78rem;color:var(--muted);white-space:nowrap}
+.ai-strip-items{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;min-width:0}
+.ai-strip-item{display:grid;grid-template-columns:8px minmax(0,1fr);align-items:center;gap:10px;min-width:0;padding:8px 12px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--card-solid) 75%,transparent);color:var(--text);text-align:left;font:inherit;cursor:pointer;transition:border-color .15s}
+.ai-strip-item:hover{border-color:rgba(139,92,246,.55)}
+.ai-strip-item i{width:8px;height:8px;border-radius:50%;background:#4c8dff}
+.ai-strip-item.lvl-danger i{background:#ef5b6b}
+.ai-strip-item.lvl-warning i{background:#f5a524}
+.ai-strip-item.lvl-success i{background:#22c08a}
+.ai-strip-item span{min-width:0}
+.ai-strip-item strong{display:block;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-strip-item small{display:block;font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-strip-empty{font-size:.88rem;color:var(--muted)}
+.ai-strip-cta{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:0;border-radius:12px;background:var(--gradient);color:#fff;font:700 .85rem Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+@media (max-width:1100px){.ai-strip{grid-template-columns:minmax(0,1fr) auto}.ai-strip-items{grid-column:1/-1;grid-row:2}}
+@media (max-width:760px){.ai-strip-items{grid-auto-flow:row;grid-auto-columns:auto}.ai-strip-item small{white-space:normal}}
+
+/* ---------- Degradê suave nos cards do dashboard ---------- */
+.dashboard-page .card{background:linear-gradient(155deg,rgba(76,141,255,.07),transparent 42%),var(--card-solid)!important}
+.dashboard-page .kpi-card.is-positive{background:linear-gradient(150deg,rgba(34,192,138,.12),transparent 55%),var(--card-solid)!important}
+.dashboard-page .kpi-card.is-negative{background:linear-gradient(150deg,rgba(239,91,107,.12),transparent 55%),var(--card-solid)!important}
+.dashboard-page .kpi-card:not(.is-positive):not(.is-negative){background:linear-gradient(150deg,rgba(76,141,255,.12),transparent 55%),var(--card-solid)!important}
+.dashboard-page .distribution-card{background:linear-gradient(120deg,rgba(140,88,232,.08),transparent 45%),var(--card-solid)!important}
+.dashboard-page .dash-cards{background:linear-gradient(160deg,rgba(139,92,246,.10),transparent 50%),var(--card-solid)!important}
+.dashboard-page .distribution-item{background:color-mix(in srgb,var(--bg-2) 85%,transparent)!important}
+[data-theme="light"] .dashboard-page .card{background:linear-gradient(155deg,rgba(76,141,255,.06),transparent 42%),#fff!important}
+[data-theme="light"] .dashboard-page .kpi-card.is-positive{background:linear-gradient(150deg,rgba(34,192,138,.10),transparent 55%),#fff!important}
+[data-theme="light"] .dashboard-page .kpi-card.is-negative{background:linear-gradient(150deg,rgba(239,91,107,.10),transparent 55%),#fff!important}
+[data-theme="light"] .dashboard-page .kpi-card:not(.is-positive):not(.is-negative){background:linear-gradient(150deg,rgba(76,141,255,.10),transparent 55%),#fff!important}
+[data-theme="light"] .ai-strip{background:linear-gradient(100deg,rgba(15,105,118,.08),rgba(63,140,255,.08) 35%,rgba(140,88,232,.08) 70%,rgba(189,47,114,.07)),#fff}
+
+/* ---------- Cards de tabela com .card-head: o legado zera o padding do card ---------- */
+.table-card>.card-head{padding:18px 20px 0!important;margin-bottom:14px!important}
+.table-card>.empty-state{padding:8px 20px 22px}
+@media (max-width:760px){.table-card>.card-head{padding:16px 16px 0!important}}

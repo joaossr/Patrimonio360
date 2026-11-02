@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#111315">
+    <meta name="theme-color" content="#0c1015">
+    <meta name="color-scheme" content="dark">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex">
     <meta name="description" content="Entre no Patrimônio 360 para controlar receitas, despesas, cartões, metas e investimentos.">
     <title>Entrar · Patrimônio 360</title>
     <link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
@@ -12,37 +15,76 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/variables.css">
-    <link rel="stylesheet" href="assets/css/reset.css">
-    <link rel="stylesheet" href="assets/css/global.css">
-    <link rel="stylesheet" href="assets/css/login.css">
-    <link rel="stylesheet" href="assets/css/auth-v43.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/auth-v52.css">
 </head>
 <body>
-<main class="login-page">
-    <div class="login-left">
-        <form id="loginForm" class="login-card" novalidate>
-            <img src="assets/images/logo-full.png" alt="" class="auth-mobile-logo" aria-hidden="true">
-            <h1>Entrar</h1>
-            <p>Faça login para acessar sua conta.</p>
-            <div class="form-group"><label for="email">E-mail</label><input id="email" type="email" placeholder="seu@email.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" required></div>
-            <div class="form-group"><label for="password">Senha</label><input id="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required></div>
-            <div class="auth-row">
-                <label class="auth-check"><input id="remember" type="checkbox" checked> Manter conectado</label>
-                <button id="btnForgot" type="button" class="btn-link" aria-expanded="false" aria-controls="forgotPanel">Esqueci minha senha</button>
+<main class="auth">
+    <aside class="auth-show" aria-label="Sobre o Patrimônio 360">
+        <div class="auth-brand"><img src="assets/images/logo-mark.png" alt="" width="44" height="44"><span>Patrimônio <b>360</b></span></div>
+        <div class="auth-pitch">
+            <h2>Sua vida financeira em um só lugar.</h2>
+            <p>Receitas, despesas, cartões, metas e investimentos organizados, com uma IA que aprende com o seu histórico.</p>
+            <ul class="auth-features">
+                <li><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg></span><div><strong>Visão completa do mês</strong><small>Saldo, entradas, saídas e resultado em tempo real.</small></div></li>
+                <li><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span><div><strong>IA própria</strong><small>Insights sobre seus gastos sem enviar dados para terceiros.</small></div></li>
+                <li><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></span><div><strong>Metas e reserva</strong><small>Acompanhe cada objetivo até chegar lá.</small></div></li>
+            </ul>
+        </div>
+        <div class="auth-preview" aria-hidden="true">
+            <div class="auth-preview-head"><small>Resultado do mês</small><em>+18%</em></div>
+            <strong>R$ 4.280,00</strong>
+            <svg class="auth-spark" viewBox="0 0 220 60" preserveAspectRatio="none"><defs><linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#4f8cff" stop-opacity=".45"/><stop offset="1" stop-color="#4f8cff" stop-opacity="0"/></linearGradient></defs><path d="M0 48 L30 42 L60 46 L90 30 L120 34 L150 20 L180 24 L220 8 L220 60 L0 60Z" fill="url(#sparkFill)"/><path d="M0 48 L30 42 L60 46 L90 30 L120 34 L150 20 L180 24 L220 8" fill="none" stroke="#7aa7ff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="auth-trust"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Conexão criptografada e dados visíveis só para você.</p>
+    </aside>
+
+    <section class="auth-main">
+        <div class="auth-mobile-brand"><img src="assets/images/logo-mark.png" alt="" width="40" height="40"><span>Patrimônio <b>360</b></span></div>
+
+        <form id="loginForm" class="auth-card" method="post" novalidate autocomplete="on">
+            <div class="auth-head">
+                <h1>Bem-vindo de volta</h1>
+                <p>Entre para acessar sua conta.</p>
             </div>
-            <div class="forgot-panel" id="forgotPanel"><p>Informe seu e-mail e enviaremos um link para redefinir sua senha.</p><div class="forgot-row"><label for="forgotEmail" class="sr-only">E-mail para redefinição</label><input id="forgotEmail" type="email" placeholder="seu@email.com" autocomplete="email" inputmode="email"><button id="sendReset" type="button">Enviar link</button></div></div>
-            <span id="message" class="form-message" aria-live="polite"></span>
-            <button class="btn-login" type="submit">Entrar</button>
-            <button id="btnRegister" type="button" class="btn-secondary">Criar conta</button>
+
+            <div class="field">
+                <label for="email">E-mail</label>
+                <div class="input-wrap">
+                    <svg class="input-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>
+                    <input id="email" type="email" placeholder="seu@email.com" autocomplete="username email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="254" required>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-top"><label for="password">Senha</label><button id="btnForgot" type="button" class="btn-link" aria-expanded="false" aria-controls="forgotPanel">Esqueci minha senha</button></div>
+                <div class="input-wrap">
+                    <svg class="input-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+                    <input id="password" type="password" placeholder="Sua senha" autocomplete="current-password" maxlength="128" required data-caps="capsHint">
+                </div>
+                <small class="caps-hint" id="capsHint" hidden>Caps Lock está ligado.</small>
+            </div>
+
+            <div class="forgot-panel" id="forgotPanel" hidden>
+                <p>Enviaremos um link para você criar uma nova senha.</p>
+                <div class="forgot-row">
+                    <label for="forgotEmail" class="sr-only">E-mail para redefinição</label>
+                    <input id="forgotEmail" type="email" placeholder="seu@email.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254">
+                    <button id="sendReset" type="button">Enviar link</button>
+                </div>
+            </div>
+
+            <label class="auth-check"><input id="remember" type="checkbox" checked><span class="check-box" aria-hidden="true"></span>Manter conectado neste aparelho</label>
+
+            <p id="message" class="form-message" aria-live="polite"></p>
+
+            <button class="btn-primary" type="submit">Entrar</button>
+
+            <p class="auth-switch">Ainda não tem conta? <a href="register.html">Criar conta grátis</a></p>
         </form>
-    </div>
-    <div class="login-right">
-        <img src="assets/images/logo-full.png" alt="Patrimônio 360" class="brand-logo">
-        <h2>Sua vida financeira em um só lugar.</h2>
-        <p>Controle receitas, despesas, cartões, investimentos e patrimônio em um único sistema inteligente.</p>
-    </div>
+
+        <p class="auth-foot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>Ambiente seguro · Patrimônio 360</p>
+    </section>
 </main>
 <script type="module" src="assets/js/auth/login.js"></script>
 </body>

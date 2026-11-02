@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Patrimônio 360 v47 — estrutura à prova de cortes: topo do celular,
+   configurações por seções, notificações maiores, tabela e legendas.
+   ========================================================================== */
+
+/* ---------- Regras gerais contra texto cortado ---------- */
+.card-head>div,.card-head>div>*{min-width:0}
+.card-head h3,.card-head span,.page-header h2,.page-header p,.settings-card-title h3,.settings-card-title p{overflow-wrap:break-word}
+.card-head{flex-wrap:wrap}
+.card-head>button,.card-head>.secondary-btn{flex:0 0 auto}
+
+/* ---------- Topo: ☰ só no celular; contador do sino dentro do botão ---------- */
+.main .topbar #menuBtn{display:none!important}
+.commitments-btn{position:relative;overflow:visible}
+.commitments-btn .notif-dot,.main .topbar .notif-dot{top:3px!important;right:3px!important;min-width:17px;height:17px;padding:0 4px;font-size:.62rem;line-height:17px;box-shadow:0 0 0 2px var(--card-solid)}
+@media (max-width:960px){
+  .main .topbar{grid-template-columns:44px minmax(0,1fr) 40px 40px!important;padding-top:calc(10px + env(safe-area-inset-top))!important}
+  .main .topbar #menuBtn{display:grid!important;grid-column:1!important;grid-row:1!important;width:44px!important;height:44px!important;min-width:44px!important;border-radius:12px;place-items:center}
+  .main .topbar .top-left .search{grid-column:2!important}
+  .main .topbar .top-actions>#hideBtn{grid-column:3!important}
+  .main .topbar .top-actions>#quickBtn{grid-column:4!important}
+}
+
+/* ---------- Configurações: seções à esquerda, conteúdo à direita ---------- */
+.settings-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;align-items:start}
+.settings-nav{position:sticky;top:84px;display:flex;flex-direction:column;gap:4px;padding:8px;border:1px solid var(--border);border-radius:18px;background:var(--card-solid)}
+.settings-nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:12px;background:transparent;color:var(--muted);font:600 .9rem Inter,system-ui,sans-serif;text-align:left;cursor:pointer}
+.settings-nav-item:hover{background:var(--bg-2);color:var(--text)}
+.settings-nav-item.active{background:linear-gradient(90deg,rgba(76,141,255,.18),rgba(139,92,246,.08));color:var(--text)}
+.settings-nav-item.active .ico{color:var(--blue)}
+.settings-panels{min-width:0}
+.settings-panel{width:100%;max-width:820px}
+.settings-page .setting-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px}
+.settings-page .setting-row>div:first-child{min-width:0}
+.settings-page .setting-control{justify-content:flex-end;min-width:0;flex-wrap:wrap}
+.settings-page .setting-control .select,.settings-page .setting-control .input{min-width:200px}
+.settings-page .profile-photo-row{padding:4px 0 16px}
+@media (max-width:960px){
+  .settings-layout{grid-template-columns:1fr;gap:14px}
+  .settings-nav{position:sticky;top:calc(64px + env(safe-area-inset-top));z-index:5;flex-direction:row;overflow-x:auto;scrollbar-width:none;padding:6px;border-radius:14px}
+  .settings-nav::-webkit-scrollbar{display:none}
+  .settings-nav-item{flex:0 0 auto;width:auto;padding:9px 12px;white-space:nowrap}
+  .settings-panel{max-width:none}
+}
+@media (max-width:760px){
+  .settings-page .setting-row{grid-template-columns:1fr!important}
+  .settings-page .setting-control{justify-content:stretch}
+  .settings-page .setting-control .select,.settings-page .setting-control .input{min-width:0;width:100%}
+  .settings-page .setting-control:has(.switch){justify-content:flex-start}
+}
+
+/* ---------- Notificações: janela maior e mais sólida no computador ---------- */
+@media (min-width:761px){
+  .modal.notif-pop{width:min(580px,calc(100vw - 32px))!important;max-height:min(760px,calc(100dvh - 90px))!important;border-radius:22px!important;background:var(--card-solid)!important;box-shadow:0 40px 100px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04)}
+  .notif-pop .notif-head{padding:20px 22px 16px!important}
+  .notif-pop .notif-head h3{font-size:1.2rem}
+  .notif-pop .notif-head-icon{width:42px;height:42px;flex-basis:42px;border-radius:13px}
+  .notif-pop .modal-body{padding:18px 22px 22px!important}
+  .notif-pop .commit-summary-v2{gap:10px}
+  .notif-pop .commit-summary-v2>div{padding:14px 16px}
+  .notif-pop .commit-summary-v2 span{font-size:.8rem}
+  .notif-pop .commit-summary-v2 strong{font-size:1.15rem;margin-top:4px}
+  .notif-pop .commit-tabs{margin:18px 0 12px}
+  .notif-pop .commit-tab{padding:9px 14px;font-size:.88rem}
+  .notif-pop .commit-list{gap:10px}
+  .notif-pop .commit-item{grid-template-columns:52px minmax(0,1fr) auto auto;gap:14px;padding:14px 16px}
+  .notif-pop .date-chip{grid-row:auto;width:52px;height:56px}
+  .notif-pop .commit-text strong{font-size:1rem;white-space:normal;overflow:visible}
+  .notif-pop .commit-item>strong{font-size:1.02rem;white-space:nowrap}
+  .notif-pop .commit-actions{grid-column:auto}
+}
+
+/* ---------- Movimentações no celular: nada se sobrepõe ---------- */
+@media (max-width:680px){
+  .data-table tr.transaction-row{grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto auto;gap:8px 12px!important}
+  .transaction-row td:first-child{grid-column:1!important;grid-row:1!important}
+  .transaction-row td[data-col="amount"]{grid-column:2!important;grid-row:1!important}
+  .transaction-row td[data-col="date"]{grid-column:1!important;grid-row:2!important;display:flex!important;align-items:center;gap:10px;flex-wrap:wrap}
+  .transaction-row td[data-col="source"]{grid-column:2!important;grid-row:2!important;justify-self:end;max-width:46vw}
+  .transaction-row td[data-col="status"]{grid-column:1!important;grid-row:3!important;justify-self:start;align-self:center}
+  .transaction-row td:last-child{grid-column:2!important;grid-row:3!important;justify-self:end}
+  .transaction-row .transaction-name strong{white-space:normal!important;overflow:visible!important}
+}
+
+/* ---------- Gastos por categoria: legenda nunca espremida ---------- */
+.card:has(.category-pie-layout){container-type:inline-size}
+.legend-row{grid-template-columns:12px minmax(60px,1fr) auto!important}
+.legend-row span{min-width:0}
+.legend-row strong{white-space:nowrap;font-variant-numeric:tabular-nums}
+@container (max-width:520px){
+  .category-pie-layout{grid-template-columns:1fr!important;justify-items:center}
+  .category-pie-layout .legend{width:100%}
+  .category-pie{height:200px;width:200px}
+}
+
+/* ---------- Distribuição da renda: mesma estrutura em todos os blocos ---------- */
+.distribution-item-top{display:grid!important;grid-template-columns:1fr;gap:6px}
+.distribution-item-top>span{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.distribution-item-top strong{font-size:1.25rem;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.distribution-item small{overflow-wrap:break-word}
+.main .topbar .top-actions>#quickBtn,.main .topbar #quickBtn{position:relative!important;overflow:visible!important}
+@media (max-width:680px){.data-table tr.transaction-row td{padding:0!important}.data-table tr.transaction-row{padding:14px 4px!important;gap:6px 12px!important}.transaction-row td[data-col="source"]{max-width:58vw!important}}
+@media (max-width:680px){.transaction-row .payment-source{max-width:none!important;white-space:nowrap}}
+@media (min-width:761px){.notif-pop .commit-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}.notif-pop .commit-tab{justify-content:center;min-width:0;padding:9px 8px}}
+
+/* Relatórios, Simuladores e Controle de dados como seções das Configurações */
+.settings-panel.settings-panel-page{max-width:none;display:block}
+.settings-panel-page[hidden]{display:none!important}
+.settings-page-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border:1px solid var(--border);border-radius:18px;background:var(--card-solid)}
+.settings-page-head>div{flex:1 1 220px;min-width:0}
+.settings-page-head h3{margin:0;font-size:1.06rem}
+.settings-page-head p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+.settings-page-head .settings-icon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(76,141,255,.14);color:var(--blue)}
+.settings-page-head .toolbar{margin-left:auto}
+.settings-panel-page>.card,.settings-panel-page>.grid,.settings-panel-page>.data-grid,.settings-panel-page>.sim-tabs{margin-bottom:16px}
+@media print{.settings-nav,.settings-page-head .toolbar{display:none!important}.settings-layout{display:block!important}}

@@ -17,7 +17,7 @@ body{background:radial-gradient(1200px 600px at 85% -10%,rgba(76,141,255,.07),tr
 .topbar{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 82%,transparent)!important;border-bottom:1px solid var(--border)}
 .topbar .search{border-radius:12px;min-width:min(420px,40vw)}
 .topbar .icon-btn{border-radius:12px}
-#menuBtn{display:none!important}
+/* ☰ controlado em app-v47.css */
 
 /* ---------- Cabeçalho das páginas com o mês à direita ---------- */
 .page-header.has-period{display:flex;align-items:center;flex-wrap:wrap;gap:14px 16px}

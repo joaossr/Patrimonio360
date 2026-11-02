@@ -1,0 +1,89 @@
+/* ==========================================================================
+   Patrimônio 360 v50 — menu em 8 áreas, fixo, com ícones maiores; abas
+   dentro das áreas; card da IA no degradê do sistema.
+   ========================================================================== */
+
+/* ---------- Desktop: menu fixo, só o conteúdo rola ---------- */
+@media (min-width:961px){
+  .app-shell.rail-layout{display:block!important}
+  .rail-layout .sidebar{position:fixed!important;left:0;top:0;bottom:0;width:88px!important;height:100dvh!important;z-index:60;gap:12px!important;padding:16px 0!important}
+  .rail-layout .main{margin-left:88px;min-width:0}
+  .rail-layout .sidebar .brand{min-height:44px!important}
+  .rail-layout .sidebar .brand-logo{width:40px!important;height:40px!important;flex-basis:40px!important}
+  .rail-layout .sidebar .menu{gap:12px!important}
+  .rail-layout .nav-group{padding:5px!important;gap:4px!important;border-radius:18px!important}
+  .rail-layout .nav-item{width:46px!important;height:46px!important;min-height:46px!important;border-radius:14px!important}
+  .rail-layout .nav-item .ico{width:22px!important;height:22px!important}
+  .rail-layout .rail-actions{gap:6px!important}
+  .rail-add{width:48px;height:48px;display:grid;place-items:center;border:0;border-radius:16px;background:var(--gradient);color:#fff;cursor:pointer;box-shadow:0 10px 24px rgba(63,140,255,.35);position:relative;flex:0 0 auto;transition:transform .15s}
+  .rail-add:hover{transform:translateY(-1px)}
+  .rail-add .nav-text{display:none}
+  .rail-add::after{content:attr(data-tip);position:absolute;left:calc(100% + 14px);top:50%;transform:translate(-4px,-50%);padding:7px 11px;border-radius:9px;background:var(--text);color:var(--bg);font:600 .8rem Inter,system-ui,sans-serif;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;z-index:200}
+  .rail-add:hover::after,.rail-add:focus-visible::after{opacity:1;transform:translate(0,-50%)}
+  .rail-layout .rail-actions .nav-item.active{background:linear-gradient(135deg,#4c8dff,#8b5cf6)!important;color:#fff!important}
+}
+/* Telas baixas: reduz um pouco, sem esconder nada */
+@media (min-width:961px) and (max-height:760px){
+  .rail-layout .sidebar{gap:8px!important;padding:12px 0!important}
+  .rail-layout .nav-item{width:42px!important;height:42px!important;min-height:42px!important}
+  .rail-add{width:44px;height:44px}
+  .rail-layout .sidebar .menu{gap:8px!important}
+  .rail-layout #themeBtn{display:grid!important}
+}
+@media (min-width:961px) and (max-height:640px){
+  .rail-layout .nav-item{width:38px!important;height:38px!important;min-height:38px!important}
+  .rail-layout .nav-item .ico{width:20px!important;height:20px!important}
+  .rail-layout .nav-group{padding:3px!important;gap:2px!important}
+}
+
+/* ---------- Celular: gaveta com o "+" e as 8 áreas ---------- */
+@media (max-width:960px){
+  .rail-add{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 14px 10px;padding:12px;border:0;border-radius:14px;background:var(--gradient);color:#fff;font:700 .92rem Inter,system-ui,sans-serif}
+  .rail-actions{grid-template-columns:repeat(3,1fr)!important}
+  .rail-actions .nav-item{flex-direction:column;gap:2px;font-size:.75rem!important;padding:8px 4px!important;min-height:56px!important}
+  .rail-actions .nav-item .nav-icon{width:auto!important;height:auto!important}
+}
+
+/* ---------- Abas dentro das áreas ---------- */
+.page-tabs{display:flex;gap:4px;width:max-content;max-width:100%;margin:0 0 18px;padding:4px;border:1px solid var(--border);border-radius:14px;background:var(--card-solid);overflow-x:auto;scrollbar-width:none}
+.page-tabs::-webkit-scrollbar{display:none}
+.page-tab{flex:0 0 auto;padding:8px 16px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:600 .9rem Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+.page-tab:hover{color:var(--text);background:var(--bg-2)}
+.page-tab.active{background:linear-gradient(135deg,rgba(76,141,255,.22),rgba(139,92,246,.18));color:var(--text);box-shadow:inset 0 0 0 1px rgba(76,141,255,.35)}
+@media (max-width:760px){.page-tabs{width:100%}.page-tab{flex:1 0 auto;padding:8px 12px;font-size:.85rem}}
+
+/* ---------- Card da IA: degradê do sistema, compacto ---------- */
+.dist-ai-row{align-items:start!important}
+.dist-ai-row>.card{height:auto!important}
+.ai-insight-card{gap:12px!important;padding:18px!important;background:var(--gradient)!important;box-shadow:0 18px 40px rgba(99,102,241,.28)!important}
+.ai-insight-card::after{right:-40px!important;bottom:-60px!important;width:150px!important;height:150px!important;opacity:.7}
+.ai-insight-top>div{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.ai-insight-top small{font-size:.75rem;color:rgba(255,255,255,.8)}
+.ai-score{margin-left:auto;display:inline-flex;align-items:baseline;gap:1px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.18);font-weight:800;font-size:1rem}
+.ai-score small{font-size:.7rem;opacity:.8}
+.ai-insight-list{display:grid;gap:8px;position:relative;z-index:1}
+.ai-insight-row{display:grid;grid-template-columns:8px minmax(0,1fr) 16px;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;text-align:left;font:inherit;cursor:pointer;transition:background .15s}
+.ai-insight-row:hover{background:rgba(255,255,255,.22)}
+.ai-insight-row i{width:8px;height:8px;border-radius:50%;background:#fff}
+.ai-insight-row.lvl-danger i{background:#ffd1d6;box-shadow:0 0 0 3px rgba(255,90,110,.6)}
+.ai-insight-row.lvl-warning i{background:#ffe7a8;box-shadow:0 0 0 3px rgba(255,190,60,.55)}
+.ai-insight-row strong{display:block;font-size:.88rem}
+.ai-insight-row small{display:block;font-size:.8rem;color:rgba(255,255,255,.88);line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ai-insight-empty{margin:0;font-size:.9rem;position:relative;z-index:1}
+.ai-insight-cta{margin-top:2px!important;align-self:stretch!important;justify-content:center;color:#5b3fd6!important}
+@media (min-width:961px) and (max-height:700px){
+  .rail-layout .nav-item{width:38px!important;height:38px!important;min-height:38px!important;border-radius:12px!important}
+  .rail-layout .nav-item .ico{width:20px!important;height:20px!important}
+  .rail-layout .nav-group{padding:3px!important;gap:2px!important}
+  .rail-layout .sidebar{gap:6px!important;padding:10px 0!important}
+  .rail-layout .sidebar .menu{gap:6px!important}
+  .rail-add{width:40px;height:40px;border-radius:13px}
+  .rail-layout .sidebar .brand{min-height:36px!important}
+  .rail-layout .sidebar .brand-logo{width:34px!important;height:34px!important;flex-basis:34px!important}
+}
+@media (min-width:961px) and (max-height:600px){
+  .rail-layout .nav-item{width:32px!important;height:32px!important;min-height:32px!important}
+  .rail-layout .nav-item .ico{width:18px!important;height:18px!important}
+  .rail-add{width:34px;height:34px}
+}
+.ai-score small{font-size:.78rem!important}
