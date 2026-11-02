@@ -11,7 +11,8 @@
 import {
     getAuth,
     createUserWithEmailAndPassword,
-    updateProfile
+    updateProfile,
+    sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 import {
@@ -87,6 +88,10 @@ export async function registerUser({
         }
 
     );
+
+    // Confirmação de e-mail: não bloqueia o acesso, mas ajuda a recuperar a conta com segurança.
+    auth.languageCode = "pt";
+    sendEmailVerification(credential.user).catch(() => {});
 
     return credential.user;
 

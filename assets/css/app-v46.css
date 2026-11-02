@@ -1,0 +1,250 @@
+/* ==========================================================================
+   Patrimônio 360 v46 — acabamento: cartões em pilha, KPIs, menu compacto,
+   notificações suspensas, tabela e visual geral mais moderno.
+   ========================================================================== */
+
+/* ---------- Base mais limpa ---------- */
+:root{--radius-card:18px;--ring:rgba(76,141,255,.35)}
+body{background:radial-gradient(1200px 600px at 85% -10%,rgba(76,141,255,.07),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(139,92,246,.06),transparent 60%),var(--bg)}
+.card{border-radius:var(--radius-card)!important;border:1px solid var(--border);box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.12)}
+.card-head{align-items:flex-start;gap:12px}
+.kpi-card::after{display:none!important}
+.secondary-btn,.primary-btn,.danger-btn{border-radius:12px;font-weight:600}
+.secondary-btn.compact,.primary-btn.compact,.danger-btn.compact{font-size:.85rem;min-height:36px;padding:0 12px}
+.page{padding:26px 30px 40px}
+
+/* ---------- Barra superior ---------- */
+.topbar{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 82%,transparent)!important;border-bottom:1px solid var(--border)}
+.topbar .search{border-radius:12px;min-width:min(420px,40vw)}
+.topbar .icon-btn{border-radius:12px}
+#menuBtn{display:none!important}
+
+/* ---------- Cabeçalho das páginas com o mês à direita ---------- */
+.page-header.has-period{display:flex;align-items:center;flex-wrap:wrap;gap:14px 16px}
+.page-header.has-period>div:first-child{flex:1 1 280px;min-width:0}
+.page-header .period-bar{margin:0}
+.page-header .period-bar .month-nav-label{min-width:170px}
+.page-header .period-bar .text-btn{display:none}
+
+/* ---------- Menu lateral compacto ---------- */
+@media (min-width:961px){
+  .app-shell{grid-template-columns:240px minmax(0,1fr)!important}
+  .app-shell.sidebar-collapsed{grid-template-columns:76px minmax(0,1fr)!important}
+  .sidebar{width:240px!important}
+  .app-shell.sidebar-collapsed .sidebar{width:76px!important}
+}
+.sidebar .brand{position:relative;gap:10px!important;padding:16px 14px 14px!important;min-height:0}
+.sidebar .brand-logo{width:32px!important;height:32px!important;flex:0 0 32px!important;filter:drop-shadow(0 3px 10px rgba(99,102,241,.35))}
+.sidebar .brand h1{font-size:.95rem!important;margin:0;line-height:1.2}
+.sidebar .brand span{font-size:.72rem!important;color:var(--muted)}
+.sidebar-toggle{margin-left:auto;width:28px;height:28px;flex:0 0 28px;display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.sidebar-toggle:hover{color:var(--text);background:var(--bg-2)}
+.sidebar .menu{padding:4px 10px 10px!important;gap:2px}
+.sidebar .menu-label{font-size:.66rem!important;letter-spacing:.09em;margin:14px 10px 6px!important;padding:0!important;color:var(--muted);opacity:.8}
+.sidebar .nav-item{min-height:38px!important;padding:6px 10px!important;gap:10px!important;font-size:.87rem!important;border-radius:11px!important;color:var(--muted)}
+.sidebar .nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.sidebar .nav-item.active{background:linear-gradient(90deg,rgba(76,141,255,.16),rgba(139,92,246,.08))!important;color:var(--text)!important;box-shadow:none}
+.sidebar .nav-item.active::before{display:none}
+.sidebar .nav-item .nav-icon{width:28px!important;height:28px!important;border-radius:8px}
+.sidebar .nav-item.active .nav-icon{box-shadow:0 4px 12px rgba(76,141,255,.3)}
+.sidebar-user{margin:8px 10px 12px!important;padding:10px!important;border-radius:14px;border:1px solid var(--border);background:var(--bg-2)}
+.sidebar-user strong{font-size:.86rem}
+.sidebar-user small{font-size:.72rem}
+.sidebar-user .avatar{width:36px!important;height:36px!important;font-size:.85rem}
+@media (min-width:961px){
+  .app-shell.sidebar-collapsed .brand{flex-direction:column;justify-content:center;padding:14px 8px!important}
+  .app-shell.sidebar-collapsed .sidebar-toggle{margin:4px 0 0}
+  .app-shell.sidebar-collapsed .menu-label{font-size:0!important;height:1px;margin:10px 14px!important;background:var(--border)}
+  .app-shell.sidebar-collapsed .nav-item{justify-content:center!important;padding:6px!important}
+  .app-shell.sidebar-collapsed .sidebar-user{justify-content:center;padding:8px!important}
+  .app-shell.sidebar-collapsed .sidebar-user>div:not(.avatar),.app-shell.sidebar-collapsed .sidebar-user .logout-mini{display:none}
+}
+@media (max-width:960px){
+  .sidebar-toggle{display:none!important}
+  .app-shell.sidebar-collapsed .sidebar .nav-text{display:inline!important}
+  .app-shell.sidebar-collapsed .sidebar .nav-item{font-size:.92rem!important;justify-content:flex-start!important}
+  .app-shell.sidebar-collapsed .sidebar .menu-label{font-size:.68rem!important}
+  .app-shell.sidebar-collapsed .sidebar .brand>div{display:block!important}
+  .sidebar .nav-item{min-height:44px!important}
+}
+
+/* ---------- KPIs: 5 lado a lado no computador, sem cortar ---------- */
+.kpi-grid.kpi-5{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.kpi-card{padding:16px!important;gap:4px!important}
+.kpi-card .kpi-label{font-size:.82rem!important;gap:8px!important;white-space:nowrap;overflow:hidden}
+.kpi-card .kpi-label{text-overflow:ellipsis}
+.kpi-icon{width:30px!important;height:30px!important;flex:0 0 30px!important;border-radius:10px!important}
+.kpi-card .kpi-value{font-size:clamp(1.02rem,1.35vw,1.45rem)!important;white-space:nowrap;overflow:visible;text-overflow:clip;font-variant-numeric:tabular-nums}
+.kpi-card .kpi-footer{font-size:.76rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1180px) and (min-width:961px){.kpi-grid.kpi-5{grid-template-columns:repeat(3,minmax(0,1fr))!important}.kpi-grid.kpi-5>.kpi-card:nth-child(n+4){grid-column:span 1}}
+@media (max-width:760px){.kpi-grid.kpi-5{grid-template-columns:repeat(2,minmax(0,1fr))!important}.kpi-card .kpi-value{font-size:1.15rem!important}}
+
+/* ---------- Cartão de crédito: face interna (corrige escala) ---------- */
+.cc{container-type:inline-size;position:relative;display:block;width:100%;aspect-ratio:85.6/53.98;padding:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;overflow:visible!important}
+.cc::after{display:none!important}
+.cc-face{position:absolute;inset:0;border-radius:4.8cqw;padding:6.4cqw 7cqw;display:flex;flex-direction:column;justify-content:space-between;color:#fff;overflow:hidden;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,255,255,.24),transparent 55%),linear-gradient(135deg,var(--card-color,#6c4cf5),color-mix(in srgb,var(--card-color,#6c4cf5) 45%,#0b0d12));box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.28)}
+.cc-face::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 2px,transparent 2px 10px);pointer-events:none}
+
+/* ---------- Pilha de cartões animada (dashboard) ---------- */
+.dash-cards{display:flex;flex-direction:column}
+.cc-deck{--gap:16px;position:relative;width:min(100%,340px);margin:6px auto calc((var(--n) - 1) * var(--gap) + 8px);aspect-ratio:85.6/53.98}
+.cc-deck-item{position:absolute;inset:0;padding:0;border:0;background:none;cursor:pointer;border-radius:16px;transform-origin:50% 100%;
+  transform:translateY(calc(var(--i) * var(--gap))) scale(calc(1 - var(--i) * .07));z-index:calc(10 - var(--i));filter:brightness(calc(1 - var(--i) * .16));
+  transition:transform .45s cubic-bezier(.2,.8,.2,1),filter .35s ease}
+.cc-deck:hover .cc-deck-item{transform:translateY(calc(var(--i) * (var(--gap) + 10px))) scale(calc(1 - var(--i) * .06))}
+.cc-deck .cc-deck-item[style*="--i:0"]:hover,.cc-deck .cc-deck-item[style*="--i: 0"]:hover{transform:translateY(-6px) rotate(-1deg)}
+.cc-deck-item:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
+.cc-deck-hint{margin:0 0 10px;text-align:center;font-size:.78rem;color:var(--muted)}
+.dash-cards .cc-stats{margin-top:auto}
+@media (prefers-reduced-motion:reduce){.cc-deck-item{transition:none}}
+
+/* ---------- Notificações (janela suspensa) ---------- */
+.popover-backdrop{background:rgba(5,8,12,.35)!important;backdrop-filter:blur(2px);display:block!important;padding:0!important}
+.modal.notif-pop{position:fixed;top:72px;right:24px;width:min(430px,calc(100vw - 24px))!important;max-width:none!important;max-height:min(640px,calc(100dvh - 96px))!important;display:flex;flex-direction:column;overflow:hidden;border-radius:20px!important;border:1px solid var(--border);
+  box-shadow:0 30px 80px rgba(0,0,0,.45);animation:p360pop .18s ease-out;transform-origin:top right}
+.modal.notif-pop::before{content:"";position:absolute;top:-7px;right:22px;width:14px;height:14px;background:var(--card-solid);border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg)}
+@keyframes p360pop{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.notif-head{display:flex!important;align-items:center;gap:12px;padding:16px 16px 12px!important;border-bottom:1px solid var(--border)}
+.notif-head h3{margin:0;font-size:1.05rem}
+.notif-head p{margin:2px 0 0;font-size:.8rem}
+.notif-head .modal-x{margin-left:auto}
+.notif-head-icon{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,#4c8dff,#8b5cf6);color:#fff}
+.notif-pop .modal-body{padding:14px 16px 16px!important;overflow:auto;flex:1}
+.notif-pop .commit-summary-v2>div{padding:10px}
+.notif-pop .commit-item{grid-template-columns:44px minmax(0,1fr) auto;padding:10px 12px;border-radius:14px;transition:border-color .15s,transform .15s}
+.notif-pop .commit-item:hover{border-color:color-mix(in srgb,var(--blue) 45%,var(--border))}
+.notif-pop .date-chip{width:44px;height:48px}
+@media (max-width:760px){
+  .popover-backdrop{display:grid!important;align-items:end}
+  .modal.notif-pop{position:relative;top:auto!important;right:auto!important;width:100%!important;max-height:88dvh!important;border-radius:22px 22px 0 0!important;animation:p360sheet .22s ease-out}
+  .modal.notif-pop::before{display:none}
+}
+@keyframes p360sheet{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- Tabela de movimentações ---------- */
+.data-table td{padding:12px 16px!important;vertical-align:middle}
+.data-table th{padding:12px 16px!important;font-size:.72rem!important}
+.data-table td.amount,.data-table td[data-col="amount"]{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+.data-table td[data-col="date"]{white-space:nowrap}
+.payment-source{white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+.row-actions{flex-wrap:nowrap!important;justify-content:flex-end}
+.transaction-row{transition:background .12s}
+.transaction-row:hover{background:rgba(255,255,255,.025)}
+.transaction-name strong{font-size:.92rem}
+.category-icon{border-radius:10px}
+
+/* ---------- Página da IA: cards do mesmo tamanho ---------- */
+.ai-layout{align-items:stretch!important}
+.ai-context{display:flex;flex-direction:column;gap:6px}
+.ai-learning-grid{grid-auto-rows:1fr}
+.ai-learning-grid div{display:flex;flex-direction:column;justify-content:center;min-height:78px}
+.ai-insights{grid-auto-rows:1fr}
+.ai-insight{min-height:72px;align-content:center}
+.ai-chat{display:flex;flex-direction:column;min-height:640px}
+.ai-chat .ai-messages{flex:1;height:auto!important;min-height:380px}
+.ai-chat-head{background:linear-gradient(90deg,rgba(76,141,255,.08),transparent)}
+.ai-bubble{border-radius:6px 18px 18px 18px!important;padding:14px 16px!important;font-size:.92rem!important;line-height:1.6!important}
+.ai-message.user .ai-bubble{border-radius:18px 6px 18px 18px!important}
+.ai-bubble h4{font-size:1rem!important}
+.ai-input-row textarea{border-radius:14px!important;font-size:.95rem}
+
+/* ---------- Celular ---------- */
+@media (max-width:960px){
+  .page{padding:18px 14px 30px}
+  .topbar .search{min-width:0;flex:1}
+  .main .topbar{grid-template-columns:minmax(0,1fr) 40px 40px!important}
+  .main .topbar .top-left .search{grid-column:1!important}
+  .main .topbar .top-actions>#hideBtn{grid-column:2!important}
+  .main .topbar .top-actions>#quickBtn{grid-column:3!important}
+  .page-header.has-period .period-bar{flex:1 1 100%;order:3}
+  .page-header.has-period .period-bar .month-nav{width:100%;justify-content:space-between}
+  .page-header.has-period .period-bar .month-nav-label{flex:1}
+  .ai-chat{min-height:0}
+}
+
+/* IA: coluna de contexto e chat com a mesma altura no computador; cada uma rola por dentro */
+@media (min-width:961px){
+  .ai-page .ai-layout>.card{height:calc(100dvh - 210px);min-height:560px;align-self:stretch}
+  .ai-page .ai-context{position:static!important;overflow:auto;scrollbar-width:thin}
+  .ai-page .ai-chat{min-height:0}
+  .ai-page .ai-chat .ai-messages{flex:1;min-height:0}
+}
+@media (min-width:961px){.ai-page .ai-toolbar{flex-wrap:nowrap!important;gap:8px}}
+.page-header.has-period{flex-direction:row!important;align-items:center!important}
+@media (max-width:960px){.page-header.has-period>div:first-child{flex:1 1 100%}.page-header.has-period .period-bar{width:100%}}
+
+/* ---------- Correções da auditoria em vários tamanhos de tela ---------- */
+/* Distribuição da renda: colunas nunca maiores que o card */
+.distribution-dashboard{grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))!important}
+.distribution-item{min-width:0}
+.distribution-item-top{flex-wrap:wrap;row-gap:2px}
+.distribution-item-top strong{white-space:nowrap}
+
+/* Contas bancárias: cards com largura mínima confortável e valores que cabem */
+.bank-cards{grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))!important;gap:16px}
+.bank-card{min-width:0}
+.bank-balance{font-size:clamp(1.4rem,2.2vw,1.9rem)!important;white-space:nowrap}
+.bank-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}
+.bank-stats>div{min-width:0}
+.bank-stats strong{font-size:.9rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+@media (max-width:420px){.bank-stats{grid-template-columns:1fr!important}}
+
+/* Orçamento: colunas flexíveis dentro do card */
+.budget-line{grid-template-columns:minmax(120px,1.1fr) minmax(110px,1.3fr) minmax(110px,130px) minmax(84px,110px)!important}
+.budget-line>*{min-width:0}
+@media (max-width:1100px){.budget-line{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 130px!important}}
+@media (max-width:760px){.budget-line{grid-template-columns:minmax(0,1fr) 128px!important}}
+
+/* Textos pequenos do cartão: nunca abaixo de 11px */
+.cc .cc-foot small{font-size:max(11px,2.8cqw)!important}
+.cc .cc-foot b{font-size:max(12px,4cqw)!important}
+
+/* Áreas de toque e textos auxiliares */
+.text-link{display:inline-flex;align-items:center;min-height:32px}
+#resetAIMemory,.text-btn{display:inline-flex;align-items:center;min-height:32px}
+.ai-disclaimer{font-size:.78rem!important}
+
+/* O atalho da IA não cobre o fim da página: espaço extra para rolar além dele */
+.page{padding-bottom:110px!important}
+@media (max-width:960px){.page{padding-bottom:150px!important}}
+
+/* Tema claro: cores com contraste legível (≥ 4,5:1) sobre fundo branco */
+[data-theme="light"]{--green:#0b8150;--red:#c62f3b}
+[data-theme="light"] .positive,[data-theme="light"] .amount.positive,[data-theme="light"] .amount.positive .money{color:#0b8150!important}
+[data-theme="light"] .negative,[data-theme="light"] .amount.negative,[data-theme="light"] .amount.negative .money{color:#c62f3b!important}
+[data-theme="light"] .payment-source.card-source{color:#5b36c9!important;background:rgba(91,54,201,.08)!important;border-color:rgba(91,54,201,.2)!important}
+[data-theme="light"] .danger-btn{color:#b4232f!important;border-color:rgba(180,35,47,.35)!important}
+[data-theme="light"] .text-btn,[data-theme="light"] .text-link:hover{color:#1d4ed8!important}
+[data-theme="light"] .badge{color:#0b6b43}
+[data-theme="light"] .badge.yellow{color:#8a5a00}
+[data-theme="light"] .badge.red{color:#b4232f}
+
+/* Ícones SVG nos lugares que ainda usavam símbolos de texto */
+.category-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:rgba(239,91,107,.12);color:#ef5b6b}
+.category-icon.is-income{background:rgba(34,192,138,.12);color:#22c08a}
+.insight-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(139,92,246,.14);color:#a78bfa;flex:0 0 34px}
+.insight-pro b{display:inline-flex;align-items:center;gap:6px}
+.insight-pro b .ico{color:var(--blue)}
+.sim-tab:not(.active){color:var(--text);opacity:.82}
+
+/* Contas: entradas / saídas / saldo do mês em lista, valores nunca cortados */
+.bank-stats{display:grid!important;grid-template-columns:1fr!important;gap:0!important;padding:4px 0!important;border:1px solid var(--border);border-radius:14px;background:var(--bg-2)}
+.bank-stats>div{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;padding:10px 14px!important;border:0!important;background:none!important;border-radius:0!important}
+.bank-stats>div+div{border-top:1px solid var(--border)!important}
+.bank-stats>div span{font-weight:600;font-size:.88rem}
+.bank-stats>div small{grid-column:1;grid-row:2;font-size:.74rem;color:var(--muted)}
+.bank-stats>div strong{grid-column:2;grid-row:1/3;font-size:.98rem!important;overflow:visible!important;text-overflow:clip!important;font-variant-numeric:tabular-nums}
+@media (max-width:420px){.bank-stats{grid-template-columns:1fr!important}}
+
+/* Investimentos: rosca e legenda lado a lado sem espremer os nomes */
+.investment-donut-layout{display:grid!important;grid-template-columns:minmax(150px,210px) minmax(150px,1fr)!important;gap:20px;align-items:center}
+.investment-donut{height:210px!important;max-width:210px;width:100%;margin:0 auto}
+.investment-legend{display:grid;gap:8px;min-width:0}
+.investment-legend>div{display:flex;justify-content:space-between;gap:10px;font-size:.9rem}
+.investment-legend span{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.investment-legend i{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+@media (max-width:1180px){.investment-donut-layout{grid-template-columns:1fr!important}}
+
+/* O atalho da IA some quando há janela, formulário ou menu aberto */
+body.modal-open #p360DashboardAI,body.mobile-sidebar-open #p360DashboardAI{display:none!important}

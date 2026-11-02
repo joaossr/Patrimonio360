@@ -1,5 +1,5 @@
 (() => {
-  const MOBILE_QUERY = '(max-width: 950px)';
+  const MOBILE_QUERY = '(max-width: 960px)';
   let overlay = null;
   let closeButton = null;
 

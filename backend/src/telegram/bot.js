@@ -1,11 +1,5 @@
 import crypto from 'node:crypto';
-import { analyzeFinancialState } from '../financial-engine/analyzer.js';
-import { calculateFinancialRisk } from '../financial-engine/risk-engine.js';
-import { buildFinancialProfile } from '../financial-engine/profile-engine.js';
-import { generateInsights } from '../financial-engine/insight-engine.js';
-import { neuralForecast } from '../ml/neural-engine.js';
-import { loadAIMemory, saveAIMemory, saveFinancialProfile, saveInsights } from '../memory/financial-memory.js';
-import { generateP360Response } from '../llm/p360-language-engine.js';
+import { P360Mind } from '../../../assets/js/ai/engine.js';
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const API = TOKEN ? `https://api.telegram.org/bot${TOKEN}` : '';
@@ -32,31 +26,17 @@ async function send(chatId, text, extra = {}) {
 }
 
 function escapeHtml(text){ return String(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function formatAIForTelegram(text){ let out=escapeHtml(text); out=out.replace(/\*\*(.+?)\*\*/gs,'<b>$1</b>'); out=out.replace(/`([^`]+)`/g,'<code>$1</code>'); return out; }
+function formatAIForTelegram(text){ let out=escapeHtml(text).replace(/^### (.*)$/gm,'<b>$1</b>'); out=out.replace(/\*\*(.+?)\*\*/gs,'<b>$1</b>'); out=out.replace(/`([^`]+)`/g,'<code>$1</code>'); return out; }
+// Responde com a IA própria do Patrimônio 360 (a mesma do site), usando o histórico e a
+// memória de aprendizado do usuário (state.aiModel). Nenhuma API externa é chamada.
 async function answerWithP360(db, chatId, uid, question, state){
-    const month=state.selectedMonth || new Date().toISOString().slice(0,7);
-    const analysis=analyzeFinancialState(state,month);
-    const risk=calculateFinancialRisk(analysis);
-    const neural=await neuralForecast(state,month);
-    const profile=buildFinancialProfile(state);
-    const stored=await loadAIMemory(db,uid);
-    const memory={...stored,recent:Array.isArray(stored.recent)?stored.recent.slice(-20):[]};
-    const insights=generateInsights(analysis,risk,neural,profile);
-    const answer=generateP360Response({question,analysis,risk,neural,memory,profile,insights,state});
-    const recent=[...memory.recent,{role:'user',content:question},{role:'assistant',content:answer}].slice(-20);
-    const previousUser=[...memory.recent].reverse().find(x=>x.role==='user')?.content || '';
-    await Promise.all([
-        saveAIMemory(db,uid,{recent,facts:memory.facts||[],context:{lastQuestion:question,previousQuestion:previousUser,channel:'telegram',updatedAt:new Date().toISOString()}}),
-        saveFinancialProfile(db,uid,profile),
-        saveInsights(db,uid,insights)
-    ]);
-    // Mostra o indicador de digitação sem atrasar a resposta.
     await tg('sendChatAction',{chat_id:chatId,action:'typing'}).catch(()=>{});
-    const formatted=`✦\n${formatAIForTelegram(answer)}`;
+    const mind=new P360Mind({ state:{...state, selectedMonth:new Date().toISOString().slice(0,7)}, memory:state.aiModel });
+    const reply=mind.ask(question);
+    await db.doc(`users/${uid}/app/state`).set({ state:{ aiModel:mind.memory }, updatedAt:new Date() }, { merge:true }).catch(e=>console.error('P360 Telegram memória:',e.message));
+    const formatted=`✦\n${formatAIForTelegram(reply?.text||'Não entendi. Tente: "quanto posso gastar?"')}`;
     // Telegram limita mensagens a 4096 caracteres; divide respostas longas sem perder conteúdo.
-    const chunks=[];
-    for(let i=0;i<formatted.length;i+=3900) chunks.push(formatted.slice(i,i+3900));
-    for(const chunk of chunks) await send(chatId,chunk);
+    for(let i=0;i<formatted.length;i+=3900) await send(chatId,formatted.slice(i,i+3900));
     return true;
 }
 function looksLikeFinancialQuestion(text){
@@ -154,7 +134,20 @@ async function saveState(db, uid, state) {
     await db.doc(`users/${uid}/app/state`).set({ state, updatedAt:new Date() }, { merge:true });
 }
 
+// Limita tentativas de /vincular por chat para impedir força bruta dos códigos.
+const linkAttempts = new Map();
+function tooManyLinkAttempts(chatId) {
+    const now = Date.now();
+    const entry = linkAttempts.get(chatId);
+    if (!entry || entry.reset < now) { linkAttempts.set(chatId, { count:1, reset:now + 15*60*1000 }); return false; }
+    entry.count++;
+    return entry.count > 5;
+}
+
 async function linkChat(db, chatId, code) {
+    if (tooManyLinkAttempts(String(chatId))) return { ok:false, message:'Muitas tentativas. Aguarde 15 minutos e gere um novo código.' };
+    code = String(code || '').trim().toUpperCase();
+    if (!/^P360-[0-9A-F]{6,10}$/.test(code)) return { ok:false, message:'Código inválido. Use o formato /vincular P360-XXXXXXXXXX.' };
     const ref = db.doc(`telegramLinkCodes/${code}`);
     const snap = await ref.get();
     if (!snap.exists) return { ok:false, message:'Código inválido ou expirado.' };
@@ -167,7 +160,7 @@ async function linkChat(db, chatId, code) {
 
 export async function createTelegramLinkCode(db, uid) {
     if (!TOKEN) throw new Error('TELEGRAM_BOT_TOKEN não configurado.');
-    const code = `P360-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const code = `P360-${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
     await db.collection('telegramLinkCodes').doc(code).set({ uid, createdAt:new Date(), expiresAt:Date.now()+LINK_TTL_MS });
     return { code, expiresInSeconds: LINK_TTL_MS/1000, botUsername: process.env.TELEGRAM_BOT_USERNAME || 'Patrimonio360Bot' };
 }
@@ -201,7 +194,7 @@ async function sendMainMenu(chatId, linked = true, firstTime = false) {
         ? `👋 <b>${firstTime ? 'Bem-vindo ao' : 'Olá novamente!'} Patrimônio 360</b>\n\nSou seu assistente financeiro pessoal pelo Telegram.\n\nPosso registrar e consultar suas informações financeiras usando os mesmos dados do seu Patrimônio 360.`
         : `👋 <b>Olá! Eu sou o Patrimônio 360</b>\n\nSou seu assistente financeiro pessoal pelo Telegram.\n\nPara começar, conecte este Telegram à sua conta do Patrimônio 360.`;
     if (!linked) {
-        return send(chatId, `${intro}\n\nAbra <b>Configurações → Telegram</b> no sistema, gere um código e envie:\n\n<code>/vincular P360-XXXXXX</code>`, {
+        return send(chatId, `${intro}\n\nAbra <b>Configurações → Telegram</b> no sistema, gere um código e envie:\n\n<code>/vincular P360-XXXXXXXXXX</code>`, {
             reply_markup: {
                 inline_keyboard: [[{ text:'🔗 Como conectar', callback_data:'menu_link_help' }]]
             }
@@ -216,7 +209,7 @@ async function handleMenuCallback(db, chatId, data, loadState) {
     const state = await loadState(link.uid);
 
     if (data === 'menu_link_help') {
-        return send(chatId, '🔗 <b>Como conectar</b>\n\n1. Entre no Patrimônio 360.\n2. Vá em <b>Configurações → Telegram</b>.\n3. Clique em <b>Conectar Telegram</b>.\n4. Copie o código gerado.\n5. Envie aqui: <code>/vincular P360-XXXXXX</code>.');
+        return send(chatId, '🔗 <b>Como conectar</b>\n\n1. Entre no Patrimônio 360.\n2. Vá em <b>Configurações → Telegram</b>.\n3. Clique em <b>Conectar Telegram</b>.\n4. Copie o código gerado.\n5. Envie aqui: <code>/vincular P360-XXXXXXXXXX</code>.');
     }
     if (data === 'menu_expense') return send(chatId, '💸 <b>Registrar despesa</b>\n\nEnvie algo como:\n<code>gastei 45 no mercado</code>\n<code>paguei 120 de internet</code>\n<code>gastei 80 no Nubank com gasolina</code>\n\nEu vou interpretar os dados e pedir sua confirmação antes de salvar.');
     if (data === 'menu_income') return send(chatId, '💰 <b>Registrar receita</b>\n\nEnvie algo como:\n<code>recebi 1950 de salário</code>\n<code>entrou 500 de freelance</code>\n\nEu vou interpretar os dados e pedir sua confirmação antes de salvar.');

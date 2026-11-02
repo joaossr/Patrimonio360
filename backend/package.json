@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "doctor": "node src/doctor.js"
+    "doctor": "node src/doctor.js",
+    "test:ai": "node --test \"test/**/*.test.js\"",
+    "test:ai:all": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0"
-  }
+  },
+  "description": "Backend do Patrimônio 360 (Telegram e frontend). A IA própria (P360 Mind) fica em assets/js/ai e roda no navegador."
 }

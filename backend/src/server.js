@@ -7,24 +7,90 @@ import cors from 'cors';
 import { cert, initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { analyzeFinancialState } from './financial-engine/analyzer.js';
-import { calculateFinancialRisk } from './financial-engine/risk-engine.js';
-import { buildFinancialProfile } from './financial-engine/profile-engine.js';
-import { generateInsights } from './financial-engine/insight-engine.js';
-import { loadAIMemory, saveAIMemory, saveFinancialProfile, saveInsights, mergeMemory } from './memory/financial-memory.js';
-import { generateExternalResponse, externalLLMStatus } from './llm/external-llm.js';
 import { createTelegramLinkCode } from './telegram/link-code.js';
+import { startTelegramBot } from './telegram/bot.js';
 
 let firebaseReady=false;let firebaseInitError=null;
 function resolveServiceAccountPath(){const configured=process.env.GOOGLE_APPLICATION_CREDENTIALS||'./service-account.json';return path.isAbsolute(configured)?configured:path.resolve(process.cwd(),configured);}
 try{if(!getApps().length){const serviceAccountJson=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;let credential;if(serviceAccountJson)credential=cert(JSON.parse(serviceAccountJson));else{const serviceAccountPath=resolveServiceAccountPath();if(!fs.existsSync(serviceAccountPath))throw new Error(`Credencial Firebase nao encontrada em: ${serviceAccountPath}`);credential=cert(JSON.parse(fs.readFileSync(serviceAccountPath,'utf8')));}initializeApp({credential,projectId:process.env.FIREBASE_PROJECT_ID});}firebaseReady=true;}catch(error){firebaseInitError=error;console.error('P360 Firebase nao inicializou:',error.message);}
-const db=firebaseReady?getFirestore():null;const app=express();const __filename=fileURLToPath(import.meta.url);const __dirname=path.dirname(__filename);const PROJECT_ROOT=path.resolve(__dirname,'../..');app.use(cors({origin:true}));app.use(express.json({limit:'1mb'}));app.use(express.static(PROJECT_ROOT,{extensions:['html'],index:'index.html'}));
-async function authUser(req,res,next){if(!firebaseReady)return res.status(503).json({error:'Firebase Admin não configurado.'});try{const header=req.headers.authorization||'';if(!header.startsWith('Bearer '))return res.status(401).json({error:'Autenticação necessária.'});req.user=await getAuth().verifyIdToken(header.slice(7),true);next();}catch{return res.status(401).json({error:'Sessão inválida.'});}}
+const db=firebaseReady?getFirestore():null;const app=express();const __filename=fileURLToPath(import.meta.url);const __dirname=path.dirname(__filename);const PROJECT_ROOT=path.resolve(__dirname,'../..');
+
+// ---------------------------------------------------------------------------
+// Segurança
+// ---------------------------------------------------------------------------
+app.disable('x-powered-by');
+app.set('trust proxy',1);
+
+// Somente origens conhecidas podem chamar a API com credenciais do usuário.
+const ALLOWED_ORIGINS=new Set([
+  'https://patrimonio360-e4190.web.app',
+  'https://patrimonio360-e4190.firebaseapp.com',
+  'https://patrimonio360-hqka.onrender.com',
+  ...String(process.env.ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean)
+]);
+const isLocalOrigin=origin=>/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+app.use(cors({
+  origin(origin,callback){
+    // Requisições sem Origin (curl, health checks, mesma origem em GET) não carregam cookies nem tokens de terceiros.
+    if(!origin||ALLOWED_ORIGINS.has(origin)||(process.env.NODE_ENV!=='production'&&isLocalOrigin(origin)))return callback(null,true);
+    return callback(null,false);
+  },
+  methods:['GET','POST'],
+  allowedHeaders:['Content-Type','Authorization'],
+  maxAge:600
+}));
+
+app.use((req,res,next)=>{
+  res.setHeader('X-Content-Type-Options','nosniff');
+  res.setHeader('X-Frame-Options','DENY');
+  res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=()');
+  res.setHeader('Cross-Origin-Opener-Policy','same-origin-allow-popups');
+  if(req.secure)res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
+  next();
+});
+
+app.use(express.json({limit:'256kb'}));
+
+// O backend também serve o frontend, mas NUNCA o próprio código, credenciais,
+// documentação interna ou arquivos ocultos (ex.: backend/service-account.json, .env, .git).
+const BLOCKED_STATIC=/(^|\/)(backend|node_modules|\.git|\.github|\.firebase)(\/|$)|(^|\/)\.[^/]*|\.(md|bat|ps1|patch|env|log|map)$|(^|\/)(firebase\.json|\.firebaserc|package(-lock)?\.json|service-account[^/]*\.json|firestore\.(rules|indexes\.json))$/i;
+app.use((req,res,next)=>{
+  let pathname='';
+  try{pathname=decodeURIComponent(req.path);}catch{return res.status(400).end();}
+  if(BLOCKED_STATIC.test(pathname.replace(/^\/+/,'')))return res.status(404).end();
+  next();
+});
+app.use(express.static(PROJECT_ROOT,{extensions:['html'],index:'index.html',dotfiles:'deny'}));
+
+// Limite simples de requisições em memória (por usuário autenticado ou IP).
+function rateLimit({windowMs,max,keyPrefix}){
+  const hits=new Map();
+  setInterval(()=>{const now=Date.now();for(const [k,v] of hits)if(v.reset<now)hits.delete(k);},windowMs).unref();
+  return (req,res,next)=>{
+    const key=`${keyPrefix}:${req.user?.uid||req.ip}`,now=Date.now();
+    let entry=hits.get(key);
+    if(!entry||entry.reset<now){entry={count:0,reset:now+windowMs};hits.set(key,entry);}
+    entry.count++;
+    res.setHeader('RateLimit-Remaining',String(Math.max(0,max-entry.count)));
+    if(entry.count>max){res.setHeader('Retry-After',String(Math.ceil((entry.reset-now)/1000)));return res.status(429).json({error:'Muitas requisições. Aguarde alguns instantes e tente novamente.'});}
+    next();
+  };
+}
+const linkLimiter=rateLimit({windowMs:10*60_000,max:5,keyPrefix:'tg'});
+const authFailLimiter=rateLimit({windowMs:60_000,max:30,keyPrefix:'auth'});
+
+async function authUser(req,res,next){if(!firebaseReady)return res.status(503).json({error:'Firebase Admin não configurado.'});try{const header=req.headers.authorization||'';if(!header.startsWith('Bearer '))return res.status(401).json({error:'Autenticação necessária.'});req.user=await getAuth().verifyIdToken(header.slice(7),true);next();}catch{return authFailLimiter(req,res,()=>res.status(401).json({error:'Sessão inválida.'}));}}
 async function loadState(uid){const snapshot=await db.doc(`users/${uid}/app/state`).get();return snapshot.exists?snapshot.data().state||{}:{};}
-function backendStatus(){const llm=externalLLMStatus();return{ok:firebaseReady&&llm.enabled&&llm.configured,service:'P360 Intelligence',backend:{port:Number(process.env.PORT||8787)},firebase:{ready:firebaseReady,projectId:process.env.FIREBASE_PROJECT_ID||null,error:firebaseInitError?.message||null},telegram:{configured:Boolean(process.env.TELEGRAM_BOT_TOKEN),username:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot',polling:false},provider:'deepseek',externalLLM:llm,financialEngine:'v2',memoryEngine:'v2',localAI:false};}
-app.get('/api/config',(req,res)=>res.json({ok:true,telegram:!!process.env.TELEGRAM_BOT_TOKEN,botUsername:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot',backendOrigin:`${req.protocol}://${req.get('host')}`,ai:externalLLMStatus()}));
+function backendStatus(){return{ok:firebaseReady,service:'Patrimônio 360',firebase:{ready:firebaseReady},telegram:{configured:Boolean(process.env.TELEGRAM_BOT_TOKEN),polling:process.env.TELEGRAM_POLLING==='true',username:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot'},ai:{provider:'p360-mind',runsIn:'browser',externalApi:false}};}
+if(firebaseInitError)console.error('Detalhe da falha do Firebase (não exposto publicamente):',firebaseInitError.message);
+app.get('/api/config',(req,res)=>res.json({ok:true,telegram:!!process.env.TELEGRAM_BOT_TOKEN,botUsername:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot',ai:{provider:'p360-mind',externalApi:false}}));
 app.get('/api/status',(req,res)=>{const status=backendStatus();res.status(status.ok?200:503).json(status);});
 app.get('/health',(req,res)=>{const status=backendStatus();res.status(status.ok?200:503).json(status);});
-app.post('/api/telegram/link-code',authUser,async(req,res)=>{try{res.json(await createTelegramLinkCode(db,req.user.uid));}catch(error){console.error('Telegram link-code error:',error.message);res.status(500).json({error:'Não foi possível gerar o código do Telegram.'});}});
-app.post('/api/ai/chat',authUser,async(req,res)=>{try{const message=String(req.body.message||'').trim().slice(0,4000);if(!message)return res.status(400).json({error:'Mensagem vazia.'});const state=await loadState(req.user.uid);const currentMonth=String(req.body.selectedMonth||state.selectedMonth||new Date().toISOString().slice(0,7));const analysis=analyzeFinancialState(state,currentMonth);const risk=calculateFinancialRisk(analysis);const profile=buildFinancialProfile(state);const storedMemory=await loadAIMemory(db,req.user.uid);const clientRecent=Array.isArray(req.body.recent)?req.body.recent.slice(-20):[];const memory=mergeMemory(storedMemory,{recent:clientRecent.length?clientRecent:(storedMemory.recent||[])});const insights=generateInsights(analysis,risk,{},profile);const recent=[...(memory.recent||[]).slice(-18),{role:'user',content:message}];const answer=await generateExternalResponse({question:message,analysis,risk,profile,insights,memory:{...memory,recent},financialContext:{currentMonth},state});const enriched=mergeMemory(memory,{recent:[...recent,{role:'assistant',content:answer}],context:{...(memory.context||{}),lastQuestion:message,lastMonth:currentMonth,updatedAt:new Date().toISOString()},goals:(state.goals||[]).map(g=>({id:g.id,name:g.name,target:g.target,date:g.date,source:'official-state'}))});await Promise.all([saveAIMemory(db,req.user.uid,enriched),saveFinancialProfile(db,req.user.uid,profile),saveInsights(db,req.user.uid,insights)]);res.json({answer,intent:'deepseek',month:currentMonth,engine:{version:'deepseek-only',analysis,risk,profile,insights,memory:{recentCount:recent.length,facts:enriched.facts?.length||0,goals:enriched.goals?.length||0},externalLLM:externalLLMStatus(),localAI:false}});}catch(error){console.error('P360 DeepSeek chat error:',error.message);const status=externalLLMStatus();const message=String(error.message||'');let code=502;if(message.includes('DEEPSEEK_API_KEY'))code=503;res.status(code).json({error:status.configured?'Não foi possível consultar a IA no momento. Tente novamente em alguns instantes.':'DeepSeek não está configurado no backend.',provider:'deepseek',localAI:false});}});
-app.listen(Number(process.env.PORT||8787),()=>console.log(`P360 DeepSeek backend em http://localhost:${process.env.PORT||8787}`));
+app.post('/api/telegram/link-code',authUser,linkLimiter,async(req,res)=>{try{res.json(await createTelegramLinkCode(db,req.user.uid));}catch(error){console.error('Telegram link-code error:',error.message);res.status(500).json({error:'Não foi possível gerar o código do Telegram.'});}});
+// A IA (P360 Mind) roda no navegador do usuário; não existe mais rota de chat no servidor.
+app.use('/api',(req,res)=>res.status(404).json({error:'Rota não encontrada.'}));
+app.use((error,req,res,next)=>{if(error?.type==='entity.too.large')return res.status(413).json({error:'Requisição muito grande.'});if(error instanceof SyntaxError)return res.status(400).json({error:'JSON inválido.'});console.error('Erro inesperado:',error?.message);res.status(500).json({error:'Erro interno.'});});
+app.listen(Number(process.env.PORT||8787),()=>console.log(`P360 backend em http://localhost:${process.env.PORT||8787}`));
+// Bot do Telegram (opcional): TELEGRAM_POLLING=true e TELEGRAM_BOT_TOKEN no .env.
+if(firebaseReady&&process.env.TELEGRAM_POLLING==='true')startTelegramBot({db,loadState});
