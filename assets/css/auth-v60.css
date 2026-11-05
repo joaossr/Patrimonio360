@@ -13,9 +13,9 @@
   /* Fundo: manchas de cor que se movem devagar + grade que desliza */
   .auth-show::after{content:"";position:absolute;inset:-25%;z-index:0;pointer-events:none;
     background:
-      radial-gradient(38% 34% at 22% 28%,rgba(63,140,255,.30),transparent 70%),
-      radial-gradient(34% 32% at 78% 24%,rgba(140,88,232,.28),transparent 70%),
-      radial-gradient(40% 36% at 62% 82%,rgba(189,47,114,.22),transparent 70%),
+      radial-gradient(38% 34% at 22% 28%,rgba(63,140,255,.38),transparent 70%),
+      radial-gradient(34% 32% at 78% 24%,rgba(140,88,232,.34),transparent 70%),
+      radial-gradient(40% 36% at 62% 82%,rgba(189,47,114,.28),transparent 70%),
       radial-gradient(30% 28% at 14% 78%,rgba(15,105,118,.28),transparent 70%);
     filter:blur(10px);animation:authBlobs 26s ease-in-out infinite alternate;will-change:transform}
   .auth-show::before{animation:authGrid 40s linear infinite;z-index:1}
@@ -44,7 +44,12 @@
 @keyframes authGrid{to{background-position:44px 44px,44px 44px}}
 @keyframes authGlowSide{from{transform:translate3d(0,0,0)}to{transform:translate3d(-60px,80px,0) scale(1.15)}}
 
-/* Respeita quem prefere menos movimento */
-@media (prefers-reduced-motion:reduce){
-  .auth-brand img,.auth-show::after,.auth-show::before,.auth-main::before{animation:none!important}
+/* Quem prefere menos movimento: sem deslocamento (flutuar, girar, deslizar), mas mantém brilho e "respiração"
+   suaves (só mudam luz e opacidade, nada se move). Sobrescreve a regra geral do auth-v52.css. */
+@keyframes authBreath{from{opacity:.5}to{opacity:1}}
+@media (min-width:961px) and (prefers-reduced-motion:reduce){
+  .auth-brand img{animation:authLogoGlow 4.5s ease-in-out infinite!important;transform:none!important}
+  .auth-show::after{animation:authBreath 8s ease-in-out infinite alternate!important;transform:none!important}
+  .auth-main::before{animation:authBreath 11s ease-in-out infinite alternate!important;transform:none!important}
+  .auth-show::before{animation:none!important}
 }
