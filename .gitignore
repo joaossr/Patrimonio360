@@ -26,3 +26,5 @@ Thumbs.db
 service-account*.json
 firebase-adminsdk*.json
 *-service-account.json
+# Cache local do Firebase CLI
+.firebase/

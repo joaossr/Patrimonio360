@@ -36,10 +36,13 @@ const SAVE_DELAY=600;
 let timer=null,pending=null,listeners={onError:null,onSaved:null};
 export function onCloudSave(handlers){ listeners={...listeners,...handlers}; }
 
+const MAX_DOC_BYTES=900*1024; // o Firestore recusa documentos acima de 1 MiB
 async function flush(){
   if(!pending)return;
   const {uid,state}=pending; pending=null; clearTimeout(timer); timer=null;
   try{
+    const bytes=new Blob([JSON.stringify(state)]).size;
+    if(bytes>MAX_DOC_BYTES)throw new Error(`Seus dados ocupam ${(bytes/1024).toFixed(0)} KB, perto do limite da nuvem (1 MB). Exporte um backup e apague movimentações muito antigas.`);
     await setDoc(doc(db,'users',uid,'app','state'),{state,updatedAt:serverTimestamp()},{merge:true});
     listeners.onSaved?.();
   }catch(error){

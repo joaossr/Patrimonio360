@@ -59,17 +59,24 @@ function parseAmount(text) {
     return 0;
 }
 
+// Datas no horário de Brasília (o servidor roda em UTC: depois das 21h "hoje" já seria o dia seguinte).
+function brDate(offsetDays = 0) {
+    const d = new Date(Date.now() - 3 * 3600e3 + offsetDays * 864e5);
+    return d.toISOString().slice(0,10);
+}
 function parseDate(text) {
     const q = norm(text);
-    const now = new Date();
-    if (q.includes('ontem')) { now.setDate(now.getDate()-1); return now.toISOString().slice(0,10); }
-    if (q.includes('anteontem')) { now.setDate(now.getDate()-2); return now.toISOString().slice(0,10); }
-    const m = String(text).match(/\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}))?\b/);
+    if (q.includes('anteontem')) return brDate(-2);
+    if (q.includes('ontem')) return brDate(-1);
+    const m = String(text).match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?\b/);
     if (m) {
-        const y = m[3] || String(now.getFullYear());
-        return `${y}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+        const day = Number(m[1]), month = Number(m[2]), year = Number(m[3] || brDate().slice(0,4));
+        const real = new Date(Date.UTC(year, month - 1, day));
+        // Só aceita datas que existem (ex.: 31/02 ou 45/13 voltam para hoje).
+        if (real.getUTCFullYear() === year && real.getUTCMonth() === month - 1 && real.getUTCDate() === day)
+            return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     }
-    return new Date().toISOString().slice(0,10);
+    return brDate();
 }
 
 function classify(text) {

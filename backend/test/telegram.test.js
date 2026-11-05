@@ -125,3 +125,13 @@ test('conta não vinculada só recebe orientação para conectar', async () => {
   assert.match(t.last().text, /Configurações/);
   assert.match(t.last().text, /vincular/);
 });
+
+test('datas dos lançamentos: ontem, anteontem e datas inválidas (horário de Brasília)', async () => {
+  const br = n => new Date(Date.now() - 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const pendingDate = async text => { const t = setup(); await t.say(text); return t.docs.get('telegramPending/42')?.pending?.date; };
+  assert.equal(await pendingDate('gastei 30 de uber ontem'), br(-1));
+  assert.equal(await pendingDate('gastei 30 de uber anteontem'), br(-2), 'anteontem não pode virar ontem');
+  assert.equal(await pendingDate('gastei 30 de uber'), br(0));
+  assert.equal(await pendingDate('gastei 30 de uber dia 31/02'), br(0), 'data inexistente volta para hoje');
+  assert.equal(await pendingDate('gastei 30 de uber dia 05/03/2026'), '2026-03-05');
+});

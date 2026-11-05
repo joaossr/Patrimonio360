@@ -5,6 +5,9 @@
 export const PALETTE = ['#4c8dff', '#8b5cf6', '#22c08a', '#f5a524', '#ef5b6b', '#14b8c4', '#e05ab8', '#7c8cff'];
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 export const money = v => brl.format(Number(v || 0));
+// Rótulos vêm dos dados do usuário (nomes de categorias): sempre escapados antes de ir para o HTML do tooltip.
+const esc = v => String(v ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+const cssColor = c => /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d\s.,%/]+\)|var\(--[\w-]+\))$/i.test(String(c || '').trim()) ? String(c).trim() : '#6c4cf5';
 export function shortMoney(v) {
   const n = Number(v || 0), a = Math.abs(n), s = n < 0 ? '-' : '';
   if (a >= 1e6) return `${s}R$ ${(a / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
@@ -202,7 +205,7 @@ export function donutChart(canvas, { items = [], center, centerLabel = 'Total', 
   ctx.fillStyle = t.text; ctx.font = `800 ${Math.max(13, Math.min(18, r / 5))}px ${t.font}`; ctx.fillText(center ?? shortMoney(total), cx, cy + 9);
   canvas._segments = segs;
   if (tooltip) interactive(canvas, (mx, my) => {
-    const s = segmentAt(canvas, mx, my); return s ? `<strong>${s.label}</strong><span><i style="background:${s.color}"></i>${money(s.value)} · ${(s.value / total * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</span>` : null;
+    const s = segmentAt(canvas, mx, my); return s ? `<strong>${esc(s.label)}</strong><span><i style="background:${cssColor(s.color)}"></i>${money(s.value)} · ${(s.value / total * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</span>` : null;
   });
   return segs;
 }
@@ -236,6 +239,6 @@ export function progressBars(canvas, { items = [], empty } = {}) {
   });
   interactive(canvas, (mx, my) => {
     const k = Math.floor((my - 4) / ((h - 8) / items.length)), it = items[k];
-    return it ? `<strong>${it.label}</strong><span>Gasto: ${money(it.value)}</span>${it.limit ? `<span>Limite: ${money(it.limit)} (${Math.round(it.value / it.limit * 100)}%)</span>` : '<span>Sem limite definido</span>'}` : null;
+    return it ? `<strong>${esc(it.label)}</strong><span>Gasto: ${money(it.value)}</span>${it.limit ? `<span>Limite: ${money(it.limit)} (${Math.round(it.value / it.limit * 100)}%)</span>` : '<span>Sem limite definido</span>'}` : null;
   });
 }
