@@ -1,26 +1,27 @@
 {
+  "id": "./",
   "name": "Patrimônio 360 — Gestão Financeira",
   "short_name": "Patrimônio 360",
   "description": "Controle receitas, despesas, cartões, metas e investimentos em um só lugar.",
   "lang": "pt-BR",
-  "start_url": "index.html",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#0c0f12",
   "theme_color": "#111315",
+  "categories": ["finance", "productivity"],
   "icons": [
-    {
-      "src": "assets/images/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/images/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Movimentações", "short_name": "Movimentos", "url": "./?source=shortcut#/movimentacoes", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Orçamento", "short_name": "Orçamento", "url": "./?source=shortcut#/orcamento", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Contas e cartões", "short_name": "Contas", "url": "./?source=shortcut#/contas", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] }
   ]
 }

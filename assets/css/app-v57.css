@@ -1,0 +1,157 @@
+/* ==========================================================================
+   Patrimônio 360 v57 — correções do print + app instalável.
+   1) Modais com formulário: cabeçalho e rodapé fixos, só o miolo rola
+      (antes o rodapé ficava transparente/sobreposto aos campos).
+   2) Filtros de movimentações (categoria, origem conta/cartão, chips).
+   3) Insights da IA resumidos no celular.
+   4) Rodapé do menu lateral e abas das notificações no celular.
+   5) Ajustes de "app": área segura, toque, rolagem, modo instalado.
+   ========================================================================== */
+
+/* ---------- 1) Modais ---------- */
+.modal:has(.modal-actions):not(.confirm-modal):not(.np-panel):not(.drawer):not(.notif-pop){
+  display:flex!important;flex-direction:column;overflow:hidden!important;
+}
+.modal:has(.modal-actions):not(.confirm-modal):not(.np-panel):not(.drawer):not(.notif-pop)>form{
+  display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin:0;
+}
+.modal:has(.modal-actions):not(.confirm-modal):not(.np-panel):not(.drawer):not(.notif-pop) .modal-body{
+  flex:1 1 auto;min-height:0;max-height:none!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+}
+.modal:has(.modal-actions) .modal-head{flex:none}
+.modal .modal-actions{
+  flex:none;position:static!important;z-index:auto;background:var(--card-solid);border-top:1px solid var(--border);
+}
+.transaction-editor-modal .modal-actions{background:var(--card-solid)!important}
+
+@media (max-width:760px){
+  .modal .modal-actions{
+    display:grid!important;grid-template-columns:1fr 1fr;gap:8px;flex-direction:row!important;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important;
+  }
+  .modal .modal-actions>*{width:100%!important;min-height:46px;flex:none!important;margin:0!important;order:0}
+  .modal .modal-actions>:only-child{grid-column:1/-1}
+  .modal .modal-actions .danger-btn{grid-column:1/-1;order:3;min-height:42px}
+  .modal-backdrop{align-items:flex-end!important}
+  .modal:not(.confirm-modal):not(.np-panel){
+    max-height:calc(100dvh - 24px - env(safe-area-inset-top))!important;border-radius:22px 22px 0 0!important;
+  }
+  .modal .modal-body{padding-left:16px;padding-right:16px}
+  .modal .form-grid{grid-template-columns:1fr 1fr!important;gap:12px}
+  .modal .form-grid .field.full,.modal .form-grid .full{grid-column:1/-1}
+}
+@media (max-width:420px){
+  .modal .form-grid{grid-template-columns:1fr!important}
+}
+
+/* ---------- 2) Filtros de movimentações ---------- */
+.filter-card .filter-primary{display:flex!important;gap:10px;align-items:center}
+.filter-card .filter-primary .input{flex:1 1 auto;min-width:0}
+.filter-card .filter-toggle{flex:none;white-space:nowrap}
+.origin-seg{display:flex;gap:6px;margin-top:12px;padding:4px;border:1px solid var(--border);border-radius:14px;background:var(--bg-2);width:max-content;max-width:100%}
+.origin-seg button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:600 .84rem Inter,system-ui,sans-serif;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.origin-seg button:hover{color:var(--text)}
+.origin-seg button.active{background:var(--gradient);color:#fff;box-shadow:0 6px 16px rgba(76,120,255,.25)}
+.origin-seg button:focus-visible{outline:2px solid #3f8cff;outline-offset:1px}
+.filter-chip{border:1px solid rgba(76,150,255,.22);cursor:pointer;font:600 .78rem Inter,system-ui,sans-serif}
+.filter-chip:hover{border-color:rgba(76,150,255,.55)}
+.filter-grid{grid-template-columns:repeat(4,minmax(150px,1fr))!important}
+.filter-grid label.date-only[hidden]{display:none}
+.filter-actions{display:flex;justify-content:flex-end;margin-top:12px}
+@media (max-width:1100px){.filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media (max-width:760px){
+  .filter-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .origin-seg{width:100%}
+  .origin-seg button{flex:1 1 0;padding:9px 6px;font-size:.82rem}
+  .filter-card .filter-primary{display:grid!important;grid-template-columns:minmax(0,1fr) auto}
+  .filter-actions .secondary-btn{width:100%}
+  .active-filter-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-2px;padding-bottom:2px}
+  .active-filter-chips::-webkit-scrollbar{display:none}
+  .filter-chip{flex:none}
+}
+@media (max-width:360px){.filter-grid{grid-template-columns:1fr!important}}
+
+/* ---------- 3) Insights da IA: resumo no celular ---------- */
+.ai-strip-item .ai-short{display:none}
+@media (max-width:760px){
+  .dashboard-page .ai-strip{grid-template-columns:minmax(0,1fr) auto!important;align-items:center;gap:8px 10px!important;padding:12px!important;margin-bottom:14px}
+  .dashboard-page .ai-strip-head{gap:10px}
+  .dashboard-page .ai-strip-head strong{font-size:.92rem}
+  .dashboard-page .ai-strip-head small{font-size:.76rem}
+  .dashboard-page .ai-strip-cta{padding:8px 12px;font-size:.8rem;border-radius:11px}
+  .dashboard-page .ai-strip-items{
+    grid-column:1/-1;grid-row:2;display:grid!important;grid-auto-flow:row!important;grid-auto-columns:auto!important;grid-template-columns:1fr!important;
+    gap:6px!important;overflow:visible!important;scroll-snap-type:none!important;margin:0!important;padding:0!important;
+  }
+  .dashboard-page .ai-strip-item{padding:8px 10px!important;border-radius:11px;grid-template-columns:8px minmax(0,1fr)}
+  .dashboard-page .ai-strip-item:nth-child(n+3){display:none}
+  .dashboard-page .ai-strip-item .ai-full{display:none}
+  .dashboard-page .ai-strip-item .ai-short{display:block;font-size:.82rem;line-height:1.3;font-weight:600;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+}
+
+/* ---------- 4) Menu lateral (rodapé) e notificações no celular ---------- */
+@media (max-width:960px){
+  .sidebar .rail-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;flex-direction:row!important}
+  .sidebar .rail-actions .nav-item,
+  .sidebar .rail-actions .rail-btn{
+    width:100%!important;min-width:0!important;height:auto!important;min-height:64px!important;margin:0!important;
+    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;
+    padding:8px 2px!important;text-align:center;font-size:.68rem!important;line-height:1.15;letter-spacing:0!important;
+  }
+  .rail-layout .sidebar .rail-actions #themeBtn{
+    width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:64px!important;max-height:none!important;
+    flex:none!important;display:flex!important;
+  }
+  .sidebar .rail-actions .nav-text{display:block!important;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sidebar .rail-actions .nav-icon{width:auto!important;height:auto!important;flex:none}
+  .sidebar .rail-actions .rail-logout{color:#ef5b6b}
+}
+@media (max-width:760px){
+  .np-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px!important;overflow:visible!important;margin:10px 10px 4px!important}
+  .np-tab{flex:none!important;min-width:0;padding:8px 2px!important;gap:3px!important;font-size:.7rem!important}
+  .np-tab b{min-width:16px!important;height:16px!important;padding:0 4px!important;font-size:.62rem!important}
+  .np-head{padding:20px 14px 12px!important}
+  .np-hero{margin-top:10px!important;padding:10px 12px!important;border-radius:14px}
+  .np-hero strong{font-size:1.18rem!important}
+  .np-pills span{padding:3px 8px;font-size:.72rem}
+  .np-item{padding:10px 4px!important}
+  .np-text small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+}
+
+/* ---------- 5) Cara de app ---------- */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,.nav-item,.bottom-nav-item,.page-tab,.origin-seg button,select,summary,[role="button"]{touch-action:manipulation}
+@media (hover:none) and (pointer:coarse){
+  .icon-btn,.np-btn,.row-actions .secondary-btn,.secondary-btn.compact{min-height:40px;min-width:40px}
+  .bottom-nav-item{min-height:56px}
+  input,select,textarea{font-size:max(16px,1rem)!important}
+}
+.main{padding-left:max(0px,env(safe-area-inset-left));padding-right:max(0px,env(safe-area-inset-right))}
+@media (max-width:960px){
+  .bottom-nav{padding-bottom:env(safe-area-inset-bottom)}
+  .page{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
+  .topbar{padding-top:max(8px,env(safe-area-inset-top))}
+}
+/* Instalado como app (sem barra do navegador) */
+@media (display-mode:standalone),(display-mode:fullscreen){
+  html,body{overscroll-behavior-y:none}
+  .skip-link{display:none}
+  body{user-select:none;-webkit-user-select:none}
+  input,textarea,select,[contenteditable]{user-select:text;-webkit-user-select:text}
+}
+/* Botão "Instalar app" e aviso de atualização */
+.install-card{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.install-card .install-text{flex:1 1 220px;min-width:0}
+.install-card .install-text strong{display:block}
+.install-card .install-text small{display:block;color:var(--muted);margin-top:3px;line-height:1.4}
+.pwa-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:120;display:flex;align-items:center;gap:12px;max-width:min(92vw,420px);padding:12px 14px;border-radius:16px;border:1px solid var(--border);background:var(--card-solid);box-shadow:0 18px 40px rgba(0,0,0,.4);font-size:.88rem}
+.pwa-toast button{flex:none;padding:8px 12px;border:0;border-radius:10px;background:var(--gradient);color:#fff;font:700 .82rem Inter,system-ui,sans-serif;cursor:pointer}
+.offline-pill{position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:130;padding:6px 12px;border-radius:999px;background:#f5a524;color:#1a1200;font:700 .76rem Inter,system-ui,sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.telegram-status{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.8rem;color:var(--muted)}
+.telegram-status i{width:8px;height:8px;border-radius:50%;background:#9aa4b2}
+.telegram-status.on i{background:#22c08a}
+.telegram-status.off i{background:#ef5b6b}
+.telegram-status.wait i{background:#f5a524;animation:tgPulse 1s ease-in-out infinite}
+@keyframes tgPulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.telegram-status.wait i{animation:none}}

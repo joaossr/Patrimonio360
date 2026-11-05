@@ -8,7 +8,8 @@ import { cert, initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createTelegramLinkCode } from './telegram/link-code.js';
-import { startTelegramBot } from './telegram/bot.js';
+import crypto from 'node:crypto';
+import { startTelegramBot, processUpdate, telegramMode, telegramWebhookSecret } from './telegram/bot.js';
 
 let firebaseReady=false;let firebaseInitError=null;
 function resolveServiceAccountPath(){const configured=process.env.GOOGLE_APPLICATION_CREDENTIALS||'./service-account.json';return path.isAbsolute(configured)?configured:path.resolve(process.cwd(),configured);}
@@ -82,15 +83,28 @@ const authFailLimiter=rateLimit({windowMs:60_000,max:30,keyPrefix:'auth'});
 
 async function authUser(req,res,next){if(!firebaseReady)return res.status(503).json({error:'Firebase Admin não configurado.'});try{const header=req.headers.authorization||'';if(!header.startsWith('Bearer '))return res.status(401).json({error:'Autenticação necessária.'});req.user=await getAuth().verifyIdToken(header.slice(7),true);next();}catch{return authFailLimiter(req,res,()=>res.status(401).json({error:'Sessão inválida.'}));}}
 async function loadState(uid){const snapshot=await db.doc(`users/${uid}/app/state`).get();return snapshot.exists?snapshot.data().state||{}:{};}
-function backendStatus(){return{ok:firebaseReady,service:'Patrimônio 360',firebase:{ready:firebaseReady},telegram:{configured:Boolean(process.env.TELEGRAM_BOT_TOKEN),polling:process.env.TELEGRAM_POLLING==='true',username:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot'},ai:{provider:'p360-mind',runsIn:'browser',externalApi:false}};}
+function backendStatus(){return{ok:firebaseReady,service:'Patrimônio 360',firebase:{ready:firebaseReady},telegram:{configured:Boolean(process.env.TELEGRAM_BOT_TOKEN),mode:telegramMode(),polling:telegramMode()==='polling',username:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot'},ai:{provider:'p360-mind',runsIn:'browser',externalApi:false}};}
 if(firebaseInitError)console.error('Detalhe da falha do Firebase (não exposto publicamente):',firebaseInitError.message);
 app.get('/api/config',(req,res)=>res.json({ok:true,telegram:!!process.env.TELEGRAM_BOT_TOKEN,botUsername:process.env.TELEGRAM_BOT_USERNAME||'Patrimonio360Bot',ai:{provider:'p360-mind',externalApi:false}}));
 app.get('/api/status',(req,res)=>{const status=backendStatus();res.status(status.ok?200:503).json(status);});
 app.get('/health',(req,res)=>{const status=backendStatus();res.status(status.ok?200:503).json(status);});
 app.post('/api/telegram/link-code',authUser,linkLimiter,async(req,res)=>{try{res.json(await createTelegramLinkCode(db,req.user.uid));}catch(error){console.error('Telegram link-code error:',error.message);res.status(500).json({error:'Não foi possível gerar o código do Telegram.'});}});
+// Webhook do Telegram: só aceita chamadas com o segredo configurado no setWebhook.
+const seenUpdates=new Set();
+app.post('/api/telegram/webhook',(req,res)=>{
+  const got=Buffer.from(String(req.headers['x-telegram-bot-api-secret-token']||''));
+  const want=Buffer.from(telegramWebhookSecret());
+  if(!process.env.TELEGRAM_BOT_TOKEN||got.length!==want.length||!crypto.timingSafeEqual(got,want))return res.status(401).end();
+  const update=req.body||{};
+  res.status(200).end(); // responde já: o Telegram reenvia se demorar e isso duplicaria lançamentos
+  const id=update.update_id;
+  if(id!=null){if(seenUpdates.has(id))return;seenUpdates.add(id);if(seenUpdates.size>500)seenUpdates.delete(seenUpdates.values().next().value);}
+  if(firebaseReady)processUpdate(db,loadState,update);
+});
 // A IA (P360 Mind) roda no navegador do usuário; não existe mais rota de chat no servidor.
 app.use('/api',(req,res)=>res.status(404).json({error:'Rota não encontrada.'}));
 app.use((error,req,res,next)=>{if(error?.type==='entity.too.large')return res.status(413).json({error:'Requisição muito grande.'});if(error instanceof SyntaxError)return res.status(400).json({error:'JSON inválido.'});console.error('Erro inesperado:',error?.message);res.status(500).json({error:'Erro interno.'});});
 app.listen(Number(process.env.PORT||8787),()=>console.log(`P360 backend em http://localhost:${process.env.PORT||8787}`));
-// Bot do Telegram (opcional): TELEGRAM_POLLING=true e TELEGRAM_BOT_TOKEN no .env.
-if(firebaseReady&&process.env.TELEGRAM_POLLING==='true')startTelegramBot({db,loadState});
+// Bot do Telegram: com TELEGRAM_BOT_TOKEN ele liga sozinho no Render (webhook, porque o plano grátis dorme);
+// local, use TELEGRAM_POLLING=true. TELEGRAM_MODE=off desliga.
+if(firebaseReady&&telegramMode()!=='off')startTelegramBot({db,loadState,mode:telegramMode()});

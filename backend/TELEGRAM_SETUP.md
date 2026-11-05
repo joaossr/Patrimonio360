@@ -64,7 +64,23 @@ localStorage.setItem('p360-ai-backend','https://SEU-BACKEND.exemplo.com')
 Depois recarregue a página.
 
 
-## 7. Menu `/start`
+## 7. Ligar o bot no Render (produção)
+O plano grátis do Render "dorme" depois de alguns minutos sem acesso, então o bot usa **webhook**: o Telegram chama o servidor, que acorda e responde (a primeira mensagem depois de um tempo parado pode demorar cerca de 1 minuto).
+
+1. No painel do Render (serviço `patrimonio360-hqka`) → **Environment**, confira:
+   - `TELEGRAM_BOT_TOKEN` = token do @BotFather
+   - `TELEGRAM_BOT_USERNAME` = `Patrimonio360Bot`
+   - `FIREBASE_SERVICE_ACCOUNT_JSON` e `FIREBASE_PROJECT_ID` (já usados pelo login)
+   - `NODE_ENV` = `production`
+   - **Remova** `TELEGRAM_POLLING` (ou deixe `false`). O Render já define `RENDER_EXTERNAL_URL`.
+2. Faça o **deploy da versão nova do backend** (`git push` do branch ligado ao Render, ou *Manual Deploy*).
+3. Nos logs deve aparecer `P360 Telegram em modo webhook: https://.../api/telegram/webhook`.
+4. Confira em `https://patrimonio360-hqka.onrender.com/api/status`: `"telegram":{"configured":true,"mode":"webhook"}`.
+5. No app: **Configurações → Telegram** mostra "Bot ativo". Gere o código e envie `/vincular P360-XXXXXX` ao bot.
+
+Sem acordar o servidor, o Render não responde: para o bot ficar sempre instantâneo use um plano pago ou um *cron* que chame `/api/status` a cada 10 minutos.
+
+## 8. Menu `/start`
 O backend já configura automaticamente os comandos do BotFather/Telegram ao iniciar:
 - `/start` — abre o menu principal
 - `/menu` — abre o menu principal
