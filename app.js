@@ -392,11 +392,18 @@ function txFilterBar({type=null,summary=false}={}){
   const o=(v,l,cur)=>`<option value="${escapeHTML(v)}" ${String(cur)===String(v)?'selected':''}>${escapeHTML(l)}</option>`;
   const cats=txCategoryNames(type),accs=(state.accounts||[]).map(a=>a.name),cards=state.cards||[];
   const typeCtl=type?`<input type="hidden" id="txType" value="${type}">`:`<label>Tipo<select class="select" id="txType">${o('all','Todos os tipos',f.type)}${o('income','Receitas',f.type)}${o('expense','Despesas',f.type)}${o('investment','Investimentos',f.type)}</select></label>`;
-  return `<div class="card filter-card compact-filter-card" id="txFilters">
-    <div class="filter-primary"><input class="input" id="txSearch" type="search" placeholder="Buscar por nome, categoria, conta ou cartão..." aria-label="Buscar movimentação" value="${escapeHTML(f.q)}"><button type="button" class="secondary-btn filter-toggle" id="toggleFilters" aria-expanded="false">Filtros <span id="filterCount"></span></button></div>
-    <div class="origin-seg" role="group" aria-label="Origem do lançamento"><button type="button" data-origin="all">Todas</button><button type="button" data-origin="conta">Conta / saldo</button><button type="button" data-origin="cartao">Cartão</button></div>
+  return `<div id="txFilters">
+  <div class="card filter-card compact-filter-card">
+    <div class="filter-primary"><input class="input" id="txSearch" type="search" placeholder="Buscar movimentação..." aria-label="Buscar movimentação" value="${escapeHTML(f.q)}"><button type="button" class="secondary-btn filter-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filterDrawer">${icon('menu',{size:16})} Filtros <span id="filterCount"></span></button></div>
     <div class="active-filter-chips" id="activeFilterChips"></div>
-    <div class="filter-drawer" id="filterDrawer"><div class="filter-grid">
+    ${summary?'<div class="movements-summary" id="txSummary" aria-live="polite"></div>':''}
+  </div>
+  <div class="filter-backdrop" id="filterBackdrop"></div>
+  <div class="filter-drawer" id="filterDrawer" role="dialog" aria-modal="true" aria-label="Filtros" aria-hidden="true">
+    <div class="filter-sheet-head"><strong>Filtros</strong><button type="button" class="icon-btn" id="txFilterClose" aria-label="Fechar filtros">${icon('close',{size:18})}</button></div>
+    <div class="filter-sheet-body">
+      <div class="filter-block"><span class="filter-label">Origem</span><div class="origin-seg" role="group" aria-label="Origem do lançamento"><button type="button" data-origin="all">Todas</button><button type="button" data-origin="conta">Conta / saldo</button><button type="button" data-origin="cartao">Cartão</button></div></div>
+      <div class="filter-grid">
       ${typeCtl}
       <label>Categoria<select class="select" id="txCategoryFilter">${o('all','Todas as categorias',f.cat)}${cats.map(c=>o(c,c,f.cat)).join('')}</select></label>
       <label>Conta<select class="select" id="txAccountFilter">${o('all','Todas as contas',f.account)}${accs.map(a=>o(a,a,f.account)).join('')}</select></label>
@@ -407,36 +414,52 @@ function txFilterBar({type=null,summary=false}={}){
       <label>Ordenação<select class="select" id="txOrder">${o('desc','Mais recentes primeiro',f.order)}${o('asc','Mais antigas primeiro',f.order)}</select></label>
       <label class="date-only">Data inicial<input class="input date-filter" id="txDateFrom" type="date" value="${escapeHTML(f.from)}"></label>
       <label class="date-only">Data final<input class="input date-filter" id="txDateTo" type="date" value="${escapeHTML(f.to)}"></label>
-    </div><div class="filter-actions"><button type="button" class="secondary-btn compact" id="txClear">Limpar filtros</button></div></div>
-    ${summary?'<div class="movements-summary" id="txSummary" aria-live="polite"></div>':''}
+      </div>
+    </div>
+    <div class="filter-sheet-foot"><button type="button" class="secondary-btn" id="txClear">Limpar</button><button type="button" class="primary-btn" id="txApply">Ver resultados</button></div>
+  </div>
   </div>`;
 }
 function bindTxFilters(){
   const root=$('#txFilters');if(!root)return;
+  // A folha de filtros vai para o <body>: dentro de cards com transform/blur o position:fixed não cobre a tela.
+  document.querySelectorAll('body > #filterDrawer, body > #filterBackdrop').forEach(e=>e.remove());
+  document.body.classList.remove('filter-open');
+  const sheet=root.querySelector('#filterDrawer'),backdrop=root.querySelector('#filterBackdrop');
+  if(sheet)document.body.appendChild(sheet);if(backdrop)document.body.appendChild(backdrop);
+  const q1=sel=>root.querySelector(sel)||sheet?.querySelector(sel)||null,qa=sel=>[...root.querySelectorAll(sel),...(sheet?sheet.querySelectorAll(sel):[])];
   const f=txf(),ctl={q:'#txSearch',type:'#txType',cat:'#txCategoryFilter',account:'#txAccountFilter',card:'#txCardFilter',dist:'#txDistFilter',status:'#txStatusFilter',period:'#txPeriod',order:'#txOrder',from:'#txDateFrom',to:'#txDateTo'};
-  const hiddenType=$('#txType',root)?.type==='hidden'?$('#txType',root).value:null;
-  const sync=()=>{Object.entries(ctl).forEach(([k,sel])=>{const e=$(sel,root);if(e&&e.value!==String(f[k]))e.value=f[k];});$$('[data-origin]',root).forEach(b=>{const on=b.dataset.origin===f.origin;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on);});$$('.date-only',root).forEach(l=>l.hidden=f.period!=='custom');};
+  const hiddenType=q1('#txType')?.type==='hidden'?q1('#txType').value:null;
+  const sync=()=>{Object.entries(ctl).forEach(([k,sel])=>{const e=q1(sel);if(e&&e.value!==String(f[k]))e.value=f[k];});qa('[data-origin]').forEach(b=>{const on=b.dataset.origin===f.origin;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on);});qa('.date-only').forEach(l=>l.hidden=f.period!=='custom');};
   const labels={cat:'Categoria',account:'Conta',card:'Cartão',dist:'Distribuição',status:'Status',period:'Período',type:'Tipo',from:'De',to:'Até',origin:'Origem'};
-  const chipText=k=>{if(k==='origin')return f.origin==='cartao'?'Cartão de crédito':'Conta / saldo';if(k==='card')return(state.cards||[]).find(c=>String(c.id)===String(f.card))?.name||f.card;if(k==='status')return f.status==='settled'?'Confirmados':'Pendentes';if(k==='type')return f.type==='income'?'Receitas':f.type==='expense'?'Despesas':'Investimentos';if(k==='dist')return{fixed:'Despesa fixa',investment:'Investimento',leisure:'Lazer'}[f.dist];if(k==='period'){const e=$(ctl.period,root);return e?.options[e.selectedIndex]?.text||f.period;}if(k==='from'||k==='to')return f[k].split('-').reverse().join('/');return f[k];};
+  const chipText=k=>{if(k==='origin')return f.origin==='cartao'?'Cartão de crédito':'Conta / saldo';if(k==='card')return(state.cards||[]).find(c=>String(c.id)===String(f.card))?.name||f.card;if(k==='status')return f.status==='settled'?'Confirmados':'Pendentes';if(k==='type')return f.type==='income'?'Receitas':f.type==='expense'?'Despesas':'Investimentos';if(k==='dist')return{fixed:'Despesa fixa',investment:'Investimento',leisure:'Lazer'}[f.dist];if(k==='period'){const e=q1(ctl.period);return e?.options[e.selectedIndex]?.text||f.period;}if(k==='from'||k==='to')return f[k].split('-').reverse().join('/');return f[k];};
   const run=()=>{
-    Object.entries(ctl).forEach(([k,sel])=>{const e=$(sel,root);if(e)f[k]=e.value;});
+    Object.entries(ctl).forEach(([k,sel])=>{const e=q1(sel);if(e)f[k]=e.value;});
     if(hiddenType)f.type=hiddenType;
     const keys=['origin','type','cat','account','card','dist','status','period','from','to'].filter(k=>{if(k==='type'&&hiddenType)return false;if(k==='from'||k==='to')return f.period==='custom'&&f[k];return f[k]!==TXF_BASE[k];});
-    const chips=$('#activeFilterChips',root);if(chips)chips.innerHTML=keys.map(k=>`<button type="button" class="filter-chip" data-clear="${k}" aria-label="Remover filtro ${labels[k]}">${labels[k]}: <b>${escapeHTML(chipText(k))}</b> ×</button>`).join('');
-    const fc=$('#filterCount',root);if(fc)fc.textContent=keys.length?`(${keys.length})`:'';
+    const chips=q1('#activeFilterChips');if(chips)chips.innerHTML=keys.map(k=>`<button type="button" class="filter-chip" data-clear="${k}" aria-label="Remover filtro ${labels[k]}">${labels[k]}: <b>${escapeHTML(chipText(k))}</b> ×</button>`).join('');
+    const fc=q1('#filterCount');if(fc)fc.textContent=keys.length?`(${keys.length})`:'';
     const list=applyTxFilters(f);
+    const ap=q1('#txApply');if(ap)ap.textContent=list.length===1?'Ver 1 resultado':`Ver ${list.length} resultados`;
     const table=$('#txTable');if(table)table.innerHTML=transactionsTable(list);
     const sum=$('#txSummary');if(sum){const inc=list.filter(t=>t.type==='income').reduce((a,t)=>a+Number(t.value||0),0),out=list.filter(t=>t.type!=='income').reduce((a,t)=>a+Number(t.value||0),0);sum.innerHTML=`<span>${list.length} movimentaç${list.length===1?'ão':'ões'}</span><span class="positive">+ ${money(inc)}</span><span class="negative">− ${money(out)}</span><strong class="${inc-out>=0?'positive':'negative'}">= ${money(inc-out)}</strong>`;}
     bindTransactionActions();sync();
   };
-  Object.values(ctl).forEach(sel=>{const e=$(sel,root);if(e){e.oninput=run;e.onchange=run;}});
-  $$('[data-origin]',root).forEach(b=>b.onclick=()=>{f.origin=b.dataset.origin;if(f.origin==='cartao')f.account='all';if(f.origin==='conta')f.card='all';sync();run();});
-  const acc=$(ctl.account,root),card=$(ctl.card,root);
+  Object.values(ctl).forEach(sel=>{const e=q1(sel);if(e){e.oninput=run;e.onchange=run;}});
+  qa('[data-origin]').forEach(b=>b.onclick=()=>{f.origin=b.dataset.origin;if(f.origin==='cartao')f.account='all';if(f.origin==='conta')f.card='all';sync();run();});
+  const acc=q1(ctl.account),card=q1(ctl.card);
   if(acc)acc.addEventListener('change',()=>{if(acc.value!=='all'){f.origin='conta';f.card='all';sync();run();}});
   if(card)card.addEventListener('change',()=>{if(card.value!=='all'){f.origin='cartao';f.account='all';sync();run();}});
-  const tg=$('#toggleFilters',root),dr=$('#filterDrawer',root);if(tg&&dr)tg.onclick=()=>{const open=dr.classList.toggle('open');tg.setAttribute('aria-expanded',open);};
+  const tg=q1('#toggleFilters');
+  const setOpen=open=>{if(!sheet)return;sheet.classList.toggle('open',open);backdrop?.classList.toggle('open',open);sheet.setAttribute('aria-hidden',String(!open));tg?.setAttribute('aria-expanded',String(open));document.body.classList.toggle('filter-open',open);if(open)requestAnimationFrame(()=>sheet.querySelector('select,input,button')?.focus({preventScroll:true}));else tg?.focus({preventScroll:true});};
+  if(tg)tg.onclick=()=>setOpen(!sheet.classList.contains('open'));
+  [q1('#txFilterClose'),q1('#txApply'),backdrop].forEach(e=>{if(e)e.onclick=()=>setOpen(false);});
+  const onKey=e=>{if(e.key==='Escape'&&sheet?.classList.contains('open')){e.stopPropagation();setOpen(false);}};
+  document.addEventListener('keydown',onKey,true);
+  const closeOnLeave=()=>{setOpen(false);document.removeEventListener('keydown',onKey,true);};
+  window.addEventListener('hashchange',closeOnLeave,{once:true});
   root.addEventListener('click',e=>{const c=e.target.closest('[data-clear]');if(!c)return;const k=c.dataset.clear;f[k]=TXF_BASE[k];if(k==='period'){f.from='';f.to='';}sync();run();});
-  const clr=$('#txClear',root);if(clr)clr.onclick=()=>{Object.assign(f,{...TXF_BASE,order:f.order});if(hiddenType)f.type=hiddenType;sync();run();};
+  const clr=q1('#txClear');if(clr)clr.onclick=()=>{Object.assign(f,{...TXF_BASE,order:f.order});if(hiddenType)f.type=hiddenType;sync();run();};
   sync();run();
 }
 
