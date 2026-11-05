@@ -125,3 +125,16 @@ test('conta não vinculada só recebe orientação para conectar', async () => {
   assert.match(t.last().text, /Configurações/);
   assert.match(t.last().text, /vincular/);
 });
+
+test('saldo respeita o início do saldo (preferences.balanceFrom): meses anteriores não entram', async () => {
+  const t = setup();
+  // Movimentação antiga (outubro) que NÃO deve contar depois de acertar os saldos em novembro
+  t.state.transactions.push({ id: 90, name: 'Antigo', type: 'expense', value: 700, date: '2020-01-10', category: 'Moradia', status: 'Paga', payment: 'conta', account: 'Nubank' });
+  await t.say('saldo');
+  assert.match(t.last().text, /5\.500,00|5\.700,00|6\.200,00|5\.500/); // com histórico completo (700 a menos)
+  t.state.preferences = { balanceFrom: `${M}-01` };
+  t.state.accounts[0].openingBalance = 2000; // saldo real em 01/11
+  await t.say('saldo');
+  // Nubank: 2000 + 5000 − 300 = 6700 (a de 2020 fica de fora); Itaú 500 → total 7.200,00
+  assert.match(t.last().text, /7\.200,00/);
+});
