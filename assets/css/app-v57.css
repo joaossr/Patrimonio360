@@ -312,3 +312,10 @@ button,.nav-item,.bottom-nav-item,.page-tab,.origin-seg button,select,summary,[r
 .tx-pay button:disabled{opacity:.45;cursor:not-allowed}
 .tx-back{margin:0 0 12px;padding:6px 2px;border:0;background:transparent;color:#8fb4ff;font:700 .86rem Inter,system-ui,sans-serif;cursor:pointer}
 @media (max-width:640px){.tx-choices{grid-template-columns:1fr}}
+
+/* Forma de pagamento ao lado do valor: botões iguais ao campo de valor */
+.tx-f .pay-seg{height:48px}
+.tx-f .pay-seg button{font-size:.84rem;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-f .pay-seg button.active{background:var(--gradient);color:#fff;box-shadow:0 6px 16px rgba(76,120,255,.25)}
+.tx-f .pay-seg button:disabled{opacity:.45;cursor:not-allowed}
+.tx-modes{margin-bottom:18px}
