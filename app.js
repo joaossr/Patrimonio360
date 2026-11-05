@@ -394,7 +394,7 @@ function txFilterBar({type=null,summary=false}={}){
   const typeCtl=type?`<input type="hidden" id="txType" value="${type}">`:`<label>Tipo<select class="select" id="txType">${o('all','Todos os tipos',f.type)}${o('income','Receitas',f.type)}${o('expense','Despesas',f.type)}${o('investment','Investimentos',f.type)}</select></label>`;
   return `<div id="txFilters">
   <div class="card filter-card compact-filter-card">
-    <div class="filter-primary"><input class="input" id="txSearch" type="search" placeholder="Buscar movimentação..." aria-label="Buscar movimentação" value="${escapeHTML(f.q)}"><button type="button" class="secondary-btn filter-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filterDrawer">${icon('menu',{size:16})} Filtros <span id="filterCount"></span></button></div>
+    <div class="filter-primary"><div class="tx-search">${icon('search',{size:18})}<input class="input" id="txSearch" type="search" placeholder="Buscar movimentação" aria-label="Buscar movimentação" value="${escapeHTML(f.q)}" enterkeyhint="search" autocomplete="off"></div><button type="button" class="secondary-btn filter-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filterDrawer" aria-label="Filtros">${icon('settings',{size:18})}<span class="ft-label">Filtros</span><span id="filterCount"></span></button></div>
     <div class="active-filter-chips" id="activeFilterChips"></div>
     ${summary?'<div class="movements-summary" id="txSummary" aria-live="polite"></div>':''}
   </div>
@@ -438,11 +438,11 @@ function bindTxFilters(){
     if(hiddenType)f.type=hiddenType;
     const keys=['origin','type','cat','account','card','dist','status','period','from','to'].filter(k=>{if(k==='type'&&hiddenType)return false;if(k==='from'||k==='to')return f.period==='custom'&&f[k];return f[k]!==TXF_BASE[k];});
     const chips=q1('#activeFilterChips');if(chips)chips.innerHTML=keys.map(k=>`<button type="button" class="filter-chip" data-clear="${k}" aria-label="Remover filtro ${labels[k]}">${labels[k]}: <b>${escapeHTML(chipText(k))}</b> ×</button>`).join('');
-    const fc=q1('#filterCount');if(fc)fc.textContent=keys.length?`(${keys.length})`:'';
+    const fc=q1('#filterCount');if(fc){fc.textContent=keys.length?String(keys.length):'';const tb=q1('#toggleFilters');if(tb)tb.setAttribute('aria-label',keys.length?`Filtros (${keys.length} ativos)`:'Filtros');}
     const list=applyTxFilters(f);
     const ap=q1('#txApply');if(ap)ap.textContent=list.length===1?'Ver 1 resultado':`Ver ${list.length} resultados`;
     const table=$('#txTable');if(table)table.innerHTML=transactionsTable(list);
-    const sum=$('#txSummary');if(sum){const inc=list.filter(t=>t.type==='income').reduce((a,t)=>a+Number(t.value||0),0),out=list.filter(t=>t.type!=='income').reduce((a,t)=>a+Number(t.value||0),0);sum.innerHTML=`<span>${list.length} movimentaç${list.length===1?'ão':'ões'}</span><span class="positive">+ ${money(inc)}</span><span class="negative">− ${money(out)}</span><strong class="${inc-out>=0?'positive':'negative'}">= ${money(inc-out)}</strong>`;}
+    const sum=$('#txSummary');if(sum){const inc=list.filter(t=>t.type==='income').reduce((a,t)=>a+Number(t.value||0),0),out=list.filter(t=>t.type!=='income').reduce((a,t)=>a+Number(t.value||0),0);sum.innerHTML=`<div class="sum-count">${list.length} movimentaç${list.length===1?'ão':'ões'}</div><div class="sum-tiles"><div><small>Entradas</small><b class="positive">${money(inc)}</b></div><div><small>Saídas</small><b class="negative">${money(out)}</b></div><div><small>Saldo</small><b class="${inc-out>=0?'positive':'negative'}">${money(inc-out)}</b></div></div>`;}
     bindTransactionActions();sync();
   };
   Object.values(ctl).forEach(sel=>{const e=q1(sel);if(e){e.oninput=run;e.onchange=run;}});

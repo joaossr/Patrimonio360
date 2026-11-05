@@ -174,3 +174,36 @@ button,.nav-item,.bottom-nav-item,.page-tab,.origin-seg button,select,summary,[r
 .telegram-status.wait i{background:#f5a524;animation:tgPulse 1s ease-in-out infinite}
 @keyframes tgPulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.telegram-status.wait i{animation:none}}
+
+/* ---------- 6) Busca, filtros e resumo (Movimentações, Receitas, Despesas) ---------- */
+.tx-search{position:relative;flex:1 1 auto;min-width:0}
+.tx-search>svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.tx-search .input{width:100%;padding-left:42px!important}
+.filter-card .filter-toggle{position:relative;display:inline-flex;align-items:center;gap:8px}
+#filterCount:not(:empty){min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--gradient);color:#fff;font:700 .72rem/20px Inter,system-ui,sans-serif;text-align:center}
+#filterCount:empty{display:none}
+.movements-summary{display:block;margin-top:12px;font-size:.9rem}
+.movements-summary strong{margin-left:0}
+.sum-count{margin-bottom:8px;color:var(--muted);font-size:.8rem;font-weight:600}
+.sum-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sum-tiles>div{min-width:0;padding:10px 12px;border-radius:14px;background:var(--bg-2);border:1px solid var(--border)}
+.sum-tiles small{display:block;margin-bottom:2px;color:var(--muted);font-size:.72rem;font-weight:600}
+.sum-tiles b{display:block;overflow:hidden;font-size:.98rem;font-weight:800;white-space:nowrap;text-overflow:ellipsis}
+.sum-tiles .positive{color:#22c08a}
+.sum-tiles .negative{color:#ef5b6b}
+@media (max-width:960px){
+  /* No celular o + da barra de baixo já cria movimentações */
+  #newTransaction2{display:none!important}
+  .filter-card.compact-filter-card{padding:12px!important;border-radius:20px}
+  .filter-card .filter-primary{display:grid!important;grid-template-columns:minmax(0,1fr) 48px;gap:10px}
+  .tx-search .input{height:48px;border-radius:14px}
+  .filter-card .filter-toggle{width:48px;height:48px;min-width:0;padding:0;justify-content:center;border-radius:14px}
+  .filter-card .ft-label{display:none}
+  .filter-card #filterCount:not(:empty){position:absolute;top:-7px;right:-7px;box-shadow:0 0 0 2px var(--card-solid)}
+  .movements-summary{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+  .sum-tiles{gap:6px}
+  .sum-tiles>div{padding:9px 10px}
+  .sum-tiles b{font-size:clamp(.7rem,3.3vw,.88rem)}
+  .inv-filters{display:grid!important;grid-template-columns:1fr 1fr;width:100%;gap:8px}
+  .inv-filters .select{width:100%;height:44px!important}
+}
