@@ -20,10 +20,9 @@ export function accountBalances(state) {
   const accounts = Array.isArray(state.accounts) ? state.accounts : [];
   const txs = fin(state).filter(t => settled(t) && t.payment !== 'cartao');
   const payments = Array.isArray(state.cardPayments) ? state.cardPayments : [];
-  const from = /^\d{4}-\d{2}-\d{2}$/.test(String(state.preferences?.balanceFrom || '')) ? state.preferences.balanceFrom : '';
   return accounts.map(a => {
-    const delta = sum(txs.filter(t => t.account === a.name && (!from || String(t.date || '') >= from)), t => (t.type === 'income' ? 1 : -1) * Number(t.value || 0))
-      - sum(payments.filter(p => p.account === a.name && (!from || String(p.date || '') >= from)), p => Number(p.value || 0));
+    const delta = sum(txs.filter(t => t.account === a.name), t => (t.type === 'income' ? 1 : -1) * Number(t.value || 0))
+      - sum(payments.filter(p => p.account === a.name), p => Number(p.value || 0));
     return { name: a.name, balance: Number(a.openingBalance ?? 0) + delta };
   });
 }

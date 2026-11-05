@@ -27,13 +27,11 @@ export function snapshot(state, month, today = new Date()) {
 
   const accounts = (state.accounts || []).map(a => {
     let bal = Number(a.openingBalance ?? a.initialBalance ?? 0) || 0;
-    const from = /^\d{4}-\d{2}-\d{2}$/.test(String(state.preferences?.balanceFrom || '')) ? state.preferences.balanceFrom : '';
     (state.transactions || []).forEach(t => {
       if (t.account !== a.name || !isSettled(t) || t.payment === 'cartao' || t.type === 'card_payment' || t.legacyCardPayment) return;
-      if (from && String(t.date || '') < from) return;
       bal += t.type === 'income' ? val(t) : -val(t);
     });
-    (state.cardPayments || []).forEach(p => { if (p.account === a.name && (!from || String(p.date || '') >= from)) bal -= val(p); });
+    (state.cardPayments || []).forEach(p => { if (p.account === a.name) bal -= val(p); });
     return { name: a.name, balance: bal };
   });
   const balance = accounts.reduce((a, x) => a + x.balance, 0);
