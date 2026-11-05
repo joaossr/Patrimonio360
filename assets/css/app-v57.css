@@ -301,3 +301,14 @@ button,.nav-item,.bottom-nav-item,.page-tab,.origin-seg button,select,summary,[r
 }
 @media (prefers-reduced-motion:reduce){.tx-reveal{animation:none}}
 .tx-flow [hidden]{display:none!important}
+
+/* Despesa → forma de pagamento (Conta ou Cartão) */
+.tx-choices{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tx-modes{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tx-pay{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:-4px 0 18px}
+.tx-pay button{min-width:0;height:44px;padding:0 10px;border-radius:12px;border:1px solid #3a4452;background:transparent;color:var(--muted);font:700 .86rem Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s,border-color .15s}
+.tx-pay button:hover:not(:disabled){color:var(--text)}
+.tx-pay button.active{border-color:#4f8cff;background:rgba(79,140,255,.14);color:var(--text)}
+.tx-pay button:disabled{opacity:.45;cursor:not-allowed}
+.tx-back{margin:0 0 12px;padding:6px 2px;border:0;background:transparent;color:#8fb4ff;font:700 .86rem Inter,system-ui,sans-serif;cursor:pointer}
+@media (max-width:640px){.tx-choices{grid-template-columns:1fr}}

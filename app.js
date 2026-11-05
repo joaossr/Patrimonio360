@@ -218,7 +218,7 @@ function shell(content){
 }
 // Menu do usuário no topo (perfil, aparência, relatórios, backup, segurança, sair).
 function bindUserMenu(){
-  const rn=$('#railNewTx');if(rn)rn.onclick=()=>{window.P360MobileNavigation?.close();openTransactionModal({type:state.page==='receitas'?'income':'expense'});};
+  const rn=$('#railNewTx');if(rn)rn.onclick=()=>{window.P360MobileNavigation?.close();openTransactionModal(state.page==='receitas'?{type:'income'}:state.page==='despesas'?{type:'expense'}:{});};
   $$('.page-tab').forEach(b=>b.onclick=()=>goTo(b.dataset.page));
   const btn=$('#userMenuBtn'),dd=$('#userDropdown');if(!btn||!dd)return;
   const close=()=>{dd.hidden=true;btn.setAttribute('aria-expanded','false');};
@@ -1217,7 +1217,7 @@ function bind(){
  $('#hideBtn').onclick=()=>{state.hideValues=!state.hideValues;save();render()};
 
  const lo=$('#logoutBtn'); if(lo) lo.onclick=()=>confirmLogout();
- ['#newTransaction','#newTransaction2'].forEach(id=>{const el=$(id);if(el)el.onclick=()=>openTransactionModal({type:state.page==='receitas'?'income':'expense'})});
+ ['#newTransaction','#newTransaction2'].forEach(id=>{const el=$(id);if(el)el.onclick=()=>openTransactionModal(state.page==='receitas'?{type:'income'}:state.page==='despesas'?{type:'expense'}:{})});
  const nc=$('#newCard'); if(nc) nc.onclick=()=>openCardModal();
  const na=$('#newAccount'); if(na) na.onclick=()=>openAccountModal();
  $$('.edit-account').forEach(b=>b.onclick=()=>openAccountModal(b.dataset.account));
@@ -1542,13 +1542,15 @@ function openTransactionModal(preset={}){
   };
   const d={mode:null,name:'',value:'',date:today,dateManual:false,category:'',catAuto:false,dist:'fixed',distManual:false,account:defAcc,accountManual:false,
     status:'',statusManual:false,repeat:'1',goalId:'',card:pickCard?String(pickCard.id):'',inst:1,instCustom:false,touchedValue:false,suggested:null};
-  const choiceBtn=k=>`<button type="button" class="tx-choice tx-choice-${k}" data-mode="${k}" ${k==='cartao'&&!cards.length?'disabled':''}><span class="tx-choice-ico">${icon(MODES[k].ico,{size:26})}</span><span class="tx-choice-txt"><b>${MODES[k].label}</b><small>${k==='cartao'&&!cards.length?'Cadastre um cartão primeiro':MODES[k].sub}</small></span></button>`;
+  const tile=(attr,k,ico,title,sub,disabled=false)=>`<button type="button" class="tx-choice tx-choice-${k}" ${attr} ${disabled?'disabled':''}><span class="tx-choice-ico">${icon(ico,{size:26})}</span><span class="tx-choice-txt"><b>${title}</b><small>${sub}</small></span></button>`;
   const wrap=modal(`<div class="modal tx-modal tx-flow" role="dialog" aria-modal="true" aria-labelledby="txTitle">
     <div class="modal-head"><div><h3 id="txTitle">Nova movimentação</h3><p class="muted" id="txSub">Como foi essa movimentação?</p></div><button class="icon-btn modal-x" aria-label="Fechar">×</button></div>
     <form id="txForm" novalidate><div class="modal-body">
-      <div class="tx-choices" id="txChoices" role="group" aria-label="Tipo de movimentação">${['conta','cartao','income'].map(choiceBtn).join('')}</div>
+      <div class="tx-choices" id="txChoices" role="group" aria-label="Tipo de movimentação">${tile('data-type="expense"','conta','expense','Despesa','Contas, compras e pagamentos')}${tile('data-type="income"','income','income','Receita','Salário, vendas, rendimentos')}</div>
+      <div id="txPayChoices" hidden><button type="button" class="tx-back" id="txBack">← Voltar</button><div class="tx-choices" role="group" aria-label="Forma de pagamento">${tile('data-mode="conta"','conta','wallet','Conta / saldo','Pix, débito, dinheiro ou boleto')}${tile('data-mode="cartao"','cartao','card','Cartão de crédito',!cards.length?'Cadastre um cartão primeiro':'À vista ou parcelado',!cards.length)}</div></div>
       <div id="txFlow" hidden>
-        <div class="tx-modes" role="tablist" aria-label="Tipo de movimentação">${['conta','cartao','income'].map(k=>`<button type="button" role="tab" data-mode="${k}" ${k==='cartao'&&!cards.length?'disabled':''}>${MODES[k].label}</button>`).join('')}</div>
+        <div class="tx-modes" role="tablist" aria-label="Tipo de movimentação"><button type="button" role="tab" data-type="expense">Despesa</button><button type="button" role="tab" data-type="income">Receita</button></div>
+        <div class="tx-pay" id="txPaySeg" role="tablist" aria-label="Forma de pagamento" hidden><button type="button" role="tab" data-mode="conta">Conta / saldo</button><button type="button" role="tab" data-mode="cartao" ${cards.length?'':'disabled'}>Cartão de crédito</button></div>
         <div class="tx-fields" id="txFields"></div>
       </div>
       <p class="form-error" id="txError" role="alert" hidden></p>
@@ -1577,7 +1579,7 @@ function openTransactionModal(preset={}){
   };
   const LAYOUT={
     conta:['name','value','date','category','dist','account','status','repeat','goal'],
-    cartao:['cardPick','inst','name','value','due','category','dist','goal'],
+    cartao:['cardPick','inst','name','value','due','category','dist'],
     income:['name','value','date','category','account','status','repeat'],
   };
 
@@ -1626,9 +1628,12 @@ function openTransactionModal(preset={}){
   const setMode=mode=>{
     const keep=d.mode;d.mode=mode;
     if(keep&&MODES[keep].type!==MODES[mode].type){d.category='';d.catAuto=false;d.statusManual=false;}
-    q('#txChoices').hidden=true;q('#txFlow').hidden=false;q('#txActions').hidden=false;
-    qa('.tx-modes button').forEach(b=>{const on=b.dataset.mode===mode;b.classList.toggle('active',on);b.setAttribute('aria-selected',on);});
-    q('#txSub').textContent=mode==='cartao'?'Compra no cartão de crédito':mode==='income'?'Registrar uma receita':'Registrar uma despesa';
+    if(mode!=='income')d.lastExpense=mode;
+    q('#txChoices').hidden=true;q('#txPayChoices').hidden=true;q('#txFlow').hidden=false;q('#txActions').hidden=false;
+    qa('.tx-modes button').forEach(b=>{const on=b.dataset.type===MODES[mode].type;b.classList.toggle('active',on);b.setAttribute('aria-selected',on);});
+    q('#txPaySeg').hidden=mode==='income';
+    qa('#txPaySeg button').forEach(b=>{const on=b.dataset.mode===mode;b.classList.toggle('active',on);b.setAttribute('aria-selected',on);});
+    q('#txSub').textContent=mode==='cartao'?'Despesa no cartão de crédito':mode==='income'?'Registrar uma receita':'Despesa na conta';
     if(mode==='cartao'){d.dateManual=false;}
     else if(keep==='cartao'&&!d.dateManual)d.date=today;
     fields.innerHTML=LAYOUT[mode].map(k=>B[k]()).join('');
@@ -1664,8 +1669,14 @@ function openTransactionModal(preset={}){
   };
 
   // ---------- eventos ----------
-  q('#txChoices').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b&&!b.disabled)setMode(b.dataset.mode);});
-  q('.tx-modes').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b&&!b.disabled&&b.dataset.mode!==d.mode)setMode(b.dataset.mode);});
+  const showPayStep=()=>{q('#txChoices').hidden=true;q('#txPayChoices').hidden=false;q('#txSub').textContent='Como você pagou?';};
+  q('#txChoices').addEventListener('click',e=>{const b=e.target.closest('[data-type]');if(!b||b.disabled)return;if(b.dataset.type==='income')setMode('income');else showPayStep();});
+  q('#txPayChoices').addEventListener('click',e=>{
+    if(e.target.closest('#txBack')){q('#txPayChoices').hidden=true;q('#txChoices').hidden=false;q('#txSub').textContent='Como foi essa movimentação?';return;}
+    const b=e.target.closest('[data-mode]');if(b&&!b.disabled)setMode(b.dataset.mode);
+  });
+  q('.tx-modes').addEventListener('click',e=>{const b=e.target.closest('[data-type]');if(!b)return;const m=b.dataset.type==='income'?'income':(d.lastExpense||'conta');if(m!==d.mode)setMode(m);});
+  q('#txPaySeg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b&&!b.disabled&&b.dataset.mode!==d.mode)setMode(b.dataset.mode);});
   fields.addEventListener('click',e=>{
     const t=e.target;
     const dq=t.closest('.date-quick button[data-d]');if(dq){d.date=dq.dataset.d;d.dateManual=true;syncDate();return;}
@@ -1717,7 +1728,7 @@ function openTransactionModal(preset={}){
     ensureCategory(category,type);
     if(d.suggested){getMind().recordCategoryOutcome(d.suggested,category);state.aiModel=getMind().memory;}
     const status=card?'Pendente':d.status||(type==='income'?'Recebida':'Paga');
-    const base={name,type,category,status,payment:card?'cartao':'conta',account:card?'':String(d.account||''),cardId:card?d.card:null,distributionType:isExpense?(d.dist||'fixed'):null,goalId:isExpense?(d.goalId||null):null};
+    const base={name,type,category,status,payment:card?'cartao':'conta',account:card?'':String(d.account||''),cardId:card?d.card:null,distributionType:isExpense?(d.dist||'fixed'):null,goalId:isExpense&&!card?(d.goalId||null):null};
     const n=card?Math.max(1,Math.min(48,Math.round(Number(d.inst)||1))):Math.max(1,Number(d.repeat||1)),groupId=n>1?newId():null;
     // Parcelas: divide em centavos e joga a diferença de arredondamento na primeira parcela.
     const cents=Math.round(total*100),each=card?Math.floor(cents/n):cents;
@@ -1727,6 +1738,7 @@ function openTransactionModal(preset={}){
 
   // Atalhos de outras telas já escolhem o tipo (ex.: botão "Receita" do dashboard).
   if(preset.type==='income')setMode('income');
+  else if(preset.type==='expense')showPayStep();
 }
 function toast(msg){const root=$('#toast-root');if(!root)return;root.setAttribute('role','status');root.setAttribute('aria-live','polite');const t=document.createElement('div');t.className='toast';t.textContent=msg;root.appendChild(t);while(root.children.length>3)root.firstElementChild.remove();setTimeout(()=>t.remove(),3200)}
 // Situação do bot do Telegram no servidor (o plano grátis do Render dorme: a 1ª chamada pode levar ~1 min).
