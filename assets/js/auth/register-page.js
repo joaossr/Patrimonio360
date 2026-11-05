@@ -61,7 +61,8 @@ form.addEventListener("submit", async (e) => {
     }
 
     const accessKey = keyInput.value;
-    if (!keyIsComplete(accessKey)) return showMessage(message, "Informe a chave de acesso completa que você recebeu.", "error");
+    const hasKey = accessKey.trim() !== "";
+    if (hasKey && !keyIsComplete(accessKey)) return showMessage(message, "A chave de acesso está incompleta. Confira os 20 caracteres.", "error");
     const nome = document.getElementById("name").value.trim().replace(/\s+/g, " ").slice(0, 80);
     const email = document.getElementById("email").value.trim().toLowerCase();
     const senha = passwordInput.value;
@@ -80,21 +81,23 @@ form.addEventListener("submit", async (e) => {
     setBusy(submit, true, "Verificando a chave...");
     try {
         // 1) A chave precisa existir e estar livre ANTES de criar a conta.
-        const check = await api("/api/license/check", { method: "POST", body: { key: accessKey } });
+        const check = await api("/api/license/check", { method: "POST", body: { key: hasKey ? accessKey : "", email } });
         if (!check.valid) {
             submitting = false; setBusy(submit, false);
-            return showMessage(message, "Chave inválida ou já utilizada. Confira os caracteres ou peça outra chave.", "error");
+            return showMessage(message, hasKey ? "Chave inválida ou já utilizada. Confira os caracteres ou peça outra chave." : "Informe a chave de acesso que você recebeu.", "error");
         }
         setBusy(submit, true, "Criando conta...");
         const user = await registerUser({ nome, email, senha });
         // 2) Usa a chave (uma única vez) e atualiza o acesso da conta.
-        setBusy(submit, true, "Ativando acesso...");
-        try {
-            await api("/api/license/redeem", { method: "POST", body: { key: accessKey }, token: await user.getIdToken() });
-            await user.getIdToken(true);
-        } catch (redeemError) {
-            // A conta já existe; a tela do app pede a chave de novo se a ativação não concluiu.
-            console.warn("Ativação pendente:", redeemError.message);
+        if (hasKey) {
+            setBusy(submit, true, "Ativando acesso...");
+            try {
+                await api("/api/license/redeem", { method: "POST", body: { key: accessKey }, token: await user.getIdToken() });
+                await user.getIdToken(true);
+            } catch (redeemError) {
+                // A conta já existe; a tela do app pede a chave de novo se a ativação não concluiu.
+                console.warn("Ativação pendente:", redeemError.message);
+            }
         }
         window.location.replace("/");
     } catch (error) {

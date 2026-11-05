@@ -32,7 +32,7 @@ export function generateKey() {
   return formatKey('P360' + body);
 }
 
-export function createLicenseService({ db, auth, now = () => Date.now(), cutoff = Date.parse(process.env.LICENSE_CUTOFF || '2026-11-06T00:00:00Z') }) {
+export function createLicenseService({ db, auth, now = () => Date.now(), cutoff = Date.parse(process.env.LICENSE_CUTOFF || '2026-11-06T00:00:00Z'), adminEmails = new Set() }) {
   const keys = () => db.collection('accessKeys');
   const cache = new Map(); // uid → { at, value } (evita consultar o Auth a cada mensagem do Telegram)
 
@@ -63,6 +63,20 @@ export function createLicenseService({ db, auth, now = () => Date.now(), cutoff 
       try { value = (await this.status(uid)).active; } catch { value = false; }
       cache.set(uid, { at: now(), value });
       return value;
+    },
+
+    // Os e-mails de ADMIN_EMAILS podem criar a conta sem chave (quem gera as chaves não tem como ter uma).
+    isAdminEmail(email) { return adminEmails.has(String(email || '').trim().toLowerCase()); },
+
+    // Administrador: acesso sem prazo, mas SÓ depois de confirmar o e-mail (senão qualquer um poderia
+    // se cadastrar com o e-mail do administrador e virar administrador).
+    async grantAdmin(uid) {
+      const user = await auth.getUser(uid);
+      if (!this.isAdminEmail(user.email)) return { active: false };
+      if (!user.emailVerified) return { active: false, adminPending: true };
+      await auth.setCustomUserClaims(uid, { ...(user.customClaims || {}), licensed: true, until: NO_EXPIRY, admin: true });
+      cache.delete(uid);
+      return { active: true, until: NO_EXPIRY, lifetime: true };
     },
 
     // Conta antiga (criada antes de LICENSE_CUTOFF): recebe acesso sem prazo.

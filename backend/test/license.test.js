@@ -126,3 +126,30 @@ test('se gravar o acesso falhar, a chave volta para o estoque', async () => {
   assert.equal((await f.svc.check(keys[0])).valid, true, 'a chave não pode ficar queimada');
   assert.ok(original);
 });
+
+test('administrador: e-mail da lista cria conta sem chave, mas só ganha acesso depois de confirmar o e-mail', async () => {
+  const docs = new Map(), users = new Map();
+  const auth = {
+    async getUser(uid) { const u = users.get(uid); return { uid, email: u.email, emailVerified: u.verified, customClaims: u.claims, metadata: { creationTime: new Date(u.created).toUTCString() } }; },
+    async setCustomUserClaims(uid, c) { users.get(uid).claims = c; },
+  };
+  const svc = createLicenseService({ db: { collection: () => ({ doc: () => ({ get: async () => ({ exists: false }) }) }) }, auth, adminEmails: new Set(['dono@exemplo.com']), cutoff: 0, now: () => Date.parse('2026-11-10T12:00:00Z') });
+  users.set('dono', { email: 'Dono@Exemplo.com', verified: false, claims: null, created: Date.parse('2026-11-09') });
+  users.set('intruso', { email: 'intruso@exemplo.com', verified: true, claims: null, created: Date.parse('2026-11-09') });
+  assert.equal(svc.isAdminEmail('DONO@exemplo.com'), true, 'maiúsculas não importam');
+  assert.equal(svc.isAdminEmail('intruso@exemplo.com'), false);
+  assert.equal(svc.isAdminEmail(''), false);
+  // e-mail ainda não confirmado: nada de acesso (impede quem se cadastrar com o e-mail do dono)
+  const pending = await svc.grantAdmin('dono');
+  assert.equal(pending.active, false); assert.equal(pending.adminPending, true);
+  assert.equal(users.get('dono').claims, null);
+  // confirmou o e-mail: libera sem prazo
+  users.get('dono').verified = true;
+  const ok = await svc.grantAdmin('dono');
+  assert.equal(ok.active, true); assert.equal(ok.until, NO_EXPIRY);
+  assert.equal(users.get('dono').claims.licensed, true);
+  // quem não está na lista nunca ganha acesso por essa rota, mesmo com e-mail confirmado
+  assert.equal((await svc.grantAdmin('intruso')).active, false);
+  assert.equal(users.get('intruso').claims, null);
+  assert.ok(docs);
+});

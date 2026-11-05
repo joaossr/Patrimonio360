@@ -1,5 +1,5 @@
 import { auth, db } from "./assets/js/config/firebase.js";
-import { onAuthStateChanged, signOut, sendPasswordResetEmail, updateProfile } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { onAuthStateChanged, signOut, sendPasswordResetEmail, sendEmailVerification, updateProfile } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 // O app.js controla a URL do backend P360. Este módulo fica responsável apenas
@@ -75,6 +75,12 @@ export async function logoutUser(){
   clearLocalUserData();
   try{ await signOut(auth); }catch(error){ console.error('Falha ao sair:',error); }
   location.replace('login.html');
+}
+
+export async function resendVerification(){
+  if(!auth.currentUser)throw new Error("Entre novamente para reenviar a confirmação.");
+  auth.languageCode="pt";
+  await sendEmailVerification(auth.currentUser);
 }
 
 export async function sendPasswordReset(){

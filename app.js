@@ -3,7 +3,7 @@ import { icon, GOAL_ICONS } from "./assets/js/icons.js";
 import { barChart, lineChart, donutChart, progressBars, sparkline, PALETTE } from "./assets/js/charts.js";
 import { ASSET_TYPES, FIXED_TYPES, TYPE_COLORS, PROCEED_KINDS, migrateLegacy, deriveAsset, positionAt, assetSummary, portfolioOverview, groupsByType, monthlySeries } from "./assets/js/portfolio.js";
 import { api, claimsActive, formatKeyInput, keyIsComplete, isLifetime, daysLeft, fmtDate } from "./assets/js/license.js";
-import { waitForUser, watchSession, loadCloudState, saveCloudState, onCloudSave, logoutUser, getBackendAuthToken, sendPasswordReset, updateDisplayName } from "./firebase-state.js";
+import { waitForUser, watchSession, loadCloudState, saveCloudState, onCloudSave, logoutUser, getBackendAuthToken, sendPasswordReset, updateDisplayName, resendVerification } from "./firebase-state.js";
 
 const fmt = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
 const pct = new Intl.NumberFormat('pt-BR', { maximumFractionDigits:1 });
@@ -1770,6 +1770,7 @@ function licenseReminder(){
   if(licenseInfo&&!licenseInfo.lifetime){const d=daysLeft(licenseInfo.until);if(d<=5)setTimeout(()=>toast(d<=0?'Sua assinatura vence hoje.':`Sua assinatura vence em ${d} dia${d>1?'s':''}. Renove em Configurações → Assinatura.`),3500);}
 }
 function licenseGate(user,st,claims){
+  if(st&&st.adminPending)return adminVerifyGate(user);
   return new Promise(()=>{ // só termina recarregando a página depois de ativar
     const expired=Number(claims?.until)>0&&Number(claims.until)<=Date.now();
     const root=$('#app');
@@ -1790,6 +1791,21 @@ function licenseGate(user,st,claims){
       try{await api('/api/license/redeem',{method:'POST',body:{key:key.value},token:await user.getIdToken()});await user.getIdToken(true);location.reload();}
       catch(error){err.textContent=error.message;err.hidden=false;btn.disabled=false;btn.textContent='Ativar acesso';}
     };
+  });
+}
+// Administrador cadastrado mas com e-mail ainda não confirmado: precisa clicar no link que o Firebase enviou.
+function adminVerifyGate(user){
+  return new Promise(()=>{
+    document.querySelector('.boot-hint')?.remove();
+    $('#app').innerHTML=`<main class="license-gate"><section class="license-card"><img src="/assets/images/logo-mark.png" alt="" width="64" height="64"><h1>Confirme o seu e-mail</h1>
+      <p>Para liberar o acesso de administrador, abra o e-mail que enviamos para <b>${escapeHTML(user.email||'')}</b> e clique no link de confirmação. Depois volte aqui.</p>
+      <button class="primary-btn" id="verDone" type="button">Já confirmei</button><button class="secondary-btn" id="verResend" type="button">Reenviar e-mail</button>
+      <p class="form-error" id="verMsg" role="status" hidden></p>
+      <small><button type="button" class="text-btn" id="verLogout">Sair</button></small></section></main>`;
+    const msg=text=>{const m=$('#verMsg');m.textContent=text;m.hidden=false;};
+    $('#verLogout').onclick=()=>logoutUser();
+    $('#verDone').onclick=async()=>{try{await user.reload();await user.getIdToken(true);location.reload();}catch(e){msg('Não foi possível conferir agora. Tente de novo.');}};
+    $('#verResend').onclick=async()=>{try{await resendVerification();msg('E-mail reenviado. Confira também a caixa de spam.');}catch(e){msg(e.message||'Não foi possível reenviar agora.');}};
   });
 }
 function bindLicenseSettings(){

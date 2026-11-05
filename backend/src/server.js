@@ -15,7 +15,7 @@ import { startTelegramBot, processUpdate, telegramMode, telegramWebhookSecret } 
 let firebaseReady=false;let firebaseInitError=null;
 function resolveServiceAccountPath(){const configured=process.env.GOOGLE_APPLICATION_CREDENTIALS||'./service-account.json';return path.isAbsolute(configured)?configured:path.resolve(process.cwd(),configured);}
 try{if(!getApps().length){const serviceAccountJson=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;let credential;if(serviceAccountJson)credential=cert(JSON.parse(serviceAccountJson));else{const serviceAccountPath=resolveServiceAccountPath();if(!fs.existsSync(serviceAccountPath))throw new Error(`Credencial Firebase nao encontrada em: ${serviceAccountPath}`);credential=cert(JSON.parse(fs.readFileSync(serviceAccountPath,'utf8')));}initializeApp({credential,projectId:process.env.FIREBASE_PROJECT_ID});}firebaseReady=true;}catch(error){firebaseInitError=error;console.error('P360 Firebase nao inicializou:',error.message);}
-const db=firebaseReady?getFirestore():null;const license=firebaseReady?createLicenseService({db,auth:getAuth()}):null;const app=express();const __filename=fileURLToPath(import.meta.url);const __dirname=path.dirname(__filename);const PROJECT_ROOT=path.resolve(__dirname,'../..');
+const db=firebaseReady?getFirestore():null;const ADMIN_EMAILS=new Set(String(process.env.ADMIN_EMAILS||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean));const license=firebaseReady?createLicenseService({db,auth:getAuth(),adminEmails:ADMIN_EMAILS}):null;const app=express();const __filename=fileURLToPath(import.meta.url);const __dirname=path.dirname(__filename);const PROJECT_ROOT=path.resolve(__dirname,'../..');
 
 // ---------------------------------------------------------------------------
 // Segurança
@@ -97,7 +97,6 @@ app.get('/health',(req,res)=>{const status=backendStatus();res.status(status.ok?
 const keyLimiter=rateLimit({windowMs:10*60_000,max:12,keyPrefix:'redeem'});
 const keyCheckLimiter=rateLimit({windowMs:10*60_000,max:20,keyPrefix:'keycheck'});
 const adminLimiter=rateLimit({windowMs:60_000,max:60,keyPrefix:'admin'});
-const ADMIN_EMAILS=new Set(String(process.env.ADMIN_EMAILS||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean));
 const guarded=fn=>async(req,res)=>{
   if(!license)return res.status(503).json({error:'Servidor sem Firebase Admin.'});
   try{await fn(req,res);}
@@ -109,11 +108,17 @@ function adminOnly(req,res,next){
   if(!req.user?.email_verified||!ADMIN_EMAILS.has(String(req.user.email||'').toLowerCase()))return res.status(403).json({error:'Acesso restrito. Confirme o e-mail da conta administradora.'});
   next();
 }
-app.post('/api/license/check',keyCheckLimiter,guarded(async(req,res)=>{const r=await license.check(req.body?.key);res.json({valid:!!r.valid});}));
+app.post('/api/license/check',keyCheckLimiter,guarded(async(req,res)=>{
+  const key=String(req.body?.key||'').trim();
+  // Sem chave: só vale para o e-mail do administrador (cadastro inicial); qualquer outro recebe "inválida".
+  if(!key)return res.json({valid:license.isAdminEmail(req.body?.email)});
+  const r=await license.check(key);res.json({valid:!!r.valid});
+}));
 app.get('/api/license/status',authUser,guarded(async(req,res)=>{
   let st=await license.status(req.user.uid);
   if(st.legacy&&st.needsClaim)st=await license.grantLegacy(req.user.uid);
-  res.json({active:st.active,until:st.until,lifetime:!!st.lifetime,legacy:!!st.legacy,expired:!!st.expired,admin:ADMIN_EMAILS.has(String(req.user.email||'').toLowerCase())&&!!req.user.email_verified});
+  if(!st.active){const a=await license.grantAdmin(req.user.uid);if(a.active)st=a;else if(a.adminPending)st={...st,adminPending:true};}
+  res.json({adminPending:!!st.adminPending,active:st.active,until:st.until,lifetime:!!st.lifetime,legacy:!!st.legacy,expired:!!st.expired,admin:ADMIN_EMAILS.has(String(req.user.email||'').toLowerCase())&&!!req.user.email_verified});
 }));
 app.post('/api/license/redeem',authUser,keyLimiter,guarded(async(req,res)=>{const r=await license.redeem(req.user.uid,req.body?.key);res.json(r);}));
 app.get('/api/admin/keys',authUser,adminLimiter,adminOnly,guarded(async(req,res)=>{res.json({keys:await license.listKeys()});}));
