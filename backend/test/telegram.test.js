@@ -31,7 +31,7 @@ const makeState = () => ({
   investments: [], cardPayments: [],
 });
 
-function setup(linked = true) {
+function setup(linked = true, guard = null) {
   const docs = new Map();
   if (linked) docs.set('telegramLinks/42', { uid: 'u1', active: true });
   const state = makeState();
@@ -45,8 +45,8 @@ function setup(linked = true) {
   };
   const loadState = async () => state;
   calls.length = 0;
-  const say = text => processUpdate(db, loadState, { message: { chat: { id: 42 }, text } });
-  const press = (data, messageId = 9) => processUpdate(db, loadState, { callback_query: { id: 'q', data, message: { chat: { id: 42 }, message_id: messageId } } });
+  const say = text => processUpdate(db, loadState, { message: { chat: { id: 42 }, text } }, guard);
+  const press = (data, messageId = 9) => processUpdate(db, loadState, { callback_query: { id: "q", data, message: { chat: { id: 42 }, message_id: messageId } } }, guard);
   const last = () => calls.filter(c => c.method === 'sendMessage' || c.method === 'editMessageText').at(-1);
   return { say, press, last, state, docs };
 }
@@ -134,4 +134,19 @@ test('datas dos lançamentos: ontem, anteontem e datas inválidas (horário de B
   assert.equal(await pendingDate('gastei 30 de uber'), br(0));
   assert.equal(await pendingDate('gastei 30 de uber dia 31/02'), br(0), 'data inexistente volta para hoje');
   assert.equal(await pendingDate('gastei 30 de uber dia 05/03/2026'), '2026-03-05');
+});
+
+test('sem assinatura ativa o bot não lê nem grava dados financeiros', async () => {
+  const t = setup(true, async () => false);
+  const before = JSON.stringify(t.state);
+  await t.say('saldo');
+  assert.match(t.last().text, /Assinatura inativa/);
+  await t.say('gastei 45 no mercado');
+  assert.match(t.last().text, /Assinatura inativa/);
+  assert.equal(JSON.stringify(t.state), before);
+  assert.equal(t.docs.get('telegramPending/42'), undefined, 'nenhum lançamento pendente pode ser criado');
+  // assinatura ativa volta ao normal
+  const ok = setup(true, async () => true);
+  await ok.say('saldo');
+  assert.match(ok.last().text, /Saldo nas contas/);
 });

@@ -1,4 +1,5 @@
 import { registerUser } from "./register.js";
+import { api, formatKeyInput, keyIsComplete } from "../license.js";
 import {
     bindPasswordToggles, bindCapsLockHint, setBusy, showMessage,
     passwordIssues, passwordStrength, isCommonPassword, EMAIL_RE
@@ -37,6 +38,10 @@ confirmInput.addEventListener("input", () => {
     confirmInput.classList.toggle("is-match", Boolean(confirmInput.value) && confirmInput.value === passwordInput.value);
 });
 
+const keyInput = document.getElementById("accessKey");
+keyInput.addEventListener("input", () => { keyInput.value = formatKeyInput(keyInput.value); });
+keyInput.addEventListener("paste", () => setTimeout(() => { keyInput.value = formatKeyInput(keyInput.value); }, 0));
+
 const REGISTER_ERRORS = {
     "auth/email-already-in-use": "Não foi possível criar a conta com este e-mail. Se ele já é seu, entre ou redefina a senha.",
     "auth/weak-password": "Senha muito fraca. Use pelo menos 8 caracteres com letras e números.",
@@ -55,6 +60,8 @@ form.addEventListener("submit", async (e) => {
         return showMessage(message, "Não foi possível criar a conta agora. Tente novamente.", "error");
     }
 
+    const accessKey = keyInput.value;
+    if (!keyIsComplete(accessKey)) return showMessage(message, "Informe a chave de acesso completa que você recebeu.", "error");
     const nome = document.getElementById("name").value.trim().replace(/\s+/g, " ").slice(0, 80);
     const email = document.getElementById("email").value.trim().toLowerCase();
     const senha = passwordInput.value;
@@ -70,13 +77,30 @@ form.addEventListener("submit", async (e) => {
     if (!document.getElementById("terms")?.checked) return showMessage(message, "Confirme que leu e aceita o uso dos seus dados.", "error");
 
     submitting = true;
-    setBusy(submit, true, "Criando conta...");
+    setBusy(submit, true, "Verificando a chave...");
     try {
-        await registerUser({ nome, email, senha });
+        // 1) A chave precisa existir e estar livre ANTES de criar a conta.
+        const check = await api("/api/license/check", { method: "POST", body: { key: accessKey } });
+        if (!check.valid) {
+            submitting = false; setBusy(submit, false);
+            return showMessage(message, "Chave inválida ou já utilizada. Confira os caracteres ou peça outra chave.", "error");
+        }
+        setBusy(submit, true, "Criando conta...");
+        const user = await registerUser({ nome, email, senha });
+        // 2) Usa a chave (uma única vez) e atualiza o acesso da conta.
+        setBusy(submit, true, "Ativando acesso...");
+        try {
+            await api("/api/license/redeem", { method: "POST", body: { key: accessKey }, token: await user.getIdToken() });
+            await user.getIdToken(true);
+        } catch (redeemError) {
+            // A conta já existe; a tela do app pede a chave de novo se a ativação não concluiu.
+            console.warn("Ativação pendente:", redeemError.message);
+        }
         window.location.replace("/");
     } catch (error) {
         submitting = false;
         setBusy(submit, false);
-        showMessage(message, REGISTER_ERRORS[error.code] || "Não foi possível criar a conta agora. Tente novamente.", "error");
+        const net = error.status === 0 ? error.message : "";
+        showMessage(message, REGISTER_ERRORS[error.code] || net || "Não foi possível criar a conta agora. Tente novamente.", "error");
     }
 });

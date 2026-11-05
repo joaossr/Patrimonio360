@@ -1,0 +1,19 @@
+/* Tela de ativação por chave de acesso + seção Assinatura em Configurações */
+.license-gate{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:radial-gradient(800px 500px at 0 0,rgba(63,140,255,.16),transparent 60%),radial-gradient(700px 500px at 100% 100%,rgba(140,88,232,.16),transparent 60%),var(--bg,#0a0e13)}
+.license-card{width:min(440px,100%);padding:30px 26px;border-radius:26px;border:1px solid var(--border,rgba(255,255,255,.1));background:var(--card-solid,#141b24);box-shadow:0 28px 70px rgba(0,0,0,.5);text-align:center;display:grid;gap:14px;justify-items:center}
+.license-card img{border-radius:18px;box-shadow:0 10px 26px rgba(76,120,255,.35)}
+.license-card h1{margin:0;font-size:1.5rem;letter-spacing:-.02em}
+.license-card p{margin:0;color:var(--muted,#9aa6b6);line-height:1.55;font-size:.94rem}
+.license-card small{color:var(--muted,#9aa6b6);font-size:.82rem}
+.license-warn{padding:10px 12px;border-radius:12px;background:rgba(246,196,83,.12);border:1px solid rgba(246,196,83,.35);color:#f6d58a!important;font-size:.84rem!important}
+.license-card form{display:grid;gap:10px;width:100%;margin-top:4px}
+.license-card input{width:100%;height:52px;padding:0 16px;border-radius:15px;border:1px solid #3a4452;background:var(--bg-2,#0e141c);color:var(--text,#f3f6fb);font:700 1.02rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.05em;text-align:center;text-transform:uppercase}
+.license-card input:focus{outline:2px solid #3f8cff;outline-offset:1px;border-color:transparent}
+.license-card .primary-btn{height:50px;border-radius:15px}
+.license-card .form-error{width:100%;margin:0;color:#ff8b98}
+.license-card .text-btn{display:inline;padding:0;border:0;background:none;color:#8fb4ff;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+.license-renew{display:flex;gap:8px;align-items:center}
+.license-renew .input{min-width:0;width:min(250px,100%);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;text-transform:uppercase}
+.license-admin-link{display:inline-flex;margin-top:12px;text-decoration:none}
+.badge.warn{background:rgba(246,196,83,.16);color:#f6d58a}
+@media (max-width:640px){.license-renew{flex-wrap:wrap;width:100%}.license-renew .input{width:100%;flex:1 1 100%}}

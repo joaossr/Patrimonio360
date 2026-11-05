@@ -430,11 +430,21 @@ async function handleCallback(db, update, loadState) {
 }
 
 // Processa uma atualização do Telegram (usado pelo polling e pelo webhook).
-export async function processUpdate(db, loadState, u) {
+// "guard(uid)" diz se a assinatura da pessoa está ativa; sem assinatura, nenhum dado financeiro é lido.
+class NoLicense extends Error {}
+export async function processUpdate(db, loadState, u, guard = null) {
+    const gated = guard ? async uid => { if (!(await guard(uid))) throw new NoLicense(); return loadState(uid); } : loadState;
     try {
-        if (u?.message) await handleMessage(db,u,loadState);
-        if (u?.callback_query) await handleCallback(db,u,loadState);
-    } catch (e) { console.error('P360 Telegram update error:',e); }
+        if (u?.message) await handleMessage(db,u,gated);
+        if (u?.callback_query) await handleCallback(db,u,gated);
+    } catch (e) {
+        if (e instanceof NoLicense) {
+            const chat = u?.message?.chat?.id || u?.callback_query?.message?.chat?.id;
+            if (chat) await send(String(chat), '🔒 <b>Assinatura inativa</b>\n\nSua assinatura do Patrimônio 360 expirou ou ainda não foi ativada. Abra o app e informe a chave de acesso em <b>Configurações → Assinatura</b>.').catch(() => {});
+            return;
+        }
+        console.error('P360 Telegram update error:',e);
+    }
 }
 
 // Segredo do webhook: usa TELEGRAM_WEBHOOK_SECRET ou deriva do token (nunca sai do servidor).
@@ -455,20 +465,20 @@ export function telegramWebhookUrl() {
     return base ? (base.endsWith('/api/telegram/webhook') ? base : base + '/api/telegram/webhook') : '';
 }
 
-async function poll(db, loadState) {
+async function poll(db, loadState, guard) {
     if (running) return;
     running = true;
     try {
         const updates = await tg('getUpdates',{offset,timeout:20,allowed_updates:['message','callback_query']});
         for (const u of updates) {
             offset = Number(u.update_id)+1;
-            await processUpdate(db,loadState,u);
+            await processUpdate(db,loadState,u,guard);
         }
     } catch (e) { console.error('P360 Telegram:',e.message); }
-    finally { running=false; setTimeout(()=>poll(db,loadState),POLL_MS); }
+    finally { running=false; setTimeout(()=>poll(db,loadState,guard),POLL_MS); }
 }
 
-export async function startTelegramBot({ db, loadState, mode = telegramMode() }) {
+export async function startTelegramBot({ db, loadState, mode = telegramMode(), guard = null }) {
     if (!TOKEN) { console.log('P360 Telegram desativado: TELEGRAM_BOT_TOKEN não configurado.'); return; }
     try {
         const me = await tg('getMe');
@@ -491,7 +501,7 @@ export async function startTelegramBot({ db, loadState, mode = telegramMode() })
         } else {
             await tg('deleteWebhook',{drop_pending_updates:false}).catch(()=>{});
             console.log('P360 Telegram em modo polling');
-            poll(db,loadState);
+            poll(db,loadState,guard);
         }
     } catch (e) {
         console.error('P360 Telegram não iniciou:',e.message);

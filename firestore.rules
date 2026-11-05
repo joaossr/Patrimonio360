@@ -15,6 +15,14 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // Assinatura ativa: o backend grava os claims "licensed" e "until" (ms) ao usar uma chave de acesso.
+    // O prazo é conferido aqui, a cada leitura/gravação, então vale mesmo se alguém burlar a tela.
+    function licensed() {
+      return signedIn()
+        && request.auth.token.licensed == true
+        && request.auth.token.until > request.time.toMillis();
+    }
+
     // Perfil básico criado no cadastro.
     match /users/{uid} {
       allow read, delete: if isOwner(uid);
@@ -24,12 +32,12 @@ service cloud.firestore {
 
       // Estado financeiro completo do app (users/{uid}/app/state).
       match /app/{docId} {
-        allow read, write: if isOwner(uid);
+        allow read, write: if isOwner(uid) && licensed();
       }
 
       // Memória, perfil e insights da IA: gravados somente pelo backend.
       match /ai/{docId} {
-        allow read: if isOwner(uid);
+        allow read: if isOwner(uid) && licensed();
         allow write: if false;
       }
     }
@@ -42,6 +50,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
     match /telegramPending/{chatId} {
+      allow read, write: if false;
+    }
+    // Chaves de acesso e assinaturas: somente o backend.
+    match /accessKeys/{keyId} {
+      allow read, write: if false;
+    }
+    match /licenses/{uid} {
       allow read, write: if false;
     }
 
