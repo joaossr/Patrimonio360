@@ -1778,7 +1778,19 @@ function goTo(page,{replace=false}={}){
 }
 window.addEventListener('popstate',()=>{const p=pageFromHash();if(p&&p!==state.page){closeAllModals();state.page=p;render();window.scrollTo({top:0});}});
 
+// Se o carregamento demorar, mostra o que está acontecendo e dá uma saída (antes ficava só o esqueleto).
+function bootHint(){
+  const t=setTimeout(()=>{
+    if(!document.querySelector('.boot-skeleton')||document.querySelector('.boot-hint'))return;
+    const el=document.createElement('div');el.className='boot-hint';el.setAttribute('role','status');
+    el.innerHTML='<b>Está demorando mais que o normal…</b><small>Estamos buscando seus dados na nuvem. Verifique sua conexão.</small><div><button type="button" class="primary-btn" data-act="retry">Tentar de novo</button><a class="secondary-btn" href="login.html">Entrar de novo</a></div>';
+    el.querySelector('[data-act="retry"]').addEventListener('click',()=>location.reload());
+    document.body.appendChild(el);
+  },6000);
+  return ()=>{clearTimeout(t);document.querySelector('.boot-hint')?.remove();};
+}
 async function bootstrap(){
+  const stopHint=bootHint();
   currentUser=await waitForUser();
   watchSession(()=>location.replace('login.html'));
   onCloudSave({onError:()=>{cloudSaveFailed=true;syncBanner();toast('Não foi possível salvar na nuvem. Verifique sua conexão.');},onSaved:()=>{if(cloudSaveFailed){cloudSaveFailed=false;syncBanner();}}});
@@ -1787,7 +1799,7 @@ async function bootstrap(){
   let shownFromCache=false;
   try{const cached=JSON.parse(localStorage.getItem(localCacheKey())||'null');if(cached){hydrate(cached);shownFromCache=true;}}catch{}
   const show=()=>{state.page=pageFromHash()||state.page||state.preferences?.startPage||'dashboard';history.replaceState(null,'',`/${state.page}`);syncDerived();render();};
-  if(shownFromCache){cloudLoading=true;show();}
+  if(shownFromCache){cloudLoading=true;stopHint();show();}
   try{
     const cloud=await loadCloudState(currentUser.uid);
     cloudReady=true;
@@ -1799,7 +1811,7 @@ async function bootstrap(){
   }catch(error){
     console.error('Erro ao carregar Firebase:',error);
   }
-  cloudLoading=false;
+  cloudLoading=false;stopHint();
   // Se um formulário estiver aberto, não redesenha por baixo dele; atualiza ao fechar.
   if(shownFromCache&&$('.modal-backdrop')){
     syncDerived();

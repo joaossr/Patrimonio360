@@ -3,11 +3,11 @@
    - Imagens, fontes e bibliotecas versionadas: cache primeiro, atualizando em segundo plano.
    - Nunca guarda nem intercepta Firebase/Firestore/Auth nem a API do backend (dados e login sempre ao vivo).
    Para forçar atualização do cache em todos os aparelhos, mude VERSION. */
-const VERSION = 'p360-v58';
+const VERSION = 'p360-v59';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 const PRECACHE = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.svg', '/assets/images/icon-192.png'];
-const NETWORK_TIMEOUT = 4000;
+const NAV_TIMEOUT = 8000; // só para abrir a página; scripts e estilos esperam a rede
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -34,10 +34,11 @@ const LIVE = /(^|\.)(firestore|identitytoolkit|securetoken|firebaseinstallations
 
 function timeout(ms) { return new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)); }
 
-async function networkFirst(request, cacheName, fallbackUrl, preload) {
+async function networkFirst(request, cacheName, fallbackUrl, preload, useTimeout = false) {
   const cache = await caches.open(cacheName);
   try {
-    const fresh = await Promise.race([preload ? Promise.resolve(preload).then(r => r || fetch(request)) : fetch(request), timeout(NETWORK_TIMEOUT)]);
+    const attempt = preload ? Promise.resolve(preload).then(r => r || fetch(request)) : fetch(request);
+    const fresh = useTimeout ? await Promise.race([attempt, timeout(NAV_TIMEOUT)]) : await attempt;
     if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
     return fresh;
   } catch {
@@ -72,7 +73,7 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       // O app (SPA) responde sempre pelo index.html; login/cadastro e outras páginas pelo próprio endereço.
       const res = isApp
-        ? await networkFirst(new Request('/index.html'), SHELL, '/index.html', event.preloadResponse)
+        ? await networkFirst(new Request('/index.html'), SHELL, '/index.html', event.preloadResponse, true)
         : await networkFirst(request, SHELL);
       return res || (await caches.match('/offline.html')) || Response.error();
     })());

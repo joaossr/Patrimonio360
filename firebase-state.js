@@ -20,9 +20,16 @@ export function watchSession(onSignedOut){
 // Retorna o estado salvo (ou null quando o usuário ainda não tem dados).
 // Lança erro se o Firestore não respondeu: quem chama NÃO deve salvar por cima
 // da nuvem nesse caso, senão os dados reais seriam substituídos.
-export async function loadCloudState(uid){
-  const snap=await getDoc(doc(db,'users',uid,'app','state'));
-  return snap.exists()?snap.data().state:null;
+export async function loadCloudState(uid,{attempts=2,timeoutMs=12000}={}){
+  let lastError=null;
+  for(let i=0;i<attempts;i++){
+    try{
+      const read=getDoc(doc(db,'users',uid,'app','state'));
+      const snap=await Promise.race([read,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tempo esgotado ao carregar seus dados.')),timeoutMs))]);
+      return snap.exists()?snap.data().state:null;
+    }catch(error){ lastError=error; }
+  }
+  throw lastError;
 }
 
 const SAVE_DELAY=600;

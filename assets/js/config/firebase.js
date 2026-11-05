@@ -12,7 +12,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import { initializeFirestore } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
 
@@ -34,7 +34,9 @@ const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-const db = getFirestore(app);
+// Algumas redes, VPNs e extensões bloqueiam o canal de streaming do Firestore e a leitura fica parada.
+// Com a detecção automática, o app troca sozinho para long polling em poucos segundos.
+const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 
 export {
 
