@@ -66,6 +66,15 @@
         ]
       },
       {
+        "source": "/@(dashboard|movimentacoes|receitas|despesas|calendario|contas|cartoes|orcamento|assinaturas|metas|reserva|investimentos|assistente|configuracoes|relatorios|simuladores|dados)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
         "source": "/",
         "headers": [
           {

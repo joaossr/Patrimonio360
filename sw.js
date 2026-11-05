@@ -3,10 +3,10 @@
    - Imagens, fontes e bibliotecas versionadas: cache primeiro, atualizando em segundo plano.
    - Nunca guarda nem intercepta Firebase/Firestore/Auth nem a API do backend (dados e login sempre ao vivo).
    Para forçar atualização do cache em todos os aparelhos, mude VERSION. */
-const VERSION = 'p360-v57';
+const VERSION = 'p360-v58';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
-const PRECACHE = ['./', 'index.html', 'offline.html', 'manifest.webmanifest', 'favicon.svg', 'assets/images/icon-192.png'];
+const PRECACHE = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.svg', '/assets/images/icon-192.png'];
 const NETWORK_TIMEOUT = 4000;
 
 self.addEventListener('install', event => {
@@ -67,13 +67,14 @@ self.addEventListener('fetch', event => {
 
   // Navegação (abrir/recarregar o app)
   if (request.mode === 'navigate') {
-    const isApp = url.origin === self.location.origin && /(^|\/)(index\.html)?$/.test(url.pathname);
+    // Caminhos sem extensão (/, /movimentacoes, /orcamento...) são o app; login.html, register.html etc. seguem pelo próprio endereço.
+    const isApp = url.origin === self.location.origin && (!/\.[a-z0-9]+$/i.test(url.pathname) || /\/index\.html$/i.test(url.pathname));
     event.respondWith((async () => {
       // O app (SPA) responde sempre pelo index.html; login/cadastro e outras páginas pelo próprio endereço.
       const res = isApp
-        ? await networkFirst(new Request('index.html'), SHELL, 'index.html', event.preloadResponse)
+        ? await networkFirst(new Request('/index.html'), SHELL, '/index.html', event.preloadResponse)
         : await networkFirst(request, SHELL);
-      return res || (await caches.match('offline.html')) || Response.error();
+      return res || (await caches.match('/offline.html')) || Response.error();
     })());
     return;
   }

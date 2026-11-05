@@ -48,7 +48,7 @@ function mount() {
     try {
       const r = window.P360AI.ask(text);
       typing.removeAttribute('data-typing');
-      typing.querySelector('.ai-dash-bubble').innerHTML = window.P360AI.format(r.text) + `<a class="ai-dash-more" href="#/assistente">Continuar na página da IA →</a>`;
+      typing.querySelector('.ai-dash-bubble').innerHTML = window.P360AI.format(r.text) + `<a class="ai-dash-more" href="/assistente" data-p360-go="assistente">Continuar na página da IA →</a>`;
       renderSuggestions(r.suggestions);
     } catch (error) {
       console.warn(error);
@@ -69,3 +69,12 @@ function mount() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });
 else mount();
+
+// Links internos (ex.: "Continuar na página da IA") navegam sem recarregar a página.
+document.addEventListener("click", e => {
+  const a = e.target.closest?.("[data-p360-go]");
+  if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+  e.preventDefault();
+  history.pushState(null, "", "/" + a.dataset.p360Go);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+});

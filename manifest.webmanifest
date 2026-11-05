@@ -20,8 +20,8 @@
     { "src": "assets/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Movimentações", "short_name": "Movimentos", "url": "./?source=shortcut#/movimentacoes", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Orçamento", "short_name": "Orçamento", "url": "./?source=shortcut#/orcamento", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Contas e cartões", "short_name": "Contas", "url": "./?source=shortcut#/contas", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Movimentações", "short_name": "Movimentos", "url": "/movimentacoes?source=shortcut", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Orçamento", "short_name": "Orçamento", "url": "/orcamento?source=shortcut", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Contas e cartões", "short_name": "Contas", "url": "/contas?source=shortcut", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] }
   ]
 }

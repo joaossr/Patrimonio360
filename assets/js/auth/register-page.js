@@ -73,7 +73,7 @@ form.addEventListener("submit", async (e) => {
     setBusy(submit, true, "Criando conta...");
     try {
         await registerUser({ nome, email, senha });
-        window.location.replace("index.html");
+        window.location.replace("/");
     } catch (error) {
         submitting = false;
         setBusy(submit, false);

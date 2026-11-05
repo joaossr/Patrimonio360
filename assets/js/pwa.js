@@ -116,7 +116,7 @@
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
     window.addEventListener('load', async () => {
       try {
-        const reg = await navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' });
+        const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
         const watch = worker => {
           worker?.addEventListener('statechange', () => {
             if (worker.state === 'installed' && navigator.serviceWorker.controller) {

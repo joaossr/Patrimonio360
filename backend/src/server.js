@@ -63,6 +63,8 @@ app.use((req,res,next)=>{
   next();
 });
 app.use(express.static(PROJECT_ROOT,{extensions:['html'],index:'index.html',dotfiles:'deny'}));
+// Endereços limpos do app (/movimentacoes, /orcamento...) abrem o index.html, como no Firebase Hosting.
+app.get(/^\/(?!api(\/|$))[a-z-]+$/,(req,res,next)=>{if(!req.accepts('html'))return next();res.sendFile(path.join(PROJECT_ROOT,'index.html'));});
 
 // Limite simples de requisições em memória (por usuário autenticado ou IP).
 function rateLimit({windowMs,max,keyPrefix}){

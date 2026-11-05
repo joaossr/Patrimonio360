@@ -37,7 +37,7 @@ let lockTimer = null;
 
 // Quem já está logado vai direto para o sistema.
 const stopWatching = onAuthStateChanged(auth, user => {
-    if (user && !submitting) window.location.replace("index.html");
+    if (user && !submitting) window.location.replace("/");
     stopWatching();
 });
 
@@ -109,7 +109,7 @@ form.addEventListener("submit", async (event) => {
             if (remember) localStorage.setItem("p360-last-email", email);
             else localStorage.removeItem("p360-last-email");
         } catch { /* sem armazenamento */ }
-        window.location.replace("index.html");
+        window.location.replace("/");
     } catch (error) {
         submitting = false;
         setBusy(submit, false);

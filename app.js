@@ -180,7 +180,7 @@ function shell(content){
   const item=([p,ic,label])=>{const on=curHub&&curHub[0]===p||state.page===p;return `<button class="nav-item ${on?'active':''}" data-page="${p}" ${on?'aria-current="page"':''} data-tip="${label}" aria-label="${label}"><span class="nav-icon">${icon(ic,{size:22})}</span><span class="nav-text">${label}</span></button>`;};
   return `<div class="app-shell rail-layout ${hidden?'blur-values':''}">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><img class="brand-logo" src="assets/images/logo-mark.png" alt="Patrimônio 360" width="38" height="38"><div><h1>Patrimônio 360</h1><span>Gestão financeira</span></div></div>
+      <div class="brand"><img class="brand-logo" src="/assets/images/logo-mark.png" alt="Patrimônio 360" width="38" height="38"><div><h1>Patrimônio 360</h1><span>Gestão financeira</span></div></div>
       <button class="rail-add" id="railNewTx" data-tip="Nova movimentação" aria-label="Nova movimentação">${icon('plus',{size:22})}<span class="nav-text">Nova movimentação</span></button>
       <nav class="menu" aria-label="Menu principal">
         ${groups.map(([a,b])=>`<div class="nav-group">${NAV_HUBS.slice(a,b).map(item).join('')}</div>`).join('')}
@@ -457,7 +457,7 @@ function bindTxFilters(){
   const onKey=e=>{if(e.key==='Escape'&&sheet?.classList.contains('open')){e.stopPropagation();setOpen(false);}};
   document.addEventListener('keydown',onKey,true);
   const closeOnLeave=()=>{setOpen(false);document.removeEventListener('keydown',onKey,true);};
-  window.addEventListener('hashchange',closeOnLeave,{once:true});
+  window.addEventListener('p360:navigate',closeOnLeave,{once:true});window.addEventListener('popstate',closeOnLeave,{once:true});
   root.addEventListener('click',e=>{const c=e.target.closest('[data-clear]');if(!c)return;const k=c.dataset.clear;f[k]=TXF_BASE[k];if(k==='period'){f.from='';f.to='';}sync();run();});
   const clr=q1('#txClear');if(clr)clr.onclick=()=>{Object.assign(f,{...TXF_BASE,order:f.order});if(hiddenType)f.type=hiddenType;sync();run();};
   sync();run();
@@ -1765,12 +1765,15 @@ function syncBanner(){
 const validPages=()=>new Set(nav.map(n=>n[0]));
 // Relatórios, Simuladores e Controle de dados agora ficam dentro das Configurações.
 const SETTINGS_PAGES={relatorios:'report',simuladores:'calculator',dados:'database'};
-function pageFromHash(){let p=decodeURIComponent(location.hash.replace(/^#\/?/,''));if(SETTINGS_PAGES[p]){settingsTab=SETTINGS_PAGES[p];p='configuracoes';}return validPages().has(p)?p:null;}
+// Endereço limpo: /movimentacoes (links antigos com #/movimentacoes continuam funcionando).
+function routeOf(){let p='';try{p=decodeURIComponent(location.pathname).replace(/^\/+|\/+$/g,'');}catch{}if(/\.html?$/i.test(p))p='';if(!p){try{p=decodeURIComponent(location.hash.replace(/^#\/?/,''));}catch{}}return p;}
+function pageFromHash(){let p=routeOf();if(SETTINGS_PAGES[p]){settingsTab=SETTINGS_PAGES[p];p='configuracoes';}return validPages().has(p)?p:null;}
 function goTo(page,{replace=false}={}){
   if(SETTINGS_PAGES[page]){settingsTab=SETTINGS_PAGES[page];page='configuracoes';}
   if(!validPages().has(page))page='dashboard';
   const changed=state.page!==page;state.page=page;
-  const hash=`#/${page}`;if(location.hash!==hash){replace?history.replaceState(null,'',hash):history.pushState(null,'',hash);}
+  const url=`/${page}`;if(location.pathname!==url||location.hash){replace?history.replaceState(null,'',url):history.pushState(null,'',url);}
+  window.dispatchEvent(new Event('p360:navigate'));
   render();if(changed)window.scrollTo({top:0});
 }
 window.addEventListener('popstate',()=>{const p=pageFromHash();if(p&&p!==state.page){closeAllModals();state.page=p;render();window.scrollTo({top:0});}});
@@ -1783,7 +1786,7 @@ async function bootstrap(){
   // Gravações seguem bloqueadas até a nuvem responder (cloudReady), então a cópia nunca sobrescreve dados novos.
   let shownFromCache=false;
   try{const cached=JSON.parse(localStorage.getItem(localCacheKey())||'null');if(cached){hydrate(cached);shownFromCache=true;}}catch{}
-  const show=()=>{state.page=pageFromHash()||state.page||state.preferences?.startPage||'dashboard';history.replaceState(null,'',`#/${state.page}`);syncDerived();render();};
+  const show=()=>{state.page=pageFromHash()||state.page||state.preferences?.startPage||'dashboard';history.replaceState(null,'',`/${state.page}`);syncDerived();render();};
   if(shownFromCache){cloudLoading=true;show();}
   try{
     const cloud=await loadCloudState(currentUser.uid);
