@@ -1497,6 +1497,20 @@ function txCategoryOptions(type){
   return `<option value="">Selecione uma categoria</option>${own}${extra}<option value="__new">＋ Criar nova categoria…</option>`;
 }
 function addMonthsToDate(iso,n){const [y,m,d]=iso.split('-').map(Number),target=new Date(y,m-1+n,1,12),last=new Date(target.getFullYear(),target.getMonth()+1,0).getDate();target.setDate(Math.min(d,last));return target.toLocaleDateString('en-CA');}
+// Fatura em que uma compra feita hoje cai: fechamento (closeDay) e vencimento (due) do cartão.
+// Compra no dia do fechamento ou depois entra na fatura seguinte. Sem dia de vencimento cadastrado, devolve null.
+function cardDueFor(card,from=new Date()){
+  const due=Math.round(Number(card?.due||0)),close=Math.round(Number(card?.closeDay||0));
+  if(!(due>=1&&due<=31))return null;
+  const d=from.getDate();let closeOffset=0,dueOffset=0;
+  if(close>=1&&close<=31){if(d>=close)closeOffset=1;dueOffset=closeOffset+(due<=close?1:0);}
+  else dueOffset=d>due?1:0;
+  const at=(off,day)=>{const base=new Date(from.getFullYear(),from.getMonth()+off,1,12),last=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();return new Date(base.getFullYear(),base.getMonth(),Math.min(day,last),12);};
+  const dueDate=at(dueOffset,due),closeDate=close>=1&&close<=31?at(closeOffset,close):null;
+  const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+  const br=x=>`${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}`;
+  return {due:iso(dueDate),dueLabel:br(dueDate),closeLabel:closeDate?br(closeDate):'',monthName:dueDate.toLocaleDateString('pt-BR',{month:'long'})};
+}
 function openTransactionModal(preset={}){
  const today=new Date().toLocaleDateString('en-CA'),type=preset.type==='income'?'income':'expense',defAcc=state.preferences?.defaultAccount||'';
  const wrap=modal(`<div class="modal tx-modal"><div class="modal-head"><h3>Nova movimentação</h3><button class="icon-btn modal-x" aria-label="Fechar">×</button></div><form id="txForm" novalidate><div class="modal-body">
@@ -1504,23 +1518,36 @@ function openTransactionModal(preset={}){
  <div class="form-grid">
  <div class="field full"><label for="txName">Descrição</label><input id="txName" name="name" required maxlength="120" placeholder="Ex.: Supermercado" autocomplete="off"></div>
  <div class="field"><label for="txValue" id="txValueLabel">Valor</label><input id="txValue" name="value" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0,00"></div>
- <div class="field"><label for="txDate">Data</label><input id="txDate" name="date" type="date" value="${today}" required></div>
+ <div class="field" id="txDateField"><label for="txDate" id="txDateLabel">Data</label><input id="txDate" name="date" type="date" value="${today}" required><small class="field-help" id="txDateHint" hidden></small></div>
  <div class="field"><label for="txCategorySelect">Categoria</label><select name="category" id="txCategorySelect" required>${txCategoryOptions(type)}</select><small class="field-help ai-cat-hint" id="txCatHint" hidden></small></div>
  <div class="field" id="txDistributionField"><label for="txDist">Tipo de despesa</label><select id="txDist" name="distributionType"><option value="fixed">Despesa fixa</option><option value="investment">Investimento</option><option value="leisure">Lazer</option></select></div>
  <div class="field" id="txPaymentField"><label for="txPayment">Forma de pagamento</label><select name="payment" id="txPayment"><option value="conta">Conta / saldo</option><option value="cartao" ${state.cards.length?'':'disabled'}>Cartão de crédito${state.cards.length?'':' (nenhum cadastrado)'}</option></select></div>
  <div class="field" id="txAccountField"><label for="txAccount">Conta</label><select id="txAccount" name="account"><option value="">Sem conta</option>${state.accounts.map(a=>`<option value="${escapeHTML(a.name)}" ${a.name===defAcc||(!defAcc&&state.accounts.length===1)?'selected':''}>${escapeHTML(a.name)}</option>`).join('')}</select></div>
- <div class="field" id="txCardField" hidden><label for="txCard">Cartão</label><select id="txCard" name="card">${state.cards.map(c=>`<option value="${escapeHTML(c.id)}" ${String(c.id)===String(state.preferences?.primaryCardId)?'selected':''}>${escapeHTML(c.name)}</option>`).join('')}</select></div>
+ <div class="field full" id="txCardField" hidden><label id="txCardLabel">Cartão</label><div class="card-picker" role="radiogroup" aria-labelledby="txCardLabel">${(()=>{const pick=state.cards.find(c=>String(c.id)===String(state.preferences?.primaryCardId))||state.cards[0];return state.cards.map(c=>`<label class="mini-card"><input type="radio" name="card" value="${escapeHTML(c.id)}" ${pick&&String(c.id)===String(pick.id)?'checked':''}><span class="mini-card-body">${creditCardHTML(c)}<span class="mini-card-meta"><b>${escapeHTML(c.name||c.bank||'Cartão')}</b><small>${c.due?`vence dia ${escapeHTML(c.due)}`:'sem vencimento'}</small></span></span></label>`).join('');})()}</div><div class="card-info" id="txCardInfo" aria-live="polite"></div></div>
  <div class="field" id="txInstallmentsField" hidden><label for="txInst">Parcelas</label><input id="txInst" name="installments" type="number" min="1" max="48" value="1" inputmode="numeric"><small class="field-help" id="txInstHelp"></small></div>
  <div class="field" id="txRepeatField"><label for="txRepeat">Repetir</label><select id="txRepeat" name="repeat"><option value="1">Não repetir</option>${[2,3,6,12,24].map(n=>`<option value="${n}">Mensalmente por ${n} meses</option>`).join('')}</select></div>
- <div class="field"><label for="txStatus">Status</label><select name="status" id="txStatus"></select></div>
+ <div class="field" id="txStatusField"><label for="txStatus">Status</label><select name="status" id="txStatus"></select></div>
  <div class="field" id="txGoalField"><label for="txGoal">Meta vinculada <span class="optional-label">(opcional)</span></label><select id="txGoal" name="goalId"><option value="">Nenhuma meta</option>${(state.goals||[]).map(g=>`<option value="${g.id}">${escapeHTML(g.name)}</option>`).join('')}</select></div>
  </div><p class="form-error" id="txError" role="alert" hidden></p></div><div class="modal-actions"><button type="button" class="secondary-btn modal-x">Cancelar</button><button class="primary-btn">Salvar movimentação</button></div></form></div>`);
  const f=$('#txForm',wrap),pay=$('#txPayment',wrap),cat=$('#txCategorySelect',wrap),status=$('#txStatus',wrap),inst=$('#txInst',wrap),value=$('#txValue',wrap),err=$('#txError',wrap);
  const curType=()=>f.querySelector('[name=type]:checked').value;
  const show=(id,on)=>{$(id,wrap).hidden=!on;};
- const update=()=>{const expense=curType()==='expense',card=expense&&pay.value==='cartao';show('#txPaymentField',expense);show('#txDistributionField',expense);show('#txGoalField',expense);show('#txCardField',card);show('#txInstallmentsField',card);show('#txRepeatField',!card);show('#txAccountField',!card);$('#txValueLabel',wrap).textContent=card?'Valor total da compra':'Valor';const n=Math.max(1,Math.min(48,Number(inst.value||1))),v=Number(value.value||0);$('#txInstHelp',wrap).textContent=card&&n>1&&v>0?`${n}x de ${fmt.format(v/n)} — uma parcela em cada fatura`:'';};
+ const dateEl=$('#txDate',wrap),dateHint=$('#txDateHint',wrap),dateLabel=$('#txDateLabel',wrap),cardInfo=$('#txCardInfo',wrap);let wasCard=false;
+ dateEl.addEventListener('input',()=>{dateEl.dataset.manual='1';});
+ const selCard=()=>{const r=f.querySelector('[name=card]:checked');return r?(state.cards||[]).find(c=>String(c.id)===r.value):null;};
+ // Compra no cartão: a data vira o vencimento da fatura em que ela cai e o status se completa sozinho (pendente até pagar a fatura).
+ const syncCardUI=card=>{
+  $('#txStatusField',wrap).hidden=card;dateLabel.textContent=card?'Vencimento da fatura':'Data';
+  if(card){
+   status.value='Pendente';const c=selCard(),r=c&&cardDueFor(c);dateHint.hidden=false;
+   if(r){if(dateEl.dataset.manual!=='1')dateEl.value=r.due;dateHint.textContent=`Fatura de ${r.monthName}${r.closeLabel?`: fecha em ${r.closeLabel}, vence em ${r.dueLabel}`:`: vence em ${r.dueLabel}`}. Pode ajustar a data se precisar.`;cardInfo.textContent=`A compra entra na fatura de ${r.monthName} e fica pendente até você pagar a fatura.`;}
+   else{dateHint.textContent='Cadastre o dia do vencimento no cartão para a data ser preenchida sozinha.';cardInfo.textContent='A compra fica pendente até você pagar a fatura.';}
+  }else{dateHint.hidden=true;cardInfo.textContent='';if(wasCard&&dateEl.dataset.manual!=='1')dateEl.value=today;}
+  wasCard=card;
+ };
+ const update=()=>{const expense=curType()==='expense',card=expense&&pay.value==='cartao';show('#txPaymentField',expense);show('#txDistributionField',expense);show('#txGoalField',expense);show('#txCardField',card);show('#txInstallmentsField',card);show('#txRepeatField',!card);show('#txAccountField',!card);$('#txValueLabel',wrap).textContent=card?'Valor total da compra':'Valor';const n=Math.max(1,Math.min(48,Number(inst.value||1))),v=Number(value.value||0);$('#txInstHelp',wrap).textContent=card&&n>1&&v>0?`${n}x de ${fmt.format(v/n)} — uma parcela em cada fatura`:'';syncCardUI(card);};
  const updateType=()=>{const income=curType()==='income',prev=cat.value;cat.innerHTML=txCategoryOptions(curType());if([...cat.options].some(o=>o.value===prev))cat.value=prev;status.innerHTML=income?'<option>Recebida</option><option>Pendente</option>':'<option>Paga</option><option>Pendente</option>';if(income)pay.value='conta';update();};
- $$('[name=type]',wrap).forEach(r=>r.onchange=updateType);pay.onchange=update;inst.oninput=update;value.oninput=update;updateType();
+ $$('[name=type]',wrap).forEach(r=>r.onchange=updateType);pay.onchange=()=>{dateEl.dataset.manual='';update();};$$('[name=card]',wrap).forEach(r=>r.onchange=()=>{dateEl.dataset.manual='';update();});inst.oninput=update;value.oninput=update;updateType();
  // A IA sugere a categoria enquanto o usuário digita a descrição (aprendido com os lançamentos dele).
  let suggested=null;const hint=$('#txCatHint',wrap),nameInput=$('#txName',wrap);let sugTimer=null;
  const applySuggestion=()=>{const name=nameInput.value.trim();if(!name||(cat.value&&cat.dataset.auto!=='1'))return;const s=getMind().suggestCategory(name,curType());if(!s){if(cat.dataset.auto==='1'){cat.value='';hint.hidden=true;suggested=null;}return;}if(![...cat.options].some(o=>o.value===s.category)){const o=document.createElement('option');o.value=s.category;o.textContent=s.category;cat.insertBefore(o,cat.lastElementChild);}cat.value=s.category;cat.dataset.auto='1';suggested=s.category;hint.hidden=false;hint.textContent=`✦ Sugerido pela IA com base nos seus lançamentos (confiança ${s.confidence>=0.9?'alta':'média'})`;};

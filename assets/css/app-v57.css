@@ -213,3 +213,21 @@ button,.nav-item,.bottom-nav-item,.page-tab,.origin-seg button,select,summary,[r
 .boot-hint small{color:var(--muted,#929ba6);line-height:1.4}
 .boot-hint div{display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap}
 .boot-hint .primary-btn,.boot-hint .secondary-btn{min-height:42px;padding:0 16px;display:inline-flex;align-items:center;text-decoration:none}
+
+/* ---------- 9) Nova movimentação: cartões em miniatura e data/status automáticos ---------- */
+.tx-modal .form-grid{align-items:start}
+.tx-modal .field select,.tx-modal .field input{margin:0}
+.card-picker{display:flex;gap:12px;overflow-x:auto;padding:6px 4px 10px;margin:0 -4px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.mini-card{position:relative;flex:0 0 156px;display:block;cursor:pointer;scroll-snap-align:start;-webkit-tap-highlight-color:transparent}
+.mini-card input{position:absolute;opacity:0;pointer-events:none}
+.mini-card-body{display:grid;gap:8px;padding:6px;border-radius:18px;border:2px solid transparent;background:var(--bg-2,#12161a);transition:border-color .15s,transform .15s,box-shadow .15s}
+.mini-card:hover .mini-card-body{transform:translateY(-2px)}
+.mini-card input:focus-visible+.mini-card-body{outline:2px solid #3f8cff;outline-offset:2px}
+.mini-card input:checked+.mini-card-body{border-color:#4f8cff;box-shadow:0 10px 26px rgba(63,140,255,.28)}
+.mini-card input:checked+.mini-card-body::after{content:"✓";position:absolute;top:2px;right:2px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--gradient);color:#fff;font:800 .8rem/1 Inter,system-ui,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.mini-card .cc{width:100%;pointer-events:none}
+.mini-card-meta{display:grid;gap:1px;padding:0 4px 4px;text-align:left;min-width:0}
+.mini-card-meta b{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:.84rem}
+.mini-card-meta small{color:var(--muted);font-size:.74rem}
+.card-info{margin-top:6px;padding:10px 12px;border-radius:12px;background:rgba(79,140,255,.10);border:1px solid rgba(79,140,255,.25);color:var(--text);font-size:.82rem;line-height:1.4}
+.card-info:empty{display:none}
