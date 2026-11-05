@@ -73,6 +73,7 @@ function accountBalance(){ return (state.accounts||[]).reduce((a,b)=>a+accountCu
 function cardInvoice(card,month=state.selectedMonth){return (state.transactions||[]).filter(t=>t.type==='expense'&&t.payment==='cartao'&&String(t.cardId)===String(card.id)&&String(t.date).slice(0,7)===month).reduce((a,t)=>a+Number(t.value||0),0);}
 function cardPaid(card,month=state.selectedMonth){return (state.cardPayments||[]).filter(p=>String(p.cardId)===String(card.id)&&p.month===month).reduce((a,p)=>a+Number(p.value||0),0);}
 function cardInvoiceOpen(card,month=state.selectedMonth){return Math.max(0,cardInvoice(card,month)-cardPaid(card,month));}
+let invoiceFixed=false; // true quando uma fatura já paga marcou compras como pagas (precisa ser gravado na nuvem)
 function syncDerived(){
   state.transactions=Array.isArray(state.transactions)?state.transactions:[];
   state.accounts=Array.isArray(state.accounts)?state.accounts:[];
@@ -82,6 +83,17 @@ function syncDerived(){
   state.categories=Array.isArray(state.categories)?state.categories:[];
   state.reserve=state.reserve&&typeof state.reserve==='object'?state.reserve:{current:0,target:0,essential:0,history:[]};
   state.reserve.history=Array.isArray(state.reserve.history)?state.reserve.history:[];
+
+  // Fatura quitada => as compras daquele cartão naquele mês passam a constar como pagas em Movimentações.
+  // (Também corrige faturas que já tinham sido pagas antes desta regra existir.)
+  (state.cards||[]).forEach(c=>{
+    const months=new Set((state.cardPayments||[]).filter(p=>String(p.cardId)===String(c.id)).map(p=>p.month).filter(Boolean));
+    months.forEach(m=>{
+      if(cardInvoice(c,m)>0&&cardInvoiceOpen(c,m)<=0.005){
+        state.transactions.forEach(t=>{if(t.type==='expense'&&t.payment==='cartao'&&String(t.cardId)===String(c.id)&&String(t.date).slice(0,7)===m&&!txIsSettled(t)){t.status='Paga';invoiceFixed=true;}});
+      }
+    });
+  });
 
   // Migração definitiva da Reserva de Emergência para Investimentos.
   // Versões antigas criavam uma categoria própria; agora o lançamento continua existindo,
@@ -1817,8 +1829,10 @@ async function bootstrap(){
     syncDerived();
     const mo=new MutationObserver(()=>{if(!$('.modal-backdrop')){mo.disconnect();render();}});
     mo.observe(document.body,{childList:true,subtree:true});
+    if(cloudReady&&invoiceFixed){invoiceFixed=false;save();}
     return;
   }
   show();
+  if(cloudReady&&invoiceFixed){invoiceFixed=false;save();}
 }
 bootstrap();
