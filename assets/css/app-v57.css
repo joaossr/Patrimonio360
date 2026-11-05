@@ -214,20 +214,90 @@ button,.nav-item,.bottom-nav-item,.page-tab,.origin-seg button,select,summary,[r
 .boot-hint div{display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap}
 .boot-hint .primary-btn,.boot-hint .secondary-btn{min-height:42px;padding:0 16px;display:inline-flex;align-items:center;text-decoration:none}
 
-/* ---------- 9) Nova movimentação: cartões em miniatura e data/status automáticos ---------- */
-.tx-modal .form-grid{align-items:start}
-.tx-modal .field select,.tx-modal .field input{margin:0}
-.card-picker{display:flex;gap:12px;overflow-x:auto;padding:6px 4px 10px;margin:0 -4px;scroll-snap-type:x proximity;scrollbar-width:thin}
-.mini-card{position:relative;flex:0 0 156px;display:block;cursor:pointer;scroll-snap-align:start;-webkit-tap-highlight-color:transparent}
+/* ---------- 9) Nova movimentação em etapas (tipo → cartão/parcelas → detalhes) ---------- */
+.tx-flow{width:min(680px,100%)}
+.tx-flow .modal-head p{margin:2px 0 0;font-size:.86rem}
+
+/* Etapa 1: três opções grandes */
+.tx-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tx-choice{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:18px;min-height:150px;border-radius:20px;border:1px solid var(--border);background:var(--bg-2);color:var(--text);text-align:left;cursor:pointer;font:inherit;transition:transform .15s,border-color .15s,box-shadow .15s,background .15s}
+.tx-choice:hover:not(:disabled){transform:translateY(-3px);border-color:rgba(79,140,255,.6);box-shadow:0 14px 34px rgba(0,0,0,.28)}
+.tx-choice:focus-visible{outline:2px solid #3f8cff;outline-offset:2px}
+.tx-choice:disabled{opacity:.5;cursor:not-allowed}
+.tx-choice-ico{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;color:#fff;background:var(--gradient);box-shadow:0 10px 22px rgba(63,140,255,.3)}
+.tx-choice-income .tx-choice-ico{background:linear-gradient(135deg,#0f6976,#3f8cff)}
+.tx-choice-cartao .tx-choice-ico{background:linear-gradient(135deg,#3f8cff,#8c58e8)}
+.tx-choice-conta .tx-choice-ico{background:linear-gradient(135deg,#8c58e8,#bd2f72)}
+.tx-choice-txt{display:grid;gap:3px;margin-top:auto}
+.tx-choice-txt b{font-size:1.02rem}
+.tx-choice-txt small{color:var(--muted);font-size:.8rem;line-height:1.35}
+
+/* Etapa 2: seletor compacto do tipo + campos em grade sem buracos */
+.tx-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;margin-bottom:18px;border:1px solid var(--border);border-radius:14px;background:var(--bg-2)}
+.tx-modes button{min-width:0;padding:10px 6px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:700 .88rem Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
+.tx-modes button:hover:not(:disabled){color:var(--text)}
+.tx-modes button.active{background:var(--gradient);color:#fff;box-shadow:0 6px 16px rgba(76,120,255,.25)}
+.tx-modes button:disabled{opacity:.45;cursor:not-allowed}
+.tx-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 14px;align-items:start}
+.tx-f{display:grid;gap:7px;min-width:0}
+.tx-f.full{grid-column:1/-1}
+.tx-f>label,.tx-f>label.l{color:var(--muted);font-size:.8rem;font-weight:600}
+.tx-f input:not([type=radio]),.tx-f select{width:100%;min-width:0;height:48px;padding:0 14px;border-radius:14px;border:1px solid #3a4452;background:var(--bg-2);color:var(--text);font:inherit}
+.tx-f input:focus,.tx-f select:focus{outline:2px solid #3f8cff;outline-offset:1px;border-color:transparent}
+.tx-money{position:relative}
+.tx-money>span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700;pointer-events:none}
+.tx-money input{padding-left:44px!important;font-weight:700;font-size:1.05rem}
+.tx-reveal{animation:txReveal .28s ease both}
+@keyframes txReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* Data: Hoje / Ontem / outra data, tudo na mesma linha */
+.date-quick{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:6px}
+.date-quick button{padding:0 14px;height:48px;border-radius:14px;border:1px solid #3a4452;background:var(--bg-2);color:var(--muted);font:700 .86rem Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.date-quick button:hover{color:var(--text)}
+.date-quick button.active{background:var(--gradient);border-color:transparent;color:#fff}
+.date-quick input{padding:0 10px!important}
+
+/* Vencimento da fatura (compra no cartão) */
+.invoice-due{display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 10px 8px 12px;border-radius:14px;border:1px solid rgba(79,140,255,.35);background:rgba(79,140,255,.10)}
+.invoice-ico{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:var(--gradient);color:#fff}
+.invoice-due>div{flex:1;min-width:0;display:grid;line-height:1.25}
+.invoice-due b{font-size:1rem}
+.invoice-due small{color:var(--muted);font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.invoice-due button{flex:none;border:0;background:transparent;color:#8fb4ff;font:700 .82rem Inter,system-ui,sans-serif;cursor:pointer;padding:8px}
+
+/* Situação e parcelas */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;height:48px;border-radius:14px;border:1px solid #3a4452;background:var(--bg-2)}
+.seg button{border:0;border-radius:10px;background:transparent;color:var(--muted);font:700 .88rem Inter,system-ui,sans-serif;cursor:pointer;transition:background .15s,color .15s}
+.seg button.active{background:var(--card-solid,#191e23);color:var(--text);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{min-width:56px;height:42px;padding:0 14px;border-radius:12px;border:1px solid #3a4452;background:var(--bg-2);color:var(--muted);font:700 .88rem Inter,system-ui,sans-serif;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.chips button:hover{color:var(--text)}
+.chips button.active{background:var(--gradient);border-color:transparent;color:#fff;box-shadow:0 6px 16px rgba(76,120,255,.25)}
+.inst-custom{margin-top:8px}
+.tx-help{color:var(--muted);font-size:.8rem}
+
+/* Cartões: só a imagem do cartão */
+.card-picker{display:flex;gap:14px;overflow-x:auto;padding:8px 6px 12px;margin:0 -6px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.mini-card{position:relative;flex:0 0 190px;display:block;cursor:pointer;scroll-snap-align:start;-webkit-tap-highlight-color:transparent}
 .mini-card input{position:absolute;opacity:0;pointer-events:none}
-.mini-card-body{display:grid;gap:8px;padding:6px;border-radius:18px;border:2px solid transparent;background:var(--bg-2,#12161a);transition:border-color .15s,transform .15s,box-shadow .15s}
-.mini-card:hover .mini-card-body{transform:translateY(-2px)}
+.mini-card-body{position:relative;display:block;padding:5px;border-radius:20px;border:2px solid transparent;opacity:.55;filter:saturate(.7);transition:border-color .15s,transform .15s,box-shadow .15s,opacity .15s,filter .15s}
+.mini-card:hover .mini-card-body{opacity:.85;transform:translateY(-2px)}
 .mini-card input:focus-visible+.mini-card-body{outline:2px solid #3f8cff;outline-offset:2px}
-.mini-card input:checked+.mini-card-body{border-color:#4f8cff;box-shadow:0 10px 26px rgba(63,140,255,.28)}
-.mini-card input:checked+.mini-card-body::after{content:"✓";position:absolute;top:2px;right:2px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--gradient);color:#fff;font:800 .8rem/1 Inter,system-ui,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.mini-card input:checked+.mini-card-body{opacity:1;filter:none;border-color:#4f8cff;box-shadow:0 12px 28px rgba(63,140,255,.32)}
+.mini-card input:checked+.mini-card-body::after{content:"✓";position:absolute;top:-4px;right:-4px;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:var(--gradient);color:#fff;font:800 .85rem/1 Inter,system-ui,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 .mini-card .cc{width:100%;pointer-events:none}
-.mini-card-meta{display:grid;gap:1px;padding:0 4px 4px;text-align:left;min-width:0}
-.mini-card-meta b{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:.84rem}
-.mini-card-meta small{color:var(--muted);font-size:.74rem}
-.card-info{margin-top:6px;padding:10px 12px;border-radius:12px;background:rgba(79,140,255,.10);border:1px solid rgba(79,140,255,.25);color:var(--text);font-size:.82rem;line-height:1.4}
-.card-info:empty{display:none}
+
+/* IA completando pelo histórico */
+.tx-ai{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:linear-gradient(135deg,rgba(63,140,255,.14),rgba(140,88,232,.14));border:1px solid rgba(140,88,232,.3);font-size:.8rem;line-height:1.4}
+.tx-ai[hidden]{display:none}
+.tx-ai-pill{border:0;border-radius:999px;padding:5px 12px;background:var(--gradient);color:#fff;font:700 .76rem Inter,system-ui,sans-serif;cursor:pointer}
+
+@media (max-width:640px){
+  .tx-choices{grid-template-columns:1fr;gap:10px}
+  .tx-choice{flex-direction:row;align-items:center;min-height:0;padding:14px 16px;gap:14px}
+  .tx-choice-txt{margin-top:0}
+  .tx-fields{grid-template-columns:1fr;gap:14px}
+  .mini-card{flex-basis:172px}
+}
+@media (prefers-reduced-motion:reduce){.tx-reveal{animation:none}}
+.tx-flow [hidden]{display:none!important}

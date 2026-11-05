@@ -1511,60 +1511,222 @@ function cardDueFor(card,from=new Date()){
   const br=x=>`${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}`;
   return {due:iso(dueDate),dueLabel:br(dueDate),closeLabel:closeDate?br(closeDate):'',monthName:dueDate.toLocaleDateString('pt-BR',{month:'long'})};
 }
+// O que o histórico da pessoa diz sobre uma descrição parecida (categoria, tipo, conta, valor típico, cartão).
+function txHistoryHint(name,type){
+  const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\(\d+\/\d+\)/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  const q=norm(name);if(q.length<3)return null;
+  const toks=q.split(' ').filter(w=>w.length>2);
+  const list=(state.transactions||[]).filter(t=>t.type===type&&t.name&&!t.legacyCardPayment).map(t=>({t,n:norm(t.name)}))
+    .filter(({n})=>n===q||n.startsWith(q)||(n.length>=4&&q.startsWith(n))||(toks.length&&toks.every(w=>n.includes(w))));
+  if(!list.length)return null;
+  list.sort((a,b)=>String(b.t.date).localeCompare(String(a.t.date)));
+  const recent=list.slice(0,8).map(x=>x.t);
+  const top=arr=>{const m=new Map();arr.filter(Boolean).forEach(v=>m.set(v,(m.get(v)||0)+1));return [...m.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||'';};
+  const vals=recent.map(t=>Number(t.value)).filter(v=>v>0).sort((a,b)=>a-b);
+  const cardTx=recent.filter(t=>t.payment==='cartao');
+  return {count:list.length,category:top(recent.map(t=>t.category)),dist:top(recent.map(t=>t.distributionType)),
+    account:top(recent.filter(t=>t.payment!=='cartao').map(t=>t.account)),payment:cardTx.length>recent.length/2?'cartao':'conta',
+    cardId:top(cardTx.map(t=>String(t.cardId))),value:vals.length?vals[Math.floor(vals.length/2)]:0};
+}
+
+// ---- Nova movimentação: escolhe o tipo e o formulário se monta em etapas --------------------------
 function openTransactionModal(preset={}){
- const today=new Date().toLocaleDateString('en-CA'),type=preset.type==='income'?'income':'expense',defAcc=state.preferences?.defaultAccount||'';
- const wrap=modal(`<div class="modal tx-modal"><div class="modal-head"><h3>Nova movimentação</h3><button class="icon-btn modal-x" aria-label="Fechar">×</button></div><form id="txForm" novalidate><div class="modal-body">
- <div class="tx-type-toggle" role="radiogroup" aria-label="Tipo de movimentação"><label><input type="radio" name="type" value="expense" ${type==='expense'?'checked':''}><span>↘ Despesa</span></label><label><input type="radio" name="type" value="income" ${type==='income'?'checked':''}><span>↗ Receita</span></label></div>
- <div class="form-grid">
- <div class="field full"><label for="txName">Descrição</label><input id="txName" name="name" required maxlength="120" placeholder="Ex.: Supermercado" autocomplete="off"></div>
- <div class="field"><label for="txValue" id="txValueLabel">Valor</label><input id="txValue" name="value" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0,00"></div>
- <div class="field" id="txDateField"><label for="txDate" id="txDateLabel">Data</label><input id="txDate" name="date" type="date" value="${today}" required><small class="field-help" id="txDateHint" hidden></small></div>
- <div class="field"><label for="txCategorySelect">Categoria</label><select name="category" id="txCategorySelect" required>${txCategoryOptions(type)}</select><small class="field-help ai-cat-hint" id="txCatHint" hidden></small></div>
- <div class="field" id="txDistributionField"><label for="txDist">Tipo de despesa</label><select id="txDist" name="distributionType"><option value="fixed">Despesa fixa</option><option value="investment">Investimento</option><option value="leisure">Lazer</option></select></div>
- <div class="field" id="txPaymentField"><label for="txPayment">Forma de pagamento</label><select name="payment" id="txPayment"><option value="conta">Conta / saldo</option><option value="cartao" ${state.cards.length?'':'disabled'}>Cartão de crédito${state.cards.length?'':' (nenhum cadastrado)'}</option></select></div>
- <div class="field" id="txAccountField"><label for="txAccount">Conta</label><select id="txAccount" name="account"><option value="">Sem conta</option>${state.accounts.map(a=>`<option value="${escapeHTML(a.name)}" ${a.name===defAcc||(!defAcc&&state.accounts.length===1)?'selected':''}>${escapeHTML(a.name)}</option>`).join('')}</select></div>
- <div class="field full" id="txCardField" hidden><label id="txCardLabel">Cartão</label><div class="card-picker" role="radiogroup" aria-labelledby="txCardLabel">${(()=>{const pick=state.cards.find(c=>String(c.id)===String(state.preferences?.primaryCardId))||state.cards[0];return state.cards.map(c=>`<label class="mini-card"><input type="radio" name="card" value="${escapeHTML(c.id)}" ${pick&&String(c.id)===String(pick.id)?'checked':''}><span class="mini-card-body">${creditCardHTML(c)}<span class="mini-card-meta"><b>${escapeHTML(c.name||c.bank||'Cartão')}</b><small>${c.due?`vence dia ${escapeHTML(c.due)}`:'sem vencimento'}</small></span></span></label>`).join('');})()}</div><div class="card-info" id="txCardInfo" aria-live="polite"></div></div>
- <div class="field" id="txInstallmentsField" hidden><label for="txInst">Parcelas</label><input id="txInst" name="installments" type="number" min="1" max="48" value="1" inputmode="numeric"><small class="field-help" id="txInstHelp"></small></div>
- <div class="field" id="txRepeatField"><label for="txRepeat">Repetir</label><select id="txRepeat" name="repeat"><option value="1">Não repetir</option>${[2,3,6,12,24].map(n=>`<option value="${n}">Mensalmente por ${n} meses</option>`).join('')}</select></div>
- <div class="field" id="txStatusField"><label for="txStatus">Status</label><select name="status" id="txStatus"></select></div>
- <div class="field" id="txGoalField"><label for="txGoal">Meta vinculada <span class="optional-label">(opcional)</span></label><select id="txGoal" name="goalId"><option value="">Nenhuma meta</option>${(state.goals||[]).map(g=>`<option value="${g.id}">${escapeHTML(g.name)}</option>`).join('')}</select></div>
- </div><p class="form-error" id="txError" role="alert" hidden></p></div><div class="modal-actions"><button type="button" class="secondary-btn modal-x">Cancelar</button><button class="primary-btn">Salvar movimentação</button></div></form></div>`);
- const f=$('#txForm',wrap),pay=$('#txPayment',wrap),cat=$('#txCategorySelect',wrap),status=$('#txStatus',wrap),inst=$('#txInst',wrap),value=$('#txValue',wrap),err=$('#txError',wrap);
- const curType=()=>f.querySelector('[name=type]:checked').value;
- const show=(id,on)=>{$(id,wrap).hidden=!on;};
- const dateEl=$('#txDate',wrap),dateHint=$('#txDateHint',wrap),dateLabel=$('#txDateLabel',wrap),cardInfo=$('#txCardInfo',wrap);let wasCard=false;
- dateEl.addEventListener('input',()=>{dateEl.dataset.manual='1';});
- const selCard=()=>{const r=f.querySelector('[name=card]:checked');return r?(state.cards||[]).find(c=>String(c.id)===r.value):null;};
- // Compra no cartão: a data vira o vencimento da fatura em que ela cai e o status se completa sozinho (pendente até pagar a fatura).
- const syncCardUI=card=>{
-  $('#txStatusField',wrap).hidden=card;dateLabel.textContent=card?'Vencimento da fatura':'Data';
-  if(card){
-   status.value='Pendente';const c=selCard(),r=c&&cardDueFor(c);dateHint.hidden=false;
-   if(r){if(dateEl.dataset.manual!=='1')dateEl.value=r.due;dateHint.textContent=`Fatura de ${r.monthName}${r.closeLabel?`: fecha em ${r.closeLabel}, vence em ${r.dueLabel}`:`: vence em ${r.dueLabel}`}. Pode ajustar a data se precisar.`;cardInfo.textContent=`A compra entra na fatura de ${r.monthName} e fica pendente até você pagar a fatura.`;}
-   else{dateHint.textContent='Cadastre o dia do vencimento no cartão para a data ser preenchida sozinha.';cardInfo.textContent='A compra fica pendente até você pagar a fatura.';}
-  }else{dateHint.hidden=true;cardInfo.textContent='';if(wasCard&&dateEl.dataset.manual!=='1')dateEl.value=today;}
-  wasCard=card;
- };
- const update=()=>{const expense=curType()==='expense',card=expense&&pay.value==='cartao';show('#txPaymentField',expense);show('#txDistributionField',expense);show('#txGoalField',expense);show('#txCardField',card);show('#txInstallmentsField',card);show('#txRepeatField',!card);show('#txAccountField',!card);$('#txValueLabel',wrap).textContent=card?'Valor total da compra':'Valor';const n=Math.max(1,Math.min(48,Number(inst.value||1))),v=Number(value.value||0);$('#txInstHelp',wrap).textContent=card&&n>1&&v>0?`${n}x de ${fmt.format(v/n)} — uma parcela em cada fatura`:'';syncCardUI(card);};
- const updateType=()=>{const income=curType()==='income',prev=cat.value;cat.innerHTML=txCategoryOptions(curType());if([...cat.options].some(o=>o.value===prev))cat.value=prev;status.innerHTML=income?'<option>Recebida</option><option>Pendente</option>':'<option>Paga</option><option>Pendente</option>';if(income)pay.value='conta';update();};
- $$('[name=type]',wrap).forEach(r=>r.onchange=updateType);pay.onchange=()=>{dateEl.dataset.manual='';update();};$$('[name=card]',wrap).forEach(r=>r.onchange=()=>{dateEl.dataset.manual='';update();});inst.oninput=update;value.oninput=update;updateType();
- // A IA sugere a categoria enquanto o usuário digita a descrição (aprendido com os lançamentos dele).
- let suggested=null;const hint=$('#txCatHint',wrap),nameInput=$('#txName',wrap);let sugTimer=null;
- const applySuggestion=()=>{const name=nameInput.value.trim();if(!name||(cat.value&&cat.dataset.auto!=='1'))return;const s=getMind().suggestCategory(name,curType());if(!s){if(cat.dataset.auto==='1'){cat.value='';hint.hidden=true;suggested=null;}return;}if(![...cat.options].some(o=>o.value===s.category)){const o=document.createElement('option');o.value=s.category;o.textContent=s.category;cat.insertBefore(o,cat.lastElementChild);}cat.value=s.category;cat.dataset.auto='1';suggested=s.category;hint.hidden=false;hint.textContent=`✦ Sugerido pela IA com base nos seus lançamentos (confiança ${s.confidence>=0.9?'alta':'média'})`;};
- nameInput.addEventListener('input',()=>{clearTimeout(sugTimer);sugTimer=setTimeout(applySuggestion,220);});
- cat.addEventListener('change',()=>{if(cat.value!==suggested){cat.dataset.auto='0';hint.hidden=true;}});
- cat.onchange=()=>{if(cat.value!=='__new')return;const name=(prompt('Nome da nova categoria:')||'').trim().slice(0,60);if(!name){cat.value='';return;}const opt=document.createElement('option');opt.value=name;opt.textContent=name;cat.insertBefore(opt,cat.lastElementChild);cat.value=name;};
- f.onsubmit=e=>{e.preventDefault();const fd=new FormData(f),type=curType(),isExpense=type==='expense',isCard=isExpense&&fd.get('payment')==='cartao',total=Number(fd.get('value')),name=String(fd.get('name')||'').trim(),date=String(fd.get('date')||''),category=String(fd.get('category')||'');
-  const fail=m=>{err.textContent=m;err.hidden=false;return false;};
-  if(!name)return fail('Informe a descrição.');if(!(total>0))return fail('Informe um valor maior que zero.');if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return fail('Informe uma data válida.');if(!category||category==='__new')return fail('Escolha uma categoria.');if(isCard&&!fd.get('card'))return fail('Escolha o cartão utilizado.');
-  ensureCategory(category,type);
-  if(suggested){getMind().recordCategoryOutcome(suggested,category);state.aiModel=getMind().memory;}
-  const base={name,type,category,status:fd.get('status'),payment:isCard?'cartao':'conta',account:isCard?'':String(fd.get('account')||''),cardId:isCard?fd.get('card'):null,distributionType:isExpense?(fd.get('distributionType')||'fixed'):null,goalId:isExpense?(fd.get('goalId')||null):null};
-  const n=isCard?Math.max(1,Math.min(48,Math.round(Number(fd.get('installments')||1)))):Math.max(1,Number(fd.get('repeat')||1)),groupId=n>1?newId():null;
-  // Parcelas: divide em centavos e joga a diferença de arredondamento na primeira parcela.
-  const cents=Math.round(total*100),each=isCard?Math.floor(cents/n):cents;
-  for(let i=0;i<n;i++){const v=isCard?(i===0?cents-each*(n-1):each)/100:total;state.transactions.unshift({id:newId(),...base,name:n>1&&isCard?`${name} (${i+1}/${n})`:name,value:v,date:addMonthsToDate(date,i),status:i===0?base.status:(isCard?base.status:'Pendente'),installments:isCard?n:1,installmentIndex:n>1?i+1:null,groupId});}
-  state.selectedMonth=date.slice(0,7);syncDerived();save();closeModal(wrap);render();toast(n>1?(isCard?`Compra parcelada em ${n}x lançada nas próximas faturas.`:`Movimentação lançada para ${n} meses.`):'Movimentação salva.');};
+  const iso=x=>x.toLocaleDateString('en-CA'),today=iso(new Date()),yest=iso(new Date(Date.now()-864e5));
+  const cards=state.cards||[],accounts=state.accounts||[];
+  const pickCard=cards.find(c=>String(c.id)===String(state.preferences?.primaryCardId))||cards[0]||null;
+  const defAcc=state.preferences?.defaultAccount||(accounts.length===1?accounts[0].name:'');
+  const MODES={
+    conta:{label:'Despesa',sub:'Conta, Pix ou dinheiro',ico:'expense',type:'expense'},
+    cartao:{label:'Cartão de crédito',sub:'À vista ou parcelado',ico:'card',type:'expense'},
+    income:{label:'Receita',sub:'Salário, vendas, rendimentos',ico:'income',type:'income'},
+  };
+  const d={mode:null,name:'',value:'',date:today,dateManual:false,category:'',catAuto:false,dist:'fixed',distManual:false,account:defAcc,accountManual:false,
+    status:'',statusManual:false,repeat:'1',goalId:'',card:pickCard?String(pickCard.id):'',inst:1,instCustom:false,touchedValue:false,suggested:null};
+  const choiceBtn=k=>`<button type="button" class="tx-choice tx-choice-${k}" data-mode="${k}" ${k==='cartao'&&!cards.length?'disabled':''}><span class="tx-choice-ico">${icon(MODES[k].ico,{size:26})}</span><span class="tx-choice-txt"><b>${MODES[k].label}</b><small>${k==='cartao'&&!cards.length?'Cadastre um cartão primeiro':MODES[k].sub}</small></span></button>`;
+  const wrap=modal(`<div class="modal tx-modal tx-flow" role="dialog" aria-modal="true" aria-labelledby="txTitle">
+    <div class="modal-head"><div><h3 id="txTitle">Nova movimentação</h3><p class="muted" id="txSub">Como foi essa movimentação?</p></div><button class="icon-btn modal-x" aria-label="Fechar">×</button></div>
+    <form id="txForm" novalidate><div class="modal-body">
+      <div class="tx-choices" id="txChoices" role="group" aria-label="Tipo de movimentação">${['conta','cartao','income'].map(choiceBtn).join('')}</div>
+      <div id="txFlow" hidden>
+        <div class="tx-modes" role="tablist" aria-label="Tipo de movimentação">${['conta','cartao','income'].map(k=>`<button type="button" role="tab" data-mode="${k}" ${k==='cartao'&&!cards.length?'disabled':''}>${MODES[k].label}</button>`).join('')}</div>
+        <div class="tx-fields" id="txFields"></div>
+      </div>
+      <p class="form-error" id="txError" role="alert" hidden></p>
+    </div><div class="modal-actions" id="txActions" hidden><button type="button" class="secondary-btn modal-x">Cancelar</button><button class="primary-btn" id="txSave">Salvar movimentação</button></div></form></div>`);
+  const q=s=>wrap.querySelector(s),qa=s=>[...wrap.querySelectorAll(s)];
+  const fields=q('#txFields'),err=q('#txError');
+  const mType=()=>MODES[d.mode].type,isCard=()=>d.mode==='cartao';
+  const money=v=>fmt.format(Number(v)||0);
+  const selCard=()=>cards.find(c=>String(c.id)===String(d.card))||null;
+
+  // ---------- peças do formulário ----------
+  const optsHtml=(list,cur,first)=>`${first||''}${list.map(v=>`<option value="${escapeHTML(v)}" ${String(v)===String(cur)?'selected':''}>${escapeHTML(v)}</option>`).join('')}`;
+  const B={
+    name:()=>`<div class="tx-f full"><label for="txName">Descrição</label><input id="txName" maxlength="120" autocomplete="off" placeholder="${mType()==='income'?'Ex.: Salário':'Ex.: Supermercado'}" value="${escapeHTML(d.name)}"><div class="tx-ai" id="txAi" aria-live="polite" hidden></div></div>`,
+    value:()=>`<div class="tx-f"><label for="txValue">${isCard()?'Valor total da compra':'Valor'}</label><div class="tx-money"><span>R$</span><input id="txValue" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" value="${escapeHTML(d.value)}"></div></div>`,
+    date:()=>`<div class="tx-f"><label for="txDate">Data</label><div class="date-quick"><button type="button" data-d="${today}">Hoje</button><button type="button" data-d="${yest}">Ontem</button><input id="txDate" type="date" value="${d.date}" aria-label="Outra data"></div></div>`,
+    due:()=>`<div class="tx-f"><label>Vencimento da fatura</label><div class="invoice-due"><span class="invoice-ico">${icon('calendar',{size:20})}</span><div><b id="txDueText"></b><small id="txDueSub"></small></div><button type="button" id="txDueEdit">Alterar</button></div><input id="txDate" type="date" value="${d.date}" aria-label="Data do vencimento da fatura" hidden></div>`,
+    category:()=>`<div class="tx-f"><label for="txCategorySelect">Categoria</label><select id="txCategorySelect">${txCategoryOptions(mType())}</select><input id="txNewCat" maxlength="60" placeholder="Nome da nova categoria (Enter para criar)" hidden></div>`,
+    dist:()=>`<div class="tx-f"><label for="txDist">Tipo de despesa</label><select id="txDist"><option value="fixed">Despesa fixa</option><option value="investment">Investimento</option><option value="leisure">Lazer</option></select></div>`,
+    account:()=>`<div class="tx-f"><label for="txAccount">Conta</label><select id="txAccount"><option value="">Sem conta</option>${accounts.map(a=>`<option value="${escapeHTML(a.name)}">${escapeHTML(a.name)}</option>`).join('')}</select></div>`,
+    status:()=>{const inc=mType()==='income';return `<div class="tx-f"><label>Situação</label><div class="seg" id="txStatusSeg" role="group" aria-label="Situação"><button type="button" data-v="${inc?'Recebida':'Paga'}">${inc?'Recebida':'Paga'}</button><button type="button" data-v="Pendente">Pendente</button></div></div>`;},
+    repeat:()=>`<div class="tx-f"><label for="txRepeat">Repetir</label><select id="txRepeat"><option value="1">Não repetir</option>${[2,3,6,12,24].map(n=>`<option value="${n}">Mensalmente por ${n} meses</option>`).join('')}</select></div>`,
+    goal:()=>`<div class="tx-f ${isCard()?'full':''}"><label for="txGoal">Meta vinculada <span class="optional-label">(opcional)</span></label><select id="txGoal"><option value="">Nenhuma meta</option>${(state.goals||[]).map(g=>`<option value="${escapeHTML(g.id)}">${escapeHTML(g.name)}</option>`).join('')}</select></div>`,
+    cardPick:()=>`<div class="tx-f full"><label id="txCardLabel">Qual cartão?</label><div class="card-picker" role="radiogroup" aria-labelledby="txCardLabel">${cards.map(c=>`<label class="mini-card" title="${escapeHTML(c.name||c.bank||'Cartão')}"><input type="radio" name="card" value="${escapeHTML(c.id)}" ${String(c.id)===String(d.card)?'checked':''} aria-label="${escapeHTML(c.name||c.bank||'Cartão')}"><span class="mini-card-body">${creditCardHTML(c)}</span></label>`).join('')}</div></div>`,
+    inst:()=>`<div class="tx-f full tx-reveal"><label>Como vai pagar?</label><div class="chips" id="txInstChips" role="group" aria-label="Parcelas">${[1,2,3,4,5,6,8,10,12].map(n=>`<button type="button" data-n="${n}">${n===1?'À vista':n+'x'}</button>`).join('')}<button type="button" data-n="0">Outro</button></div><div class="inst-custom" id="txInstCustomBox" hidden><input id="txInstCustom" type="number" min="2" max="48" inputmode="numeric" placeholder="Nº de parcelas (2 a 48)"></div><small class="tx-help" id="txInstHelp"></small></div>`,
+  };
+  const LAYOUT={
+    conta:['name','value','date','category','dist','account','status','repeat','goal'],
+    cartao:['cardPick','inst','name','value','due','category','dist','goal'],
+    income:['name','value','date','category','account','status','repeat'],
+  };
+
+  // ---------- estado ↔ tela ----------
+  const syncStatus=()=>{
+    if(isCard())return;
+    if(!d.statusManual)d.status=d.date>today?'Pendente':(mType()==='income'?'Recebida':'Paga');
+    qa('#txStatusSeg button').forEach(b=>b.classList.toggle('active',b.dataset.v===d.status));
+  };
+  const syncDate=()=>{
+    const el=q('#txDate');if(el)el.value=d.date;
+    qa('.date-quick button').forEach(b=>b.classList.toggle('active',b.dataset.d===d.date));
+    if(isCard()){
+      const c=selCard(),r=c&&cardDueFor(c),[y,m,dd]=d.date.split('-');
+      const t=q('#txDueText'),s=q('#txDueSub');
+      if(t)t.textContent=`${dd}/${m}/${y}`;
+      if(s){
+        const monthName=new Date(Number(y),Number(m)-1,1,12).toLocaleDateString('pt-BR',{month:'long'});
+        const n=d.inst;
+        s.textContent=r||d.dateManual?`Fatura de ${monthName}${r&&!d.dateManual&&r.closeLabel?` · fecha em ${r.closeLabel}`:''}${n>1?` · última parcela em ${addMonthsToDate(d.date,n-1).split('-').reverse().slice(0,2).join('/')}`:''}`:'Defina o dia de vencimento no cartão para preencher sozinho';
+      }
+    }
+    syncStatus();
+  };
+  const applyDue=()=>{if(!isCard())return;const r=selCard()&&cardDueFor(selCard());if(r&&!d.dateManual)d.date=r.due;else if(!r&&!d.dateManual)d.date=today;syncDate();};
+  const syncInst=()=>{
+    qa('#txInstChips button').forEach(b=>{const n=Number(b.dataset.n);b.classList.toggle('active',n?n===d.inst&&!d.instCustom:!!d.instCustom);});
+    const box=q('#txInstCustomBox');if(box)box.hidden=!d.instCustom;
+    const v=Number(d.value)||0,help=q('#txInstHelp');
+    if(help)help.textContent=d.inst>1&&v>0?`${d.inst}x de ${money(v/d.inst)} — uma parcela em cada fatura`:(d.inst===1?'Compra à vista: entra inteira na fatura.':'');
+    syncDate();
+  };
+  const refreshCategory=()=>{
+    const sel=q('#txCategorySelect');if(!sel)return;
+    if(d.category&&![...sel.options].some(o=>o.value===d.category)){const o=document.createElement('option');o.value=d.category;o.textContent=d.category;sel.insertBefore(o,sel.lastElementChild);}
+    sel.value=d.category||'';
+  };
+  const pushDraftToDom=()=>{
+    refreshCategory();
+    const set=(id,v)=>{const e=q(id);if(e)e.value=v;};
+    set('#txDist',d.dist);set('#txRepeat',d.repeat);set('#txGoal',d.goalId);
+    const acc=q('#txAccount');if(acc){acc.value=accounts.some(a=>a.name===d.account)?d.account:'';}
+    syncInst();syncStatus();
+  };
+
+  const setMode=mode=>{
+    const keep=d.mode;d.mode=mode;
+    if(keep&&MODES[keep].type!==MODES[mode].type){d.category='';d.catAuto=false;d.statusManual=false;}
+    q('#txChoices').hidden=true;q('#txFlow').hidden=false;q('#txActions').hidden=false;
+    qa('.tx-modes button').forEach(b=>{const on=b.dataset.mode===mode;b.classList.toggle('active',on);b.setAttribute('aria-selected',on);});
+    q('#txSub').textContent=mode==='cartao'?'Compra no cartão de crédito':mode==='income'?'Registrar uma receita':'Registrar uma despesa';
+    if(mode==='cartao'){d.dateManual=false;}
+    else if(keep==='cartao'&&!d.dateManual)d.date=today;
+    fields.innerHTML=LAYOUT[mode].map(k=>B[k]()).join('');
+    fields.dataset.mode=mode;
+    pushDraftToDom();
+    if(mode==='cartao')applyDue();
+    err.hidden=true;
+    if(d.name)applyAI();
+    if(matchMedia('(hover:hover)').matches)q('#txName')?.focus({preventScroll:true});
+  };
+
+  // ---------- IA: completa com base no histórico ----------
+  let aiTimer=null;
+  const applyAI=()=>{
+    const ai=q('#txAi');if(!ai||!d.mode)return;
+    const name=d.name.trim();
+    if(name.length<3){ai.hidden=true;ai.innerHTML='';return;}
+    const h=txHistoryHint(name,mType()),filled=[];
+    const learned=!h?.category?getMind().suggestCategory(name,mType()):null;
+    const cat=h?.category||learned?.category||'';
+    if(cat&&(!d.category||d.catAuto)){d.category=cat;d.catAuto=true;d.suggested=cat;refreshCategory();filled.push(cat);}
+    if(h&&mType()==='expense'){
+      if(h.dist&&!d.distManual){d.dist=h.dist;const e=q('#txDist');if(e)e.value=h.dist;}
+      if(!isCard()&&h.account&&!d.accountManual&&accounts.some(a=>a.name===h.account)){d.account=h.account;const e=q('#txAccount');if(e)e.value=h.account;filled.push(h.account);}
+    }
+    if(h&&mType()==='income'&&h.account&&!d.accountManual&&accounts.some(a=>a.name===h.account)){d.account=h.account;const e=q('#txAccount');if(e)e.value=h.account;filled.push(h.account);}
+    if(h?.value&&!d.touchedValue){d.value=h.value.toFixed(2);const e=q('#txValue');if(e)e.value=d.value;filled.push(money(h.value));syncInst();}
+    let pill='';
+    if(h&&mType()==='expense'&&h.payment==='cartao'&&!isCard()&&cards.some(c=>String(c.id)===h.cardId)){pill=`<button type="button" class="tx-ai-pill" data-ai-card="${escapeHTML(h.cardId)}">Costuma ser no cartão ${escapeHTML(cards.find(c=>String(c.id)===h.cardId).name)} — usar</button>`;}
+    if(!filled.length&&!pill){ai.hidden=true;ai.innerHTML='';return;}
+    ai.hidden=false;
+    ai.innerHTML=`<span>✦ ${filled.length?`Completei pelo seu histórico: <b>${filled.map(escapeHTML).join(' · ')}</b>`:'Sugestão do seu histórico'}</span>${pill}`;
+  };
+
+  // ---------- eventos ----------
+  q('#txChoices').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b&&!b.disabled)setMode(b.dataset.mode);});
+  q('.tx-modes').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b&&!b.disabled&&b.dataset.mode!==d.mode)setMode(b.dataset.mode);});
+  fields.addEventListener('click',e=>{
+    const t=e.target;
+    const dq=t.closest('.date-quick button[data-d]');if(dq){d.date=dq.dataset.d;d.dateManual=true;syncDate();return;}
+    const sg=t.closest('#txStatusSeg button');if(sg){d.status=sg.dataset.v;d.statusManual=true;syncStatus();return;}
+    const ic=t.closest('#txInstChips button');if(ic){const n=Number(ic.dataset.n);if(n){d.inst=n;d.instCustom=false;}else{d.instCustom=true;if(d.inst<2)d.inst=2;const i=q('#txInstCustom');if(i){i.value=d.inst;i.focus();}}syncInst();return;}
+    if(t.closest('#txDueEdit')){const i=q('#txDate');if(i){i.hidden=!i.hidden;if(!i.hidden){i.focus();try{i.showPicker?.();}catch{}}}return;}
+    const pc=t.closest('[data-ai-card]');if(pc){d.card=pc.dataset.aiCard;setMode('cartao');return;}
+  });
+  fields.addEventListener('input',e=>{
+    const t=e.target;
+    if(t.id==='txName'){d.name=t.value;clearTimeout(aiTimer);aiTimer=setTimeout(applyAI,250);}
+    else if(t.id==='txValue'){d.value=t.value;d.touchedValue=true;syncInst();}
+    else if(t.id==='txDate'){if(/^\d{4}-\d{2}-\d{2}$/.test(t.value)){d.date=t.value;d.dateManual=true;syncDate();}}
+    else if(t.id==='txInstCustom'){const n=Math.max(2,Math.min(48,Math.round(Number(t.value)||2)));d.inst=n;syncInst();}
+  });
+  fields.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.id==='txCategorySelect'){
+      const nc=q('#txNewCat');
+      if(t.value==='__new'){nc.hidden=false;nc.focus();d.category='';d.catAuto=false;return;}
+      nc.hidden=true;d.category=t.value;d.catAuto=false;
+      if(d.suggested)getMind().recordCategoryOutcome(d.suggested,t.value);
+    }
+    else if(t.id==='txDist'){d.dist=t.value;d.distManual=true;}
+    else if(t.id==='txAccount'){d.account=t.value;d.accountManual=true;}
+    else if(t.id==='txRepeat')d.repeat=t.value;
+    else if(t.id==='txGoal')d.goalId=t.value;
+    else if(t.name==='card'){d.card=t.value;d.dateManual=false;applyDue();}
+  });
+  fields.addEventListener('keydown',e=>{
+    if(e.target.id==='txNewCat'&&e.key==='Enter'){
+      e.preventDefault();const n=e.target.value.trim().slice(0,60);if(!n)return;
+      d.category=n;d.catAuto=false;e.target.hidden=true;e.target.value='';
+      const sel=q('#txCategorySelect');const o=document.createElement('option');o.value=n;o.textContent=n;sel.insertBefore(o,sel.lastElementChild);sel.value=n;
+    }
+  });
+  fields.addEventListener('focusout',e=>{if(e.target.id==='txNewCat'&&!e.target.hidden&&!e.target.value.trim()){e.target.hidden=true;const sel=q('#txCategorySelect');sel.value=d.category||'';}});
+
+  // ---------- salvar ----------
+  q('#txForm').onsubmit=e=>{
+    e.preventDefault();if(!d.mode)return;
+    const type=mType(),isExpense=type==='expense',card=isCard(),total=Number(d.value),name=d.name.trim(),date=d.date,category=d.category;
+    const fail=m=>{err.textContent=m;err.hidden=false;err.scrollIntoView({block:'nearest'});return false;};
+    if(card&&!d.card)return fail('Escolha o cartão utilizado.');
+    if(!name)return fail('Informe a descrição.');
+    if(!(total>0))return fail('Informe um valor maior que zero.');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return fail('Informe uma data válida.');
+    if(!category||category==='__new')return fail('Escolha uma categoria.');
+    ensureCategory(category,type);
+    if(d.suggested){getMind().recordCategoryOutcome(d.suggested,category);state.aiModel=getMind().memory;}
+    const status=card?'Pendente':d.status||(type==='income'?'Recebida':'Paga');
+    const base={name,type,category,status,payment:card?'cartao':'conta',account:card?'':String(d.account||''),cardId:card?d.card:null,distributionType:isExpense?(d.dist||'fixed'):null,goalId:isExpense?(d.goalId||null):null};
+    const n=card?Math.max(1,Math.min(48,Math.round(Number(d.inst)||1))):Math.max(1,Number(d.repeat||1)),groupId=n>1?newId():null;
+    // Parcelas: divide em centavos e joga a diferença de arredondamento na primeira parcela.
+    const cents=Math.round(total*100),each=card?Math.floor(cents/n):cents;
+    for(let i=0;i<n;i++){const v=card?(i===0?cents-each*(n-1):each)/100:total;state.transactions.unshift({id:newId(),...base,name:n>1&&card?`${name} (${i+1}/${n})`:name,value:v,date:addMonthsToDate(date,i),status:i===0?base.status:(card?base.status:'Pendente'),installments:card?n:1,installmentIndex:n>1?i+1:null,groupId});}
+    state.selectedMonth=date.slice(0,7);syncDerived();save();closeModal(wrap);render();toast(n>1?(card?`Compra parcelada em ${n}x lançada nas próximas faturas.`:`Movimentação lançada para ${n} meses.`):'Movimentação salva.');
+  };
+
+  // Atalhos de outras telas já escolhem o tipo (ex.: botão "Receita" do dashboard).
+  if(preset.type==='income')setMode('income');
 }
 function toast(msg){const root=$('#toast-root');if(!root)return;root.setAttribute('role','status');root.setAttribute('aria-live','polite');const t=document.createElement('div');t.className='toast';t.textContent=msg;root.appendChild(t);while(root.children.length>3)root.firstElementChild.remove();setTimeout(()=>t.remove(),3200)}
 // Situação do bot do Telegram no servidor (o plano grátis do Render dorme: a 1ª chamada pode levar ~1 min).
