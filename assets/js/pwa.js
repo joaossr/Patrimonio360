@@ -117,23 +117,25 @@
     window.addEventListener('load', async () => {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
+        const hadController = Boolean(navigator.serviceWorker.controller);
         const watch = worker => {
           worker?.addEventListener('statechange', () => {
-            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-              waitingWorker = worker;
-              emit();
-              toast('update', '<b>Nova versão disponível</b>', 'Atualizar', () => api.applyUpdate());
-            }
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) { waitingWorker = worker; emit(); }
           });
         };
-        if (reg.waiting && navigator.serviceWorker.controller) { waitingWorker = reg.waiting; toast('update', '<b>Nova versão disponível</b>', 'Atualizar', () => api.applyUpdate()); }
+        if (reg.waiting && navigator.serviceWorker.controller) { waitingWorker = reg.waiting; emit(); }
         watch(reg.installing);
         reg.addEventListener('updatefound', () => watch(reg.installing));
         // Procura versão nova ao voltar para o app (celular costuma deixá-lo aberto por dias).
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
         let reloaded = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (reloaded || !waitingWorker) return; // primeiro controle não recarrega
+          if (reloaded || !hadController) return; // a primeira instalação não recarrega
+          // Com um formulário aberto, não perde o que a pessoa digitou: pergunta antes.
+          if (document.querySelector('.modal-backdrop')) {
+            toast('update', '<b>Nova versão disponível</b>', 'Atualizar', () => { reloaded = true; location.reload(); });
+            return;
+          }
           reloaded = true;
           location.reload();
         });

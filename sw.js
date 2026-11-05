@@ -3,13 +3,14 @@
    - Imagens, fontes e bibliotecas versionadas: cache primeiro, atualizando em segundo plano.
    - Nunca guarda nem intercepta Firebase/Firestore/Auth nem a API do backend (dados e login sempre ao vivo).
    Para forçar atualização do cache em todos os aparelhos, mude VERSION. */
-const VERSION = 'p360-v59';
+const VERSION = 'p360-v60';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 const PRECACHE = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.svg', '/assets/images/icon-192.png'];
 const NAV_TIMEOUT = 8000; // só para abrir a página; scripts e estilos esperam a rede
 
 self.addEventListener('install', event => {
+  self.skipWaiting(); // assume o controle já: a v60 corrige um bloqueio do Firebase causado pelas versões anteriores
   event.waitUntil((async () => {
     const cache = await caches.open(SHELL);
     // Um arquivo que falhe não impede a instalação.
@@ -89,10 +90,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Fontes e SDK do Firebase (arquivos versionados)
-  if (/(^|\.)(gstatic\.com|fonts\.googleapis\.com)$/.test(url.hostname)) {
-    event.respondWith(staleWhileRevalidate(request, ASSETS));
-  }
+  // Requisições de outros domínios (SDK do Firebase no gstatic, fontes etc.) NÃO passam pelo service worker:
+  // a CSP do site (connect-src) bloqueia fetch() dessas origens aqui dentro, e isso derrubava o carregamento do app.
 });
 
 // Abrir o app ao tocar numa notificação (preparado para avisos futuros)
