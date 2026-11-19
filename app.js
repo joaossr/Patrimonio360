@@ -1821,7 +1821,7 @@ function bindLicenseSettings(){
   }
   const slot=$('#licAdminSlot');
   if(slot&&settingsTab==='shield'&&typeof currentUser?.getIdToken==='function'){
-    currentUser.getIdToken().then(t=>api('/api/license/status',{token:t,timeoutMs:20000})).then(st=>{const el=$('#licAdminSlot');if(st.admin&&el)el.innerHTML='<a class="secondary-btn license-admin-link" href="/admin.html">Abrir painel de chaves de acesso</a>';}).catch(()=>{});
+    (async()=>{try{await currentUser.reload?.();}catch{}return currentUser.getIdToken(true);})().then(t=>api('/api/license/status',{token:t,timeoutMs:20000})).then(st=>{const el=$('#licAdminSlot');if(st.admin&&el)el.innerHTML='<a class="secondary-btn license-admin-link" href="/admin.html">Abrir painel de chaves de acesso</a>';}).catch(()=>{});
   }
 }
 // Situação do bot do Telegram no servidor (o plano grátis do Render dorme: a 1ª chamada pode levar ~1 min).

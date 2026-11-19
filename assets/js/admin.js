@@ -37,12 +37,16 @@ function message(key) {
 
 async function start() {
   try {
-    const st = await api('/api/license/status', { token: await tokenOf() });
+    // O Firebase guarda o token por até 1 hora. Se o e-mail foi confirmado depois do último login, o token antigo
+    // ainda diz "e-mail não confirmado" e o servidor recusa o painel. Recarrega a conta e força um token novo.
+    try { await user.reload(); } catch { /* sem conexão: segue com o token atual */ }
+    const st = await api('/api/license/status', { token: await user.getIdToken(true) });
     if (!st.admin) throw Object.assign(new Error('Esta conta não é administradora. Entre com o e-mail administrador e confirme o endereço de e-mail.'), { status: 403 });
     $('#admStatus').hidden = true; $('#admApp').hidden = false;
     await loadKeys();
   } catch (error) {
-    $('#admStatus').textContent = error.message; $('#admStatus').classList.add('adm-error');
+    console.error('Painel de chaves:', error);
+    $('#admStatus').textContent = error.message + (error.status ? ` (código ${error.status})` : ''); $('#admStatus').classList.add('adm-error');
   }
 }
 
@@ -64,7 +68,11 @@ $('#genForm').onsubmit = async e => {
     $('#genList').innerHTML = r.keys.map(k => `<li><code>${esc(k)}</code><button type="button" class="adm-btn ghost sm" data-copy="${esc(k)}">Copiar</button><button type="button" class="adm-btn ghost sm" data-msg="${esc(k)}">Mensagem</button></li>`).join('');
     $('#genResult').hidden = false; $('#genLabel').value = '';
     await loadKeys();
-  } catch (error) { err.textContent = error.message; err.hidden = false; }
+  } catch (error) {
+    console.error('Gerar chaves:', error);
+    err.textContent = error.message + (error.status ? ` (código ${error.status})` : '');
+    err.hidden = false;
+  }
   finally { btn.disabled = false; btn.textContent = 'Gerar chave'; }
 };
 $('#genList').onclick = e => {
