@@ -1,0 +1,19 @@
+/* v63: correções de layout encontradas nos testes em vários tamanhos de tela (320 a 1920 px). */
+
+/* Investimentos (celular): o texto dos destaques não pode empurrar o cartão para fora da tela. */
+.inv-hl-note{min-width:0;max-width:100%}
+@media(max-width:760px){
+  .inv-hl{align-items:stretch}
+  .inv-hl>div{width:100%;max-width:100%;flex:0 1 auto}
+  .inv-hl-note{white-space:normal;overflow-wrap:anywhere}
+}
+
+/* Categorias: nomes longos quebram linha em vez de vazar da linha. */
+.category-admin-row strong{min-width:0;overflow-wrap:anywhere}
+@media(max-width:380px){.category-admin-row{gap:6px}}
+
+/* Texto sem espaços (nomes, e-mails, valores enormes) nunca deve estourar cartões e linhas de lista. */
+.card strong,.card h3,.linked-row span,.linked-row strong,.kpi-card strong,.progress-top strong{overflow-wrap:anywhere}
+
+/* Rótulo dos indicadores: em telas estreitas quebra em duas linhas em vez de ficar cortado. */
+@media(max-width:480px){.kpi-card .kpi-label{white-space:normal!important;line-height:1.2}}

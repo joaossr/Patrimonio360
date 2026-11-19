@@ -209,3 +209,19 @@ test('um cliente comum não consegue virar administrador nem se dar acesso sozin
   assert.equal((await S.call('POST', '/api/telegram/link-code', { token: 'tok-user' })).status, 402, 'sem assinatura não gera código do Telegram');
 });
 
+
+test('limite por IP vale atrás de proxy: o IP real vem do CF-Connecting-IP e X-Forwarded-For não burla', async () => {
+  const L = await boot();
+  try {
+    const codes = {};
+    for (let i = 0; i < 40; i++) {
+      const r = await L.call('GET', '/api/admin/users', { token: 'lixo' + i, headers: { 'cf-connecting-ip': '203.0.113.7', 'x-forwarded-for': `10.0.0.${i}` } });
+      codes[r.status] = (codes[r.status] || 0) + 1;
+    }
+    assert.ok(codes[429] >= 5, `depois de 30 tentativas falhas o mesmo IP real precisa ser barrado: ${JSON.stringify(codes)}`);
+    const outro = await L.call('GET', '/api/admin/users', { token: 'lixo', headers: { 'cf-connecting-ip': '203.0.113.99' } });
+    assert.equal(outro.status, 401, 'outro IP não é afetado');
+    const falso = await L.call('GET', '/api/admin/users', { token: 'lixo', headers: { 'cf-connecting-ip': 'não-é-ip<script>' } });
+    assert.ok([401, 429].includes(falso.status), 'valor inválido no cabeçalho é ignorado, não derruba');
+  } finally { await L.close(); }
+});

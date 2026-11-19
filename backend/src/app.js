@@ -10,6 +10,9 @@ import { processUpdate, telegramMode, telegramWebhookSecret } from './telegram/b
 
 const sha = v => crypto.createHash('sha256').update(String(v)).digest();
 const safeEqual = (a, b) => crypto.timingSafeEqual(sha(a), sha(b)); // compara em tempo constante
+// IP real do cliente. Atrás do Render/Cloudflare o req.ip pode ser o do proxy (e mudar a cada chamada), o que
+// anularia os limites por IP; o Cloudflare grava o IP verdadeiro em CF-Connecting-IP e sobrescreve o que o cliente mandar.
+const clientIp = req => { const h = String(req.headers?.['cf-connecting-ip'] || '').trim(); return /^[0-9a-fA-F:.]{3,45}$/.test(h) ? h : (req.ip || ''); };
 
 export function createApp({
   db = null, firebaseReady = false, license = null, verifyIdToken = null, projectRoot = process.cwd(),
@@ -73,7 +76,7 @@ export function createApp({
     const hits = new Map();
     setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (v.reset < now) hits.delete(k); }, windowMs).unref();
     return (req, res, next) => {
-      const key = `${keyPrefix}:${req.user?.uid || req.ip}`, now = Date.now();
+      const key = `${keyPrefix}:${req.user?.uid || clientIp(req)}`, now = Date.now();
       let entry = hits.get(key);
       if (!entry || entry.reset < now) { entry = { count: 0, reset: now + windowMs }; hits.set(key, entry); }
       entry.count++;
@@ -107,7 +110,7 @@ export function createApp({
   const pinFailures = new Map();
   const PIN_MAX = 5, PIN_WINDOW = 15 * 60_000;
   async function audit(req, action, detail = {}) {
-    try { if (db) await db.collection('adminLog').add({ at: new Date(), by: req.user?.email || req.user?.uid || '?', ip: req.ip || '', action, detail }); }
+    try { if (db) await db.collection('adminLog').add({ at: new Date(), by: req.user?.email || req.user?.uid || '?', ip: clientIp(req), action, detail }); }
     catch (e) { console.error('Falha ao gravar auditoria:', e?.message); }
   }
   function adminOnly(req, res, next) {
@@ -117,7 +120,7 @@ export function createApp({
     const authAge = Date.now() / 1000 - Number(req.user.auth_time || 0);
     if (adminSessionHours > 0 && authAge > adminSessionHours * 3600) return res.status(401).json({ error: 'Por segurança, entre novamente para usar o painel de administração.', reauth: true });
     if (adminPin) {
-      const key = `${req.user.uid}|${req.ip}`, now = Date.now(), f = pinFailures.get(key);
+      const key = `${req.user.uid}|${clientIp(req)}`, now = Date.now(), f = pinFailures.get(key);
       if (f && f.reset > now && f.count >= PIN_MAX) { res.setHeader('Retry-After', String(Math.ceil((f.reset - now) / 1000))); return res.status(429).json({ error: 'Muitas tentativas de PIN. Aguarde alguns minutos.' }); }
       if (!safeEqual(String(req.headers['x-admin-pin'] || ''), adminPin)) {
         const cur = f && f.reset > now ? f : { count: 0, reset: now + PIN_WINDOW };
@@ -166,7 +169,7 @@ export function createApp({
     const refund = ['order_refunded', 'chargeback'].includes(event) || ['refunded', 'chargedback'].includes(status);
     const approved = !refund && (event === 'order_approved' || status === 'paid');
     if (!refund && !approved) return res.json({ ok: true, ignored: 'evento' });
-    const fakeReq = { user: { email: 'kiwify' }, ip: req.ip };
+    const fakeReq = { user: { email: 'kiwify' }, ip: clientIp(req) };
     if (refund) { const r = await license.recordRefund({ email, orderId }); await audit(fakeReq, 'kiwify-reembolso', { email: String(email || '').toLowerCase(), orderId, ...r }); return res.json({ ok: true, ...r }); }
     const r = await license.recordPurchase({ email, orderId, productId, source: 'kiwify' });
     await audit(fakeReq, 'kiwify-compra', { email: String(email || '').toLowerCase(), orderId, ...r });
