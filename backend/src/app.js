@@ -157,8 +157,9 @@ export function createApp({
     const sig = String(req.query.signature || '').toLowerCase();
     const hmac = data => crypto.createHmac('sha1', kiwifyToken).update(data).digest('hex');
     const valid = sig.length > 0 && [hmac(req.rawBody || Buffer.alloc(0)), hmac(JSON.stringify(req.body || {}))].some(x => safeEqual(sig, x));
-    if (!valid) return res.status(401).json({ error: 'Assinatura inválida.' });
+    if (!valid) { console.warn('[kiwify] aviso recusado: assinatura inválida'); return res.status(401).json({ error: 'Assinatura inválida.' }); }
     const b = req.body || {};
+    console.log('[kiwify] aviso válido:', String(b.webhook_event_type || '-'), String(b.order_status || '-'));
     const email = b.Customer?.email, orderId = b.order_id || b.order_ref || '', productId = b.Product?.product_id || '';
     const event = String(b.webhook_event_type || ''), status = String(b.order_status || '');
     if (kiwifyProductId && productId !== kiwifyProductId) return res.json({ ok: true, ignored: 'outro-produto' });
