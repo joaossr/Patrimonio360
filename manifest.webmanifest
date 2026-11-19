@@ -14,14 +14,14 @@
   "theme_color": "#111315",
   "categories": ["finance", "productivity"],
   "icons": [
-    { "src": "assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "assets/images/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "assets/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "assets/images/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/images/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/images/pwa-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/images/pwa-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Movimentações", "short_name": "Movimentos", "url": "/movimentacoes?source=shortcut", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Orçamento", "short_name": "Orçamento", "url": "/orcamento?source=shortcut", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Contas e cartões", "short_name": "Contas", "url": "/contas?source=shortcut", "icons": [{ "src": "assets/images/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Movimentações", "short_name": "Movimentos", "url": "/movimentacoes?source=shortcut", "icons": [{ "src": "assets/images/pwa-192.png", "sizes": "192x192" }] },
+    { "name": "Orçamento", "short_name": "Orçamento", "url": "/orcamento?source=shortcut", "icons": [{ "src": "assets/images/pwa-192.png", "sizes": "192x192" }] },
+    { "name": "Contas e cartões", "short_name": "Contas", "url": "/contas?source=shortcut", "icons": [{ "src": "assets/images/pwa-192.png", "sizes": "192x192" }] }
   ]
 }

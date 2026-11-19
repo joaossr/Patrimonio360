@@ -3,10 +3,10 @@
    - Imagens, fontes e bibliotecas versionadas: cache primeiro, atualizando em segundo plano.
    - Nunca guarda nem intercepta Firebase/Firestore/Auth nem a API do backend (dados e login sempre ao vivo).
    Para forçar atualização do cache em todos os aparelhos, mude VERSION. */
-const VERSION = 'p360-v60';
+const VERSION = 'p360-v61';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
-const PRECACHE = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.svg', '/assets/images/icon-192.png'];
+const PRECACHE = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/favicon.svg', '/assets/images/pwa-192.png'];
 const NAV_TIMEOUT = 8000; // só para abrir a página; scripts e estilos esperam a rede
 
 self.addEventListener('install', event => {
