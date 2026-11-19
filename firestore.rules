@@ -15,7 +15,7 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    // Assinatura ativa: o backend grava os claims "licensed" e "until" (ms) ao usar uma chave de acesso.
+    // Assinatura ativa: o backend grava os claims "licensed" e "until" (ms) ao liberar o acesso (compra na Kiwify ou liberação do administrador).
     // O prazo é conferido aqui, a cada leitura/gravação, então vale mesmo se alguém burlar a tela.
     function licensed() {
       return signedIn()
