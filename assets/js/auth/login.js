@@ -19,6 +19,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 import { app } from "../config/firebase.js";
+import { bindSocialButtons, finishRedirect, SOCIAL_ERRORS } from "./social.js";
 import {
     bindPasswordToggles, bindCapsLockHint, setBusy, showMessage,
     lockRemaining, registerFailure, clearFailures, formatWait, EMAIL_RE
@@ -124,6 +125,13 @@ form.addEventListener("submit", async (event) => {
         showMessage(message, LOGIN_ERRORS[error.code] || "Não foi possível entrar agora. Tente novamente.", "error");
     }
 });
+
+// ---------- Entrar com Google ----------
+bindSocialButtons({
+    onUser: async () => { submitting = true; window.location.replace("/"); },
+    onError: text => showMessage(message, text, "error")
+});
+finishRedirect().then(r => { if (r?.error) showMessage(message, SOCIAL_ERRORS[r.error.code] || "Não foi possível entrar agora. Tente novamente.", "error"); });
 
 // ---------- Esqueci minha senha ----------
 const forgotBtn = document.getElementById("btnForgot");

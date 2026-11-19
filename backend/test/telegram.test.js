@@ -11,7 +11,7 @@ globalThis.fetch = async (url, init) => {
   calls.push({ method, ...body });
   return { json: async () => ({ ok: true, result: {} }) };
 };
-const { processUpdate } = await import('../src/telegram/bot.js');
+const { processUpdate, resetRateLimits } = await import('../src/telegram/bot.js');
 const { monthNow, todayStr } = await import('../src/telegram/answers.js');
 
 const M = monthNow(), T = todayStr();
@@ -45,6 +45,7 @@ function setup(linked = true, guard = null) {
   };
   const loadState = async () => state;
   calls.length = 0;
+  resetRateLimits();
   const say = text => processUpdate(db, loadState, { message: { chat: { id: 42 }, text } }, guard);
   const press = (data, messageId = 9) => processUpdate(db, loadState, { callback_query: { id: "q", data, message: { chat: { id: 42 }, message_id: messageId } } }, guard);
   const last = () => calls.filter(c => c.method === 'sendMessage' || c.method === 'editMessageText').at(-1);
@@ -149,4 +150,14 @@ test('sem assinatura ativa o bot não lê nem grava dados financeiros', async ()
   const ok = setup(true, async () => true);
   await ok.say('saldo');
   assert.match(ok.last().text, /Saldo nas contas/);
+});
+
+test('limite por conversa: mensagens em excesso são ignoradas (anti-inundação)', async () => {
+  const { tooManyMessages } = await import('../src/telegram/bot.js');
+  const t = Date.now();
+  let bloqueadas = 0;
+  for (let i = 0; i < 40; i++) if (tooManyMessages('conversa-teste', t)) bloqueadas++;
+  assert.equal(bloqueadas, 15, 'as 25 primeiras passam, as 15 seguintes são ignoradas');
+  assert.equal(tooManyMessages('conversa-teste', t + 61_000), false, 'depois de 1 minuto volta ao normal');
+  assert.equal(tooManyMessages('outra-conversa', t), false, 'uma conversa não afeta a outra');
 });

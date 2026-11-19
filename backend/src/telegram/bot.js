@@ -432,7 +432,18 @@ async function handleCallback(db, update, loadState) {
 // Processa uma atualização do Telegram (usado pelo polling e pelo webhook).
 // "guard(uid)" diz se a assinatura da pessoa está ativa; sem assinatura, nenhum dado financeiro é lido.
 class NoLicense extends Error {}
+// No máximo 25 mensagens por minuto por conversa: o resto é ignorado em silêncio.
+const chatHits = new Map();
+export const resetRateLimits = () => chatHits.clear(); // só para testes
+export function tooManyMessages(chatId, now = Date.now(), max = 25) {
+    const key = String(chatId);
+    let h = chatHits.get(key);
+    if (!h || h.reset < now) { h = { count: 0, reset: now + 60_000 }; chatHits.set(key, h); if (chatHits.size > 5000) for (const [k, v] of chatHits) if (v.reset < now) chatHits.delete(k); }
+    return ++h.count > max;
+}
 export async function processUpdate(db, loadState, u, guard = null) {
+    const rateChat = u?.message?.chat?.id || u?.callback_query?.message?.chat?.id;
+    if (rateChat && tooManyMessages(rateChat)) return;
     const gated = guard ? async uid => { if (!(await guard(uid))) throw new NoLicense(); return loadState(uid); } : loadState;
     try {
         if (u?.message) await handleMessage(db,u,gated);

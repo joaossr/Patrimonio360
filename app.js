@@ -2,7 +2,7 @@ import { P360Mind, INTENT_LABELS } from "./assets/js/ai/engine.js";
 import { icon, GOAL_ICONS } from "./assets/js/icons.js";
 import { barChart, lineChart, donutChart, progressBars, sparkline, PALETTE } from "./assets/js/charts.js";
 import { ASSET_TYPES, FIXED_TYPES, TYPE_COLORS, PROCEED_KINDS, migrateLegacy, deriveAsset, positionAt, assetSummary, portfolioOverview, groupsByType, monthlySeries } from "./assets/js/portfolio.js";
-import { api, claimsActive, formatKeyInput, keyIsComplete, isLifetime, daysLeft, fmtDate } from "./assets/js/license.js";
+import { api, claimsActive, isLifetime, daysLeft, fmtDate, CHECKOUT_URL } from "./assets/js/license.js";
 import { waitForUser, watchSession, loadCloudState, saveCloudState, onCloudSave, logoutUser, getBackendAuthToken, sendPasswordReset, updateDisplayName, resendVerification } from "./firebase-state.js";
 
 const fmt = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
@@ -520,7 +520,7 @@ function settingsPage(){
   ${section('tag','Categorias','Usadas em movimentações, orçamento e relatórios',`<div class="category-admin">${cats.map(c=>`<div class="category-admin-row"><span class="badge ${c.kind==='Receita'?'green':c.kind==='Ambos'?'':'red'}">${escapeHTML(c.kind||'Despesa')}</span><strong>${escapeHTML(c.name)}</strong><small>${(state.transactions||[]).filter(t=>t.category===c.name).length} lançamento(s)</small><button class="icon-btn icon-sm cat-rename" data-name="${escapeHTML(c.name)}" aria-label="Renomear ${escapeHTML(c.name)}">${icon('edit',{size:16})}</button><button class="icon-btn icon-sm cat-delete" data-name="${escapeHTML(c.name)}" aria-label="Excluir ${escapeHTML(c.name)}">${icon('trash',{size:16})}</button></div>`).join('')||'<p class="muted">Nenhuma categoria criada.</p>'}</div><button class="secondary-btn compact" id="newCategory">${icon('plus',{size:16})} Nova categoria</button>`,'settings-wide')}
   ${section('bell','Avisos e comportamento','Central de compromissos e confirmações',`${row('Alertas de compromissos','Mostra o contador no sino',sw('notificationsPref',pr.notifications!==false))}${row('Antecedência dos avisos','Contas que vencem nos próximos…',seg('prefAlertDays',[['3','3 dias'],['7','7 dias'],['15','15 dias']],pr.alertDays||7))}${row('Confirmar antes de excluir','Evita exclusões acidentais',sw('confirmDelete',pr.confirmDelete!==false))}${row('Guia de primeiros passos','Mostra novamente no dashboard',`<button class="secondary-btn compact" id="showOnboarding">Mostrar</button>`)}`)}
   ${section('download','Exportar e dados','Planilhas, backup e importação',`${row('Exportar movimentações (CSV)','Abre no Excel e no Google Planilhas',`<div class="inline-form"><select class="select" id="exportPeriod" aria-label="Período da exportação"><option value="month">${escapeHTML(monthLabelOf(state.selectedMonth))}</option><option value="year">Ano de ${state.selectedMonth.slice(0,4)}</option><option value="all">Todo o período</option></select><button class="primary-btn compact" id="exportCsvSettings">${icon('download',{size:16})} Exportar</button></div>`)}${row('Backup, importação e duplicados','Baixar ou restaurar todos os dados',`<button class="secondary-btn compact" data-go="dados">Abrir</button>`)}`)}
-  ${section('shield','Assinatura','Seu acesso ao Patrimônio 360',`${row('Situação',licenseInfo?(licenseInfo.lifetime?'Acesso ativo, sem data de vencimento.':`Ativa até <b>${fmtDate(licenseInfo.until)}</b> · ${daysLeft(licenseInfo.until)} dia(s) restantes`):'Verificando…',`<span class="badge ${licenseInfo&&!licenseInfo.lifetime&&daysLeft(licenseInfo.until)<=7?'warn':'ok'}">${licenseInfo&&!licenseInfo.lifetime&&daysLeft(licenseInfo.until)<=7?'Perto de vencer':'Ativa'}</span>`)}${row('Renovar ou prorrogar','Digite uma nova chave de acesso: o prazo é somado ao que você já tem',`<div class="inline-form license-renew"><input class="input" id="renewKey" placeholder="P360-XXXX-XXXX-XXXX-XXXX" maxlength="29" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Nova chave de acesso"><button class="secondary-btn compact" id="renewBtn" type="button">Ativar</button></div>`)}<div id="licAdminSlot"></div>`)}
+  ${section('shield','Assinatura','Seu acesso ao Patrimônio 360',`${row('Situação',licenseInfo?(licenseInfo.lifetime?'Acesso ativo, sem data de vencimento.':`Ativa até <b>${fmtDate(licenseInfo.until)}</b> · ${daysLeft(licenseInfo.until)} dia(s) restantes`):'Verificando…',`<span class="badge ${licenseInfo&&!licenseInfo.lifetime&&daysLeft(licenseInfo.until)<=7?'warn':'ok'}">${licenseInfo&&!licenseInfo.lifetime&&daysLeft(licenseInfo.until)<=7?'Perto de vencer':'Ativa'}</span>`)}<div id="licAdminSlot"></div>`)}
   ${section('phone','Aplicativo','Use o Patrimônio 360 como um app no celular',`${row('Instalar no aparelho','<span id="installHint">Abre em tela cheia, com ícone na tela inicial.</span>',`<button class="secondary-btn compact" id="installApp">Instalar</button>`)}`)}
   ${section('send','Telegram','Registre gastos e consulte seu saldo pelo celular',`${row('Conectar @Patrimonio360Bot','Gere um código e envie ao bot',`<button class="secondary-btn compact" id="connectTelegram">Conectar</button>`)}<div class="telegram-status wait" id="telegramStatus" role="status"><i></i><span>Verificando o bot…</span></div><div id="telegramLinkResult" class="muted telegram-result"></div>`)}
   ${section('lock','Segurança da conta','Acesso e proteção dos seus dados',`${row('E-mail de acesso',`${escapeHTML(currentUser?.email||'—')}${currentUser&&!currentUser.emailVerified?' · não verificado':''}`,'')}${row('Senha','Receba um link seguro por e-mail',`<button class="secondary-btn compact" id="resetPassword">Redefinir</button>`)}${row('Sair desta conta','Remove a cópia local deste navegador',`<button class="danger-btn compact" id="settingsLogout">Sair</button>`)}`)}
@@ -1751,12 +1751,22 @@ function openTransactionModal(preset={}){
   if(matchMedia('(hover:hover)').matches)q('#txName')?.focus({preventScroll:true});
 }
 function toast(msg){const root=$('#toast-root');if(!root)return;root.setAttribute('role','status');root.setAttribute('aria-live','polite');const t=document.createElement('div');t.className='toast';t.textContent=msg;root.appendChild(t);while(root.children.length>3)root.firstElementChild.remove();setTimeout(()=>t.remove(),3200)}
-// ---- Assinatura por chave de acesso ------------------------------------------------------
+// ---- Acesso vitalício por compra ------------------------------------------------------
 let licenseInfo=null; // { until, lifetime } da pessoa logada
 function setLicense(c){licenseInfo={until:Number(c.until),lifetime:isLifetime(c.until)};}
-// Garante acesso antes de carregar qualquer dado: contas antigas entram sozinhas; as demais precisam de uma chave.
+// Garante acesso antes de carregar qualquer dado: contas antigas entram sozinhas; as demais precisam da compra.
+// Contas novas (criadas a partir desta data) com e-mail e senha só entram depois de confirmar o e-mail.
+// Quem entra com Google já vem confirmado. Contas antigas não são barradas.
+const VERIFY_FROM=Date.UTC(2026,10,19);
+function needsEmailVerification(user){
+  if(!user||user.emailVerified!==false)return false;
+  if(!(user.providerData||[]).some(p=>p.providerId==='password'))return false;
+  const created=Date.parse(user.metadata?.creationTime||'');
+  return Number.isFinite(created)&&created>=VERIFY_FROM;
+}
 async function ensureLicense(user){
   if(typeof user.getIdTokenResult!=='function')return;
+  if(needsEmailVerification(user))return adminVerifyGate(user);
   let claims=(await user.getIdTokenResult()).claims;
   if(claimsActive(claims)){setLicense(claims);return licenseReminder();}
   let st={};
@@ -1767,61 +1777,58 @@ async function ensureLicense(user){
   return licenseGate(user,st,claims);
 }
 function licenseReminder(){
-  if(licenseInfo&&!licenseInfo.lifetime){const d=daysLeft(licenseInfo.until);if(d<=5)setTimeout(()=>toast(d<=0?'Sua assinatura vence hoje.':`Sua assinatura vence em ${d} dia${d>1?'s':''}. Renove em Configurações → Assinatura.`),3500);}
+  if(licenseInfo&&!licenseInfo.lifetime){const d=daysLeft(licenseInfo.until);if(d<=5)setTimeout(()=>toast(d<=0?'Sua assinatura vence hoje.':`Sua assinatura vence em ${d} dia${d>1?'s':''}. Fale com o suporte para renovar.`),3500);}
 }
 function licenseGate(user,st,claims){
   if(st&&st.adminPending)return adminVerifyGate(user);
-  return new Promise(()=>{ // só termina recarregando a página depois de ativar
+  return new Promise(()=>{ // só termina recarregando a página depois que o acesso for liberado
     const expired=Number(claims?.until)>0&&Number(claims.until)<=Date.now();
     const root=$('#app');
     document.querySelector('.boot-hint')?.remove();
-    root.innerHTML=`<main class="license-gate"><section class="license-card" aria-labelledby="gateTitle"><img src="/assets/images/logo-mark.png" alt="" width="64" height="64"><h1 id="gateTitle">${expired?'Sua assinatura venceu':'Ative o seu acesso'}</h1>
-      <p>${expired?`O acesso terminou em <b>${fmtDate(claims.until)}</b>. Seus dados continuam guardados: informe uma nova chave para voltar.`:'O Patrimônio 360 funciona por assinatura. Informe a chave de acesso que você recebeu.'}</p>
+    root.innerHTML=`<main class="license-gate"><section class="license-card" aria-labelledby="gateTitle"><img src="/assets/images/logo-mark.png" alt="" width="64" height="64"><h1 id="gateTitle">${expired?'Seu acesso terminou':'Libere o seu acesso'}</h1>
+      <p>O Patrimônio 360 tem <b>acesso vitalício</b>: pagamento único, sem mensalidade. Depois da compra o acesso é liberado sozinho para o e-mail <b>${escapeHTML(user.email||'')}</b>, então compre com este mesmo e-mail.</p>
       ${st.error?`<p class="license-warn">${escapeHTML(st.error)}</p>`:''}
-      <form id="gateForm" novalidate><label for="gateKey" class="sr-only">Chave de acesso</label><input id="gateKey" placeholder="P360-XXXX-XXXX-XXXX-XXXX" maxlength="29" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text"><button class="primary-btn" id="gateBtn">Ativar acesso</button></form>
-      <p class="form-error" id="gateErr" role="alert" hidden></p>
+      ${CHECKOUT_URL?`<a class="primary-btn" id="gateBuy" href="${escapeHTML(CHECKOUT_URL)}" target="_blank" rel="noopener">Comprar acesso vitalício</a>`:''}
+      <button class="secondary-btn" id="gateCheck" type="button">Já comprei: verificar agora</button>
+      <p class="form-error" id="gateErr" role="status" hidden></p>
       <small>Conectado como <b>${escapeHTML(user.email||'')}</b> · <button type="button" class="text-btn" id="gateLogout">Sair</button></small></section></main>`;
-    const key=$('#gateKey'),err=$('#gateErr'),btn=$('#gateBtn');
-    key.oninput=()=>{key.value=formatKeyInput(key.value);};key.focus();
+    const err=$('#gateErr'),btn=$('#gateCheck');
     $('#gateLogout').onclick=()=>logoutUser();
-    $('#gateForm').onsubmit=async e=>{
-      e.preventDefault();err.hidden=true;
-      if(!keyIsComplete(key.value)){err.textContent='Digite a chave completa (20 caracteres).';err.hidden=false;return;}
-      btn.disabled=true;btn.textContent='Ativando… (pode levar até 1 minuto)';
-      try{await api('/api/license/redeem',{method:'POST',body:{key:key.value},token:await user.getIdToken()});await user.getIdToken(true);location.reload();}
-      catch(error){err.textContent=error.message;err.hidden=false;btn.disabled=false;btn.textContent='Ativar acesso';}
+    const check=async manual=>{
+      if(manual){err.hidden=true;btn.disabled=true;btn.textContent='Verificando… (pode levar até 1 minuto)';}
+      try{
+        await user.reload?.();
+        const r=await api('/api/license/status',{token:await user.getIdToken(true),timeoutMs:manual?75000:20000});
+        if(r.active){await user.getIdToken(true);location.reload();return;}
+        if(manual){err.textContent=r.verifyPending?'Encontramos a sua compra, mas falta confirmar o e-mail desta conta. Abra o link que enviamos para o seu e-mail.':'Ainda não encontramos uma compra para este e-mail. Pagamentos por Pix podem levar alguns minutos. Se comprou com outro e-mail, fale com o suporte.';err.hidden=false;}
+      }catch(error){if(manual){err.textContent=error.message;err.hidden=false;}}
+      if(manual){btn.disabled=false;btn.textContent='Já comprei: verificar agora';}
     };
+    btn.onclick=()=>check(true);
+    setInterval(()=>check(false),20000); // quem acabou de pagar entra sozinho, sem precisar clicar
   });
 }
-// Administrador cadastrado mas com e-mail ainda não confirmado: precisa clicar no link que o Firebase enviou.
+// E-mail ainda não confirmado: precisa clicar no link que o Firebase enviou (vale para clientes e para o administrador).
 function adminVerifyGate(user){
   return new Promise(()=>{
     document.querySelector('.boot-hint')?.remove();
     $('#app').innerHTML=`<main class="license-gate"><section class="license-card"><img src="/assets/images/logo-mark.png" alt="" width="64" height="64"><h1>Confirme o seu e-mail</h1>
-      <p>Para liberar o acesso de administrador, abra o e-mail que enviamos para <b>${escapeHTML(user.email||'')}</b> e clique no link de confirmação. Depois volte aqui.</p>
+      <p>Para liberar o seu acesso, abra o e-mail que enviamos para <b>${escapeHTML(user.email||'')}</b> e clique no link de confirmação. Confira também a caixa de spam. Esta tela atualiza sozinha quando você confirmar.</p>
       <button class="primary-btn" id="verDone" type="button">Já confirmei</button><button class="secondary-btn" id="verResend" type="button">Reenviar e-mail</button>
       <p class="form-error" id="verMsg" role="status" hidden></p>
       <small><button type="button" class="text-btn" id="verLogout">Sair</button></small></section></main>`;
     const msg=text=>{const m=$('#verMsg');m.textContent=text;m.hidden=false;};
     $('#verLogout').onclick=()=>logoutUser();
+    // confere a cada 5 s se o e-mail já foi confirmado (a pessoa costuma abrir o link em outra aba)
+    const poll=setInterval(async()=>{try{await user.reload();if(user.emailVerified){clearInterval(poll);await user.getIdToken(true);location.reload();}}catch{}},5000);
     $('#verDone').onclick=async()=>{try{await user.reload();await user.getIdToken(true);location.reload();}catch(e){msg('Não foi possível conferir agora. Tente de novo.');}};
     $('#verResend').onclick=async()=>{try{await resendVerification();msg('E-mail reenviado. Confira também a caixa de spam.');}catch(e){msg(e.message||'Não foi possível reenviar agora.');}};
   });
 }
 function bindLicenseSettings(){
-  const rk=$('#renewKey'),rb=$('#renewBtn');
-  if(rk&&rb){
-    rk.oninput=()=>{rk.value=formatKeyInput(rk.value);};
-    rb.onclick=async()=>{
-      if(!keyIsComplete(rk.value))return toast('Digite a chave completa (20 caracteres).');
-      rb.disabled=true;rb.textContent='Ativando…';
-      try{const r=await api('/api/license/redeem',{method:'POST',body:{key:rk.value},token:await currentUser.getIdToken()});await currentUser.getIdToken(true);licenseInfo={until:Number(r.until),lifetime:!!r.lifetime};rk.value='';toast(r.lifetime?'Acesso ativado sem data de vencimento.':`Assinatura ativa até ${fmtDate(r.until)}.`);render();}
-      catch(error){toast(error.message);rb.disabled=false;rb.textContent='Ativar';}
-    };
-  }
   const slot=$('#licAdminSlot');
   if(slot&&settingsTab==='shield'&&typeof currentUser?.getIdToken==='function'){
-    (async()=>{try{await currentUser.reload?.();}catch{}return currentUser.getIdToken(true);})().then(t=>api('/api/license/status',{token:t,timeoutMs:20000})).then(st=>{const el=$('#licAdminSlot');if(st.admin&&el)el.innerHTML='<a class="secondary-btn license-admin-link" href="/admin.html">Abrir painel de chaves de acesso</a>';}).catch(()=>{});
+    (async()=>{try{await currentUser.reload?.();}catch{}return currentUser.getIdToken(true);})().then(t=>api('/api/license/status',{token:t,timeoutMs:20000})).then(st=>{const el=$('#licAdminSlot');if(st.admin&&el)el.innerHTML='<a class="secondary-btn license-admin-link" href="/admin.html">Abrir painel de administração</a>';}).catch(()=>{});
   }
 }
 // Situação do bot do Telegram no servidor (o plano grátis do Render dorme: a 1ª chamada pode levar ~1 min).
@@ -2089,7 +2096,7 @@ async function bootstrap(){
   const stopHint=bootHint();
   currentUser=await waitForUser();
   await ensureLicense(currentUser);
-  // A conta administradora só tem o painel de administração (chaves e assinantes), nunca o app financeiro.
+  // A conta administradora só tem o painel de administração (assinantes e acessos), nunca o app financeiro.
   try{if(typeof currentUser.getIdTokenResult==='function'&&(await currentUser.getIdTokenResult()).claims.admin===true){location.replace('/admin.html');return;}}catch{}
   watchSession(()=>location.replace('login.html'));
   onCloudSave({onError:()=>{cloudSaveFailed=true;syncBanner();toast('Não foi possível salvar na nuvem. Verifique sua conexão.');},onSaved:()=>{if(cloudSaveFailed){cloudSaveFailed=false;syncBanner();}}});

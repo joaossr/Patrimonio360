@@ -53,3 +53,15 @@
   .auth-main::before{animation:authBreath 11s ease-in-out infinite alternate!important;transform:none!important}
   .auth-show::before{animation:none!important}
 }
+
+/* Entrar com Google */
+.auth-divider{display:flex;align-items:center;gap:12px;margin:6px 0;color:var(--muted);font-size:.82rem}
+.auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.social-row{display:grid;gap:10px}
+.btn-social{display:flex;align-items:center;justify-content:center;gap:10px;height:50px;border:1px solid var(--border-2);border-radius:14px;background:var(--field);color:var(--text);font:600 .95rem Inter,system-ui,sans-serif;cursor:pointer;transition:background .15s,border-color .15s}
+.btn-social:hover{background:#18212c;border-color:rgba(255,255,255,.28)}
+.btn-social:disabled{opacity:.6;cursor:progress}
+.btn-social[hidden]{display:none}
+.btn-social svg{width:20px;height:20px;flex:none}
+.btn-social:focus-visible{box-shadow:var(--ring);outline:2px solid transparent}
+.auth-hint{margin:4px 0 0;color:var(--muted);font-size:.82rem;text-align:center}

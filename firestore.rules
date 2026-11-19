@@ -32,7 +32,7 @@ service cloud.firestore {
 
       // Estado financeiro completo do app (users/{uid}/app/state).
       match /app/{docId} {
-        allow read, write: if isOwner(uid) && licensed();
+        allow read, write: if isOwner(uid) && licensed() && docId == 'state';
       }
 
       // Memória, perfil e insights da IA: gravados somente pelo backend.
@@ -52,7 +52,10 @@ service cloud.firestore {
     match /telegramPending/{chatId} {
       allow read, write: if false;
     }
-    // Chaves de acesso e assinaturas: somente o backend.
+    // Compras, assinaturas e registro de administração: somente o backend.
+    match /purchases/{id} {
+      allow read, write: if false;
+    }
     match /accessKeys/{keyId} {
       allow read, write: if false;
     }

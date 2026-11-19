@@ -1,45 +1,32 @@
-// Acesso por assinatura: chaves de uso único.
+// Acesso vitalício por compra (Kiwify).
 //
-// - As chaves ficam no Firestore (coleção "accessKeys") só como HASH (SHA-256): quem ler o banco não
-//   consegue usar nenhuma chave. O texto da chave aparece uma única vez, na hora de gerar.
-// - Ao usar uma chave, o backend marca a chave como usada (dentro de uma transação, então duas pessoas
-//   nunca usam a mesma) e grava no usuário os "custom claims" { licensed: true, until: <ms> }.
+// - Cada venda aprovada chega pelo webhook da Kiwify e o e-mail do comprador é registrado como PAGO na
+//   coleção "purchases" (o documento só tem o hash do e-mail no ID; as regras do Firestore fecham a coleção).
+// - Quando a pessoa cria a conta com o mesmo e-mail e CONFIRMA o e-mail (ou entra com Google), o backend
+//   grava no usuário os "custom claims" { licensed: true, until: <ms>, purchase: true }.
 // - As regras do Firestore (firestore.rules) só deixam ler/gravar os dados do app quando o token tem
-//   esses claims e "until" ainda não passou. Ou seja: a trava vale mesmo para quem tentar burlar a tela.
+//   esses claims. Ou seja: a trava vale mesmo para quem tentar burlar a tela.
+// - Reembolso ou chargeback: o webhook marca a compra como reembolsada e o acesso é retirado.
 // - Contas criadas ANTES da data de início (LICENSE_CUTOFF) são liberadas automaticamente (acesso sem prazo).
 import crypto from 'node:crypto';
 
-export const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O/1/I para não confundir
 export const NO_EXPIRY = Date.UTC(2099, 0, 1);
-const DAY = 864e5;
 
 export class LicenseError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
-// "p360-abcd efgh..." → "P360ABCDEFGH..." (só letras e números, com o prefixo P360).
-export function normalizeKey(raw) {
-  let k = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (k.length === 16) k = 'P360' + k;
-  return k;
-}
-export const isKeyShape = k => /^P360[A-Z0-9]{16}$/.test(k);
-export const hashKey = raw => crypto.createHash('sha256').update('p360-access-key:' + normalizeKey(raw)).digest('hex');
-export function formatKey(k) { const n = normalizeKey(k); return `${n.slice(0, 4)}-${n.slice(4, 8)}-${n.slice(8, 12)}-${n.slice(12, 16)}-${n.slice(16, 20)}`; }
-export function generateKey() {
-  let body = '';
-  for (let i = 0; i < 16; i++) body += ALPHABET[crypto.randomInt(ALPHABET.length)];
-  return formatKey('P360' + body);
-}
+export const normalizeEmail = e => String(e || '').trim().toLowerCase();
+export const isEmailShape = e => /^[^\s@<>]{1,64}@[^\s@<>]{1,255}\.[^\s@<>]{2,}$/.test(e) && e.length <= 254;
+export const buyerId = email => crypto.createHash('sha256').update('p360-buyer:' + normalizeEmail(email)).digest('hex');
 
 export function createLicenseService({ db, auth, now = () => Date.now(), cutoff = Date.parse(process.env.LICENSE_CUTOFF || '2026-11-06T00:00:00Z'), adminEmails = new Set() }) {
-  const keys = () => db.collection('accessKeys');
+  const purchases = () => db.collection('purchases');
   const cache = new Map(); // uid → { at, value } (evita consultar o Auth a cada mensagem do Telegram)
 
   const claimsOf = user => {
     const c = user.customClaims || {};
-    const until = Number(c.until || 0);
-    return { licensed: c.licensed === true, until };
+    return { licensed: c.licensed === true, until: Number(c.until || 0) };
   };
   const stateFrom = user => {
     const { licensed, until } = claimsOf(user);
@@ -48,8 +35,13 @@ export function createLicenseService({ db, auth, now = () => Date.now(), cutoff 
     if (!licensed && created < cutoff) return { active: true, until: NO_EXPIRY, legacy: true, lifetime: true, needsClaim: true };
     return { active: false, until: licensed ? until : 0, legacy: false, expired: licensed && until <= now() };
   };
+  const findUserByEmail = async email => {
+    try { return await auth.getUserByEmail(email); }
+    catch (e) { if (e?.code === 'auth/user-not-found') return null; throw e; }
+  };
+  const iso = v => (v?.toDate ? v.toDate().toISOString() : v instanceof Date ? v.toISOString() : null);
 
-  return {
+  const service = {
     // Estado atual da assinatura de um usuário (fonte da verdade: o Auth do servidor).
     async status(uid) {
       return stateFrom(await auth.getUser(uid));
@@ -65,8 +57,7 @@ export function createLicenseService({ db, auth, now = () => Date.now(), cutoff 
       return value;
     },
 
-    // Os e-mails de ADMIN_EMAILS podem criar a conta sem chave (quem gera as chaves não tem como ter uma).
-    isAdminEmail(email) { return adminEmails.has(String(email || '').trim().toLowerCase()); },
+    isAdminEmail(email) { return adminEmails.has(normalizeEmail(email)); },
 
     // Administrador: acesso sem prazo, mas SÓ depois de confirmar o e-mail (senão qualquer um poderia
     // se cadastrar com o e-mail do administrador e virar administrador).
@@ -89,66 +80,61 @@ export function createLicenseService({ db, auth, now = () => Date.now(), cutoff 
       return { ...st, needsClaim: false };
     },
 
-    // Confere se a chave existe e está livre, SEM gastar (usada antes de criar a conta).
-    async check(raw) {
-      const k = normalizeKey(raw);
-      if (!isKeyShape(k)) return { valid: false };
-      const snap = await keys().doc(hashKey(k)).get();
-      if (!snap.exists) return { valid: false };
-      const d = snap.data();
-      return { valid: !d.usedBy && !d.revoked, days: Number(d.days || 0) };
-    },
-
-    // Usa a chave: uma única vez, para um único usuário. Soma o prazo ao que a pessoa já tem.
-    async redeem(uid, raw) {
-      const k = normalizeKey(raw);
-      if (!isKeyShape(k)) throw new LicenseError(400, 'Chave inválida. Confira os 20 caracteres e tente de novo.');
+    // Libera o acesso da conta se o e-mail dela (confirmado) tem uma compra paga.
+    async grantPurchase(uid) {
       const user = await auth.getUser(uid);
-      const ref = keys().doc(hashKey(k));
-      let days = 0;
-      await db.runTransaction(async tx => {
-        const snap = await tx.get(ref);
-        if (!snap.exists) throw new LicenseError(404, 'Chave inválida. Confira os caracteres e tente de novo.');
-        const d = snap.data();
-        if (d.revoked) throw new LicenseError(403, 'Esta chave foi cancelada. Fale com quem te enviou.');
-        if (d.usedBy) throw new LicenseError(409, 'Esta chave já foi utilizada.');
-        days = Number(d.days || 0);
-        tx.update(ref, { usedBy: uid, usedEmail: user.email || '', usedAt: new Date(now()) });
-      });
-      const current = claimsOf(user);
-      const base = current.licensed && current.until > now() ? current.until : now();
-      const until = days > 0 ? Math.min(NO_EXPIRY, base + days * DAY) : NO_EXPIRY;
-      try {
-        await auth.setCustomUserClaims(uid, { ...(user.customClaims || {}), licensed: true, until });
-      } catch (error) {
-        // Não deixa a pessoa sem a chave e sem o acesso: devolve a chave para o estoque.
-        await ref.update({ usedBy: null, usedEmail: '', usedAt: null }).catch(() => {});
-        throw new LicenseError(500, 'Não foi possível ativar agora. Tente de novo em instantes.');
-      }
+      const email = normalizeEmail(user.email);
+      if (!email) return { active: false };
+      const snap = await purchases().doc(buyerId(email)).get();
+      if (!snap.exists || snap.data().status !== 'paid') return { active: false, purchase: false };
+      if (!user.emailVerified) return { active: false, purchase: true, verifyPending: true };
+      await auth.setCustomUserClaims(uid, { ...(user.customClaims || {}), licensed: true, until: NO_EXPIRY, purchase: true });
       cache.delete(uid);
-      return { active: true, until, lifetime: until >= NO_EXPIRY, days };
+      return { active: true, until: NO_EXPIRY, lifetime: true, purchase: true };
     },
 
-    // ---- Administração ----
-    async createKeys({ count = 1, days = 30, label = '', by = '' }) {
-      count = Math.max(1, Math.min(100, Math.round(Number(count) || 1)));
-      days = Math.max(0, Math.min(3650, Math.round(Number(days) || 0)));
-      label = String(label || '').replace(/[<>]/g, '').trim().slice(0, 80);
-      const out = [];
-      for (let i = 0; i < count; i++) {
-        const key = generateKey();
-        await keys().doc(hashKey(key)).set({ createdAt: new Date(now()), createdBy: by, days, label, hint: key.slice(-4), usedBy: null, usedEmail: '', usedAt: null, revoked: false });
-        out.push(key);
-      }
-      return { keys: out, days, label };
+    // ---- Compras e reembolsos (webhook da Kiwify ou liberação manual do administrador) ----
+    async recordPurchase({ email, orderId = '', source = 'kiwify', productId = '' }) {
+      email = normalizeEmail(email);
+      if (!isEmailShape(email)) throw new LicenseError(400, 'E-mail inválido.');
+      orderId = String(orderId || '').slice(0, 80);
+      const ref = purchases().doc(buyerId(email));
+      const snap = await ref.get();
+      const old = snap.exists ? snap.data() : null;
+      // Um reembolso é definitivo para aquele pedido: um aviso antigo de "pago" reenviado não pode reabrir o acesso.
+      if (old && old.status === 'refunded' && orderId && old.orderId === orderId) return { granted: false, ignored: true };
+      await ref.set({ email, status: 'paid', orderId, source, productId: String(productId || '').slice(0, 80), createdAt: old?.createdAt || new Date(now()), updatedAt: new Date(now()) });
+      const user = await findUserByEmail(email);
+      if (!user) return { granted: false, waitingSignup: true };
+      const r = await this.grantPurchase(user.uid);
+      return { granted: !!r.active, verifyPending: !!r.verifyPending };
     },
-    async listKeys(limit = 200) {
-      const snap = await keys().orderBy('createdAt', 'desc').limit(limit).get();
-      return snap.docs.map(d => {
-        const x = d.data(), t = v => (v?.toDate ? v.toDate().toISOString() : v instanceof Date ? v.toISOString() : null);
-        return { id: d.id, label: x.label || '', days: Number(x.days || 0), hint: x.hint || '', createdAt: t(x.createdAt), usedAt: t(x.usedAt), usedEmail: x.usedEmail || '', used: !!x.usedBy, revoked: !!x.revoked };
-      });
+
+    async recordRefund({ email, orderId = '', source = 'kiwify' }) {
+      email = normalizeEmail(email);
+      if (!isEmailShape(email)) throw new LicenseError(400, 'E-mail inválido.');
+      orderId = String(orderId || '').slice(0, 80);
+      const ref = purchases().doc(buyerId(email));
+      const snap = await ref.get();
+      const old = snap.exists ? snap.data() : null;
+      // Reembolso de um pedido antigo não pode derrubar quem já fez uma compra nova depois.
+      if (old && old.status === 'paid' && orderId && old.orderId && old.orderId !== orderId) return { revoked: false, ignored: true };
+      await ref.set({ email, status: 'refunded', orderId: orderId || old?.orderId || '', source, productId: old?.productId || '', createdAt: old?.createdAt || new Date(now()), updatedAt: new Date(now()) });
+      const user = await findUserByEmail(email);
+      if (!user) return { revoked: false };
+      const c = user.customClaims || {};
+      if (c.admin === true || c.legacy === true) return { revoked: false, protected: true };
+      await auth.setCustomUserClaims(user.uid, { ...c, licensed: false, until: 0, purchase: false });
+      try { await auth.revokeRefreshTokens?.(user.uid); } catch { /* o claim já foi removido */ }
+      cache.delete(user.uid);
+      return { revoked: true };
     },
+
+    async listPurchases(limit = 500) {
+      const snap = await purchases().orderBy('updatedAt', 'desc').limit(limit).get();
+      return snap.docs.map(d => { const x = d.data(); return { email: x.email || '', status: x.status || '', source: x.source || '', orderId: x.orderId || '', updatedAt: iso(x.updatedAt) }; });
+    },
+
     // Todas as contas com a situação da assinatura (painel do administrador).
     async listUsers({ max = 2000 } = {}) {
       const out = [];
@@ -172,13 +158,6 @@ export function createLicenseService({ db, auth, now = () => Date.now(), cutoff 
       } while (pageToken && out.length < max);
       return out.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     },
-    async revokeKey(id) {
-      if (!/^[a-f0-9]{64}$/.test(String(id || ''))) throw new LicenseError(400, 'Identificador inválido.');
-      const ref = keys().doc(id), snap = await ref.get();
-      if (!snap.exists) throw new LicenseError(404, 'Chave não encontrada.');
-      if (snap.data().usedBy) throw new LicenseError(409, 'Esta chave já foi usada e não pode ser cancelada.');
-      await ref.update({ revoked: true });
-      return { ok: true };
-    },
   };
+  return service;
 }

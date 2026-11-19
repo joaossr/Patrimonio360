@@ -1,4 +1,4 @@
-// Painel do administrador: gera e acompanha as chaves de acesso de uso único.
+// Painel do administrador: acompanha compras e contas, libera e cancela acessos por e-mail.
 // A segurança está no servidor (só e-mails de ADMIN_EMAILS, já confirmados, passam). Esta tela só mostra o resultado.
 import { auth } from './config/firebase.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
@@ -7,52 +7,52 @@ import { api } from './license.js';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
 const fmt = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
-const SITE = location.origin;
-let user = null, keys = [], users = [], filter = 'all', lastGenerated = [];
+let user = null, purchases = [], users = [], filter = 'all';
 
 function toast(msg) {
   const t = $('#admToast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 2800);
 }
-const copy = async text => { try { await navigator.clipboard.writeText(text); toast('Copiado.'); } catch { toast('Não foi possível copiar. Selecione e copie manualmente.'); } };
 const tokenOf = () => user.getIdToken();
-const validity = d => d === 0 ? 'Sem vencimento' : d === 365 ? '1 ano' : d === 180 ? '6 meses' : `${d} dias`;
+// PIN de administrador (opcional no servidor): guardado só nesta aba, nunca em disco.
+let pin = '';
+try { pin = sessionStorage.getItem('p360AdmPin') || ''; } catch { /* sem sessionStorage */ }
+const aapi = (path, opts = {}) => api(path, { ...opts, headers: { ...(opts.headers || {}), ...(pin ? { 'X-Admin-Pin': pin } : {}) } });
 
-function renderRows() {
-  const list = keys.filter(k => filter === 'all' || (filter === 'free' ? !k.used && !k.revoked : k.used));
+const SOURCE = { kiwify: 'Kiwify', admin: 'Manual' };
+function renderPurchases() {
+  const list = purchases.filter(p => filter === 'all' || p.status === filter);
   $('#listEmpty').hidden = list.length > 0;
-  $('#keyRows').innerHTML = list.map(k => {
-    const status = k.revoked ? '<span class="adm-pill off">Cancelada</span>' : k.used ? `<span class="adm-pill used">Usada</span><small>${esc(k.usedEmail)} · ${fmt(k.usedAt)}</small>` : '<span class="adm-pill free">Disponível</span>';
-    return `<tr><td data-l="Para">${esc(k.label) || '<i>sem nome</i>'}</td><td data-l="Final"><code>••••${esc(k.hint)}</code></td><td data-l="Validade">${validity(k.days)}</td><td data-l="Criada">${fmt(k.createdAt)}</td><td data-l="Situação">${status}</td><td>${!k.used && !k.revoked ? `<button type="button" class="adm-link danger" data-revoke="${esc(k.id)}">Cancelar</button>` : ''}</td></tr>`;
+  $('#keyRows').innerHTML = list.map(p => {
+    const paid = p.status === 'paid';
+    const status = paid ? '<span class="adm-pill free">Paga</span>' : '<span class="adm-pill off">Reembolsada</span>';
+    const action = paid
+      ? `<button type="button" class="adm-link" data-revoke="${esc(p.email)}">Cancelar acesso</button>`
+      : `<button type="button" class="adm-link" data-grant="${esc(p.email)}">Liberar de novo</button>`;
+    return `<tr><td data-l="E-mail">${esc(p.email)}</td><td data-l="Origem">${esc(SOURCE[p.source] || p.source)}</td><td data-l="Atualizada">${fmt(p.updatedAt)}</td><td data-l="Situação">${status}</td><td>${action}</td></tr>`;
   }).join('');
 }
-function renderStats() {
-  const now = Date.now(), soon = now + 7 * 864e5;
-  const active = users.filter(u => ['ativa', 'vitalicia', 'antiga', 'admin'].includes(u.status) && u.status !== 'admin');
-  $('#stUsers').textContent = users.filter(u => u.status !== 'admin').length;
-  $('#stActive').textContent = active.length;
-  $('#stSoon').textContent = users.filter(u => u.status === 'ativa' && u.until && u.until <= soon).length;
-  $('#stFree').textContent = keys.filter(k => !k.used && !k.revoked).length;
-  $('#stUsed').textContent = keys.filter(k => k.used).length;
-}
-const STATUS = { admin: ['Administrador', 'used'], ativa: ['Ativa', 'free'], vitalicia: ['Sem vencimento', 'free'], antiga: ['Conta antiga', 'free'], vencida: ['Vencida', 'off'], 'sem-acesso': ['Sem acesso', 'off'] };
+const STATUS = { admin: ['Administrador', 'used'], ativa: ['Ativa', 'free'], vitalicia: ['Vitalício', 'free'], antiga: ['Conta antiga', 'free'], vencida: ['Vencida', 'off'], 'sem-acesso': ['Sem acesso', 'off'] };
 function renderUsers() {
   $('#usersEmpty').hidden = users.length > 0;
   $('#userRows').innerHTML = users.map(u => {
     const [label, cls] = STATUS[u.status] || [u.status, 'off'];
-    const until = u.status === 'ativa' ? fmt(new Date(u.until).toISOString()) : (u.status === 'vencida' ? 'venceu ' + fmt(new Date(u.until).toISOString()) : '—');
-    return `<tr><td data-l="Pessoa">${esc(u.name) || '<i>sem nome</i>'}<small>${esc(u.email)}${u.verified ? '' : ' · e-mail não confirmado'}</small></td><td data-l="Cadastro">${fmt(u.createdAt)}</td><td data-l="Último acesso">${fmt(u.lastLogin)}</td><td data-l="Situação"><span class="adm-pill ${cls}">${label}</span></td><td data-l="Vence em">${until}</td></tr>`;
+    return `<tr><td data-l="Pessoa">${esc(u.name) || '<i>sem nome</i>'}<small>${esc(u.email)}${u.verified ? '' : ' · e-mail não confirmado'}</small></td><td data-l="Cadastro">${fmt(u.createdAt)}</td><td data-l="Último acesso">${fmt(u.lastLogin)}</td><td data-l="Situação"><span class="adm-pill ${cls}">${label}</span></td></tr>`;
   }).join('');
 }
-async function loadKeys() {
-  const token = await tokenOf();
-  const [k, u] = await Promise.all([api('/api/admin/keys', { token }), api('/api/admin/users', { token }).catch(() => ({ users: [] }))]);
-  keys = k.keys || []; users = u.users || [];
-  renderRows(); renderUsers(); renderStats();
+function renderStats() {
+  const have = new Set(users.map(u => String(u.email).toLowerCase()));
+  const paid = purchases.filter(p => p.status === 'paid');
+  $('#stUsers').textContent = users.filter(u => u.status !== 'admin').length;
+  $('#stActive').textContent = users.filter(u => ['ativa', 'vitalicia', 'antiga'].includes(u.status)).length;
+  $('#stPaid').textContent = paid.length;
+  $('#stWaiting').textContent = paid.filter(p => !have.has(String(p.email).toLowerCase())).length;
+  $('#stRefund').textContent = purchases.filter(p => p.status === 'refunded').length;
 }
-
-function message(key) {
-  return `Olá! Seu acesso ao Patrimônio 360 está liberado 🎉\n\n1) Abra: ${SITE}/register.html\n2) Crie a sua conta e digite esta chave de acesso:\n\n${key}\n\nA chave vale só para você e só pode ser usada uma vez.`;
+async function loadAll() {
+  const r = await aapi('/api/admin/users', { token: await tokenOf() });
+  users = r.users || []; purchases = r.purchases || [];
+  renderPurchases(); renderUsers(); renderStats();
 }
 
 async function start() {
@@ -63,9 +63,11 @@ async function start() {
     const st = await api('/api/license/status', { token: await user.getIdToken(true) });
     if (!st.admin) throw Object.assign(new Error('Esta conta não é administradora. Entre com o e-mail administrador e confirme o endereço de e-mail.'), { status: 403 });
     $('#admStatus').hidden = true; $('#admApp').hidden = false;
-    await loadKeys();
+    await loadAll();
   } catch (error) {
-    console.error('Painel de chaves:', error);
+    console.error('Painel de acessos:', error);
+    if (error.data?.pinRequired) { $('#admStatus').hidden = true; $('#pinForm').hidden = false; $('#pinInput').focus(); if (pin) { $('#pinError').textContent = 'PIN incorreto.'; $('#pinError').hidden = false; } return; }
+    if (error.data?.reauth) { $('#admStatus').innerHTML = 'Por segurança, a sessão de administrador expirou. <a href="/login.html" id="reauth">Entrar novamente</a>'; $('#reauth').onclick = async e => { e.preventDefault(); await signOut(auth); location.replace('/login.html'); }; return; }
     $('#admStatus').textContent = error.message + (error.status ? ` (código ${error.status})` : ''); $('#admStatus').classList.add('adm-error');
   }
 }
@@ -76,36 +78,37 @@ onAuthStateChanged(auth, u => {
   $('#admStatus').textContent = 'Verificando acesso… (o servidor pode levar até 1 minuto para acordar)';
   start();
 });
+$('#pinForm').onsubmit = e => {
+  e.preventDefault();
+  pin = $('#pinInput').value;
+  try { sessionStorage.setItem('p360AdmPin', pin); } catch { /* ok */ }
+  $('#pinForm').hidden = true; $('#admStatus').hidden = false; $('#admStatus').textContent = 'Verificando…';
+  start();
+};
 $('#admLogout').onclick = async () => { await signOut(auth); location.replace('/login.html'); };
 
+async function grant(email) {
+  const r = await aapi('/api/admin/grant', { method: 'POST', token: await tokenOf(), body: { email } });
+  toast(r.granted ? 'Acesso liberado.' : r.verifyPending ? 'Registrado. Falta a pessoa confirmar o e-mail.' : 'Registrado. O acesso sai quando a pessoa criar a conta.');
+  await loadAll();
+}
 $('#genForm').onsubmit = async e => {
   e.preventDefault();
   const btn = $('#genBtn'), err = $('#genError'); err.hidden = true;
-  btn.disabled = true; btn.textContent = 'Gerando…';
-  try {
-    const r = await api('/api/admin/keys', { method: 'POST', token: await tokenOf(), body: { count: Number($('#genCount').value), days: Number($('#genDays').value), label: $('#genLabel').value } });
-    lastGenerated = r.keys;
-    $('#genList').innerHTML = r.keys.map(k => `<li><code>${esc(k)}</code><button type="button" class="adm-btn ghost sm" data-copy="${esc(k)}">Copiar</button><button type="button" class="adm-btn ghost sm" data-msg="${esc(k)}">Mensagem</button></li>`).join('');
-    $('#genResult').hidden = false; $('#genLabel').value = '';
-    await loadKeys();
-  } catch (error) {
-    console.error('Gerar chaves:', error);
-    err.textContent = error.message + (error.status ? ` (código ${error.status})` : '');
-    err.hidden = false;
-  }
-  finally { btn.disabled = false; btn.textContent = 'Gerar chave'; }
+  btn.disabled = true; btn.textContent = 'Liberando…';
+  try { await grant($('#genEmail').value.trim().toLowerCase()); $('#genEmail').value = ''; }
+  catch (error) { console.error('Liberar acesso:', error); err.textContent = error.message + (error.status ? ` (código ${error.status})` : ''); err.hidden = false; }
+  finally { btn.disabled = false; btn.textContent = 'Liberar acesso'; }
 };
-$('#genList').onclick = e => {
-  const c = e.target.closest('[data-copy]'), m = e.target.closest('[data-msg]');
-  if (c) copy(c.dataset.copy); else if (m) copy(message(m.dataset.msg));
-};
-$('#reloadAll').onclick = async () => { try { await loadKeys(); toast('Atualizado.'); } catch (e) { toast(e.message); } };
-$('#copyAll').onclick = () => copy(lastGenerated.join('\n'));
-$('#copyMsg').onclick = () => copy(lastGenerated.map(message).join('\n\n———\n\n'));
-$('.adm-filter').onclick = e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; document.querySelectorAll('.adm-filter button').forEach(x => x.classList.toggle('active', x === b)); renderRows(); };
+$('#reloadAll').onclick = async () => { try { await loadAll(); toast('Atualizado.'); } catch (e) { toast(e.message); } };
+$('.adm-filter').onclick = e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; document.querySelectorAll('.adm-filter button').forEach(x => x.classList.toggle('active', x === b)); renderPurchases(); };
 $('#keyRows').onclick = async e => {
-  const b = e.target.closest('[data-revoke]'); if (!b) return;
-  if (!confirm('Cancelar esta chave? Ela deixará de funcionar.')) return;
-  try { await api('/api/admin/keys/revoke', { method: 'POST', token: await tokenOf(), body: { id: b.dataset.revoke } }); toast('Chave cancelada.'); await loadKeys(); }
-  catch (error) { toast(error.message); }
+  const r = e.target.closest('[data-revoke]'), g = e.target.closest('[data-grant]');
+  try {
+    if (r) {
+      if (!confirm(`Cancelar o acesso de ${r.dataset.revoke}? A pessoa perde o acesso agora.`)) return;
+      await aapi('/api/admin/revoke', { method: 'POST', token: await tokenOf(), body: { email: r.dataset.revoke } });
+      toast('Acesso cancelado.'); await loadAll();
+    } else if (g) await grant(g.dataset.grant);
+  } catch (error) { toast(error.message); }
 };
