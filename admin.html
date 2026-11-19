@@ -19,7 +19,7 @@
 </head>
 <body>
 <header class="adm-top">
-    <a class="adm-brand" href="/"><img src="/assets/images/logo-mark.png" alt="" width="34" height="34"><span>Patrimônio <b>360</b> · Chaves de acesso</span></a>
+    <a class="adm-brand" href="/admin.html"><img src="/assets/images/logo-mark.png" alt="" width="34" height="34"><span>Patrimônio <b>360</b> · Chaves de acesso</span></a>
     <div class="adm-user"><span id="admUser"></span><button type="button" class="adm-link" id="admLogout" hidden>Sair</button></div>
 </header>
 
@@ -27,6 +27,14 @@
     <p id="admStatus" class="adm-note" role="status">Carregando…</p>
 
     <div id="admApp" hidden>
+        <section class="adm-stats" aria-label="Resumo">
+            <div><small>Contas</small><b id="stUsers">—</b></div>
+            <div><small>Assinaturas ativas</small><b id="stActive">—</b></div>
+            <div><small>Vencem em 7 dias</small><b id="stSoon">—</b></div>
+            <div><small>Chaves disponíveis</small><b id="stFree">—</b></div>
+            <div><small>Chaves usadas</small><b id="stUsed">—</b></div>
+        </section>
+
         <section class="adm-card" aria-labelledby="genTitle">
             <h1 id="genTitle">Gerar chaves</h1>
             <p class="adm-sub">Cada chave vale para uma única pessoa e só funciona uma vez. O texto da chave aparece só agora: copie e envie.</p>
@@ -58,6 +66,12 @@
             </div>
             <div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>Para</th><th>Final</th><th>Validade</th><th>Criada</th><th>Situação</th><th></th></tr></thead><tbody id="keyRows"></tbody></table></div>
             <p id="listEmpty" class="adm-note" hidden>Nenhuma chave ainda.</p>
+        </section>
+
+        <section class="adm-card" aria-labelledby="usersTitle">
+            <div class="adm-head"><h2 id="usersTitle">Assinantes</h2><button type="button" class="adm-link" id="reloadAll">Atualizar</button></div>
+            <div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>Pessoa</th><th>Cadastro</th><th>Último acesso</th><th>Situação</th><th>Vence em</th></tr></thead><tbody id="userRows"></tbody></table></div>
+            <p id="usersEmpty" class="adm-note" hidden>Nenhuma conta ainda.</p>
         </section>
     </div>
 </main>

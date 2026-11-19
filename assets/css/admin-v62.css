@@ -58,3 +58,10 @@ a{color:#8fb4ff}
   .adm-table td{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border:0}
   .adm-table td::before{content:attr(data-l);color:var(--muted);font-size:.74rem}
 }
+
+/* Totais do painel */
+.adm-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.adm-stats>div{padding:16px 18px;border-radius:18px;border:1px solid var(--border);background:var(--card);display:grid;gap:4px}
+.adm-stats small{color:var(--muted);font-size:.76rem;font-weight:600}
+.adm-stats b{font-size:1.7rem;letter-spacing:-.02em;background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (max-width:760px){.adm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.adm-stats>div:last-child{grid-column:1/-1}}

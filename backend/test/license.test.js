@@ -153,3 +153,25 @@ test('administrador: e-mail da lista cria conta sem chave, mas só ganha acesso 
   assert.equal(users.get('intruso').claims, null);
   assert.ok(docs);
 });
+
+test('lista de assinantes: situação de cada conta (administrador, ativa, vencida, antiga, sem acesso)', async () => {
+  const t0 = Date.parse('2026-11-20T12:00:00Z');
+  const mk = (email, claims, created) => ({ email, displayName: email.split('@')[0], emailVerified: true, customClaims: claims, metadata: { creationTime: new Date(created).toUTCString(), lastSignInTime: new Date(t0).toUTCString() } });
+  const all = [
+    mk('adm@x.com', { licensed: true, until: Date.UTC(2099, 0, 1), admin: true }, Date.parse('2026-11-08')),
+    mk('ativa@x.com', { licensed: true, until: t0 + 10 * DAY }, Date.parse('2026-11-09')),
+    mk('vitalicia@x.com', { licensed: true, until: Date.UTC(2099, 0, 1) }, Date.parse('2026-11-09')),
+    mk('vencida@x.com', { licensed: true, until: t0 - DAY }, Date.parse('2026-11-09')),
+    mk('antiga@x.com', null, Date.parse('2026-09-01')),
+    mk('nova@x.com', null, Date.parse('2026-11-10')),
+  ];
+  const auth = { async listUsers(n, token) { return token ? { users: [], pageToken: undefined } : { users: all.slice(0, 3), pageToken: 'p2' }; } };
+  const auth2 = { async listUsers(n, token) { return token === 'p2' ? { users: all.slice(3), pageToken: undefined } : { users: all.slice(0, 3), pageToken: 'p2' }; } };
+  const svc = createLicenseService({ db: null, auth: auth2, now: () => t0, cutoff: Date.parse('2026-11-06T00:00:00Z') });
+  const list = await svc.listUsers();
+  assert.equal(list.length, 6, 'junta as páginas');
+  const by = Object.fromEntries(list.map(u => [u.email, u.status]));
+  assert.deepEqual(by, { 'adm@x.com': 'admin', 'ativa@x.com': 'ativa', 'vitalicia@x.com': 'vitalicia', 'vencida@x.com': 'vencida', 'antiga@x.com': 'antiga', 'nova@x.com': 'sem-acesso' });
+  assert.ok(list.every(u => !('password' in u) && !('uid' in u)), 'nada sensível na resposta');
+  assert.ok(auth);
+});

@@ -8,7 +8,7 @@ const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
 const fmt = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
 const SITE = location.origin;
-let user = null, keys = [], filter = 'all', lastGenerated = [];
+let user = null, keys = [], users = [], filter = 'all', lastGenerated = [];
 
 function toast(msg) {
   const t = $('#admToast'); t.textContent = msg; t.hidden = false;
@@ -26,9 +26,29 @@ function renderRows() {
     return `<tr><td data-l="Para">${esc(k.label) || '<i>sem nome</i>'}</td><td data-l="Final"><code>••••${esc(k.hint)}</code></td><td data-l="Validade">${validity(k.days)}</td><td data-l="Criada">${fmt(k.createdAt)}</td><td data-l="Situação">${status}</td><td>${!k.used && !k.revoked ? `<button type="button" class="adm-link danger" data-revoke="${esc(k.id)}">Cancelar</button>` : ''}</td></tr>`;
   }).join('');
 }
+function renderStats() {
+  const now = Date.now(), soon = now + 7 * 864e5;
+  const active = users.filter(u => ['ativa', 'vitalicia', 'antiga', 'admin'].includes(u.status) && u.status !== 'admin');
+  $('#stUsers').textContent = users.filter(u => u.status !== 'admin').length;
+  $('#stActive').textContent = active.length;
+  $('#stSoon').textContent = users.filter(u => u.status === 'ativa' && u.until && u.until <= soon).length;
+  $('#stFree').textContent = keys.filter(k => !k.used && !k.revoked).length;
+  $('#stUsed').textContent = keys.filter(k => k.used).length;
+}
+const STATUS = { admin: ['Administrador', 'used'], ativa: ['Ativa', 'free'], vitalicia: ['Sem vencimento', 'free'], antiga: ['Conta antiga', 'free'], vencida: ['Vencida', 'off'], 'sem-acesso': ['Sem acesso', 'off'] };
+function renderUsers() {
+  $('#usersEmpty').hidden = users.length > 0;
+  $('#userRows').innerHTML = users.map(u => {
+    const [label, cls] = STATUS[u.status] || [u.status, 'off'];
+    const until = u.status === 'ativa' ? fmt(new Date(u.until).toISOString()) : (u.status === 'vencida' ? 'venceu ' + fmt(new Date(u.until).toISOString()) : '—');
+    return `<tr><td data-l="Pessoa">${esc(u.name) || '<i>sem nome</i>'}<small>${esc(u.email)}${u.verified ? '' : ' · e-mail não confirmado'}</small></td><td data-l="Cadastro">${fmt(u.createdAt)}</td><td data-l="Último acesso">${fmt(u.lastLogin)}</td><td data-l="Situação"><span class="adm-pill ${cls}">${label}</span></td><td data-l="Vence em">${until}</td></tr>`;
+  }).join('');
+}
 async function loadKeys() {
-  const r = await api('/api/admin/keys', { token: await tokenOf() });
-  keys = r.keys || []; renderRows();
+  const token = await tokenOf();
+  const [k, u] = await Promise.all([api('/api/admin/keys', { token }), api('/api/admin/users', { token }).catch(() => ({ users: [] }))]);
+  keys = k.keys || []; users = u.users || [];
+  renderRows(); renderUsers(); renderStats();
 }
 
 function message(key) {
@@ -79,6 +99,7 @@ $('#genList').onclick = e => {
   const c = e.target.closest('[data-copy]'), m = e.target.closest('[data-msg]');
   if (c) copy(c.dataset.copy); else if (m) copy(message(m.dataset.msg));
 };
+$('#reloadAll').onclick = async () => { try { await loadKeys(); toast('Atualizado.'); } catch (e) { toast(e.message); } };
 $('#copyAll').onclick = () => copy(lastGenerated.join('\n'));
 $('#copyMsg').onclick = () => copy(lastGenerated.map(message).join('\n\n———\n\n'));
 $('.adm-filter').onclick = e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; document.querySelectorAll('.adm-filter button').forEach(x => x.classList.toggle('active', x === b)); renderRows(); };

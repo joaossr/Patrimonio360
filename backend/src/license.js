@@ -149,6 +149,29 @@ export function createLicenseService({ db, auth, now = () => Date.now(), cutoff 
         return { id: d.id, label: x.label || '', days: Number(x.days || 0), hint: x.hint || '', createdAt: t(x.createdAt), usedAt: t(x.usedAt), usedEmail: x.usedEmail || '', used: !!x.usedBy, revoked: !!x.revoked };
       });
     },
+    // Todas as contas com a situação da assinatura (painel do administrador).
+    async listUsers({ max = 2000 } = {}) {
+      const out = [];
+      let pageToken;
+      do {
+        const page = await auth.listUsers(1000, pageToken);
+        for (const u of page.users) {
+          const c = u.customClaims || {}, until = Number(c.until || 0), created = Date.parse(u.metadata?.creationTime || '') || 0;
+          let status = 'sem-acesso';
+          if (c.admin === true) status = 'admin';
+          else if (c.licensed === true) status = until <= now() ? 'vencida' : (until >= NO_EXPIRY ? 'vitalicia' : 'ativa');
+          else if (created < cutoff) status = 'antiga';
+          out.push({
+            email: u.email || '', name: u.displayName || '', verified: !!u.emailVerified, status,
+            until: c.licensed === true ? until : null,
+            createdAt: created ? new Date(created).toISOString() : null,
+            lastLogin: u.metadata?.lastSignInTime ? new Date(Date.parse(u.metadata.lastSignInTime)).toISOString() : null,
+          });
+        }
+        pageToken = page.pageToken;
+      } while (pageToken && out.length < max);
+      return out.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    },
     async revokeKey(id) {
       if (!/^[a-f0-9]{64}$/.test(String(id || ''))) throw new LicenseError(400, 'Identificador inválido.');
       const ref = keys().doc(id), snap = await ref.get();

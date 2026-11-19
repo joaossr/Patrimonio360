@@ -123,6 +123,7 @@ app.get('/api/license/status',authUser,guarded(async(req,res)=>{
 app.post('/api/license/redeem',authUser,keyLimiter,guarded(async(req,res)=>{const r=await license.redeem(req.user.uid,req.body?.key);res.json(r);}));
 app.get('/api/admin/keys',authUser,adminLimiter,adminOnly,guarded(async(req,res)=>{res.json({keys:await license.listKeys()});}));
 app.post('/api/admin/keys',authUser,adminLimiter,adminOnly,guarded(async(req,res)=>{res.json(await license.createKeys({count:req.body?.count,days:req.body?.days,label:req.body?.label,by:req.user.email||req.user.uid}));}));
+app.get('/api/admin/users',authUser,adminLimiter,adminOnly,guarded(async(req,res)=>{res.json({users:await license.listUsers()});}));
 app.post('/api/admin/keys/revoke',authUser,adminLimiter,adminOnly,guarded(async(req,res)=>{res.json(await license.revokeKey(req.body?.id));}));
 
 app.post('/api/telegram/link-code',authUser,linkLimiter,async(req,res)=>{try{if(license&&!(await license.isLicensed(req.user.uid)))return res.status(402).json({error:'Assinatura inativa. Ative sua chave em Configurações → Assinatura.'});res.json(await createTelegramLinkCode(db,req.user.uid));}catch(error){console.error('Telegram link-code error:',error.message);res.status(500).json({error:'Não foi possível gerar o código do Telegram.'});}});

@@ -2089,6 +2089,8 @@ async function bootstrap(){
   const stopHint=bootHint();
   currentUser=await waitForUser();
   await ensureLicense(currentUser);
+  // A conta administradora só tem o painel de administração (chaves e assinantes), nunca o app financeiro.
+  try{if(typeof currentUser.getIdTokenResult==='function'&&(await currentUser.getIdTokenResult()).claims.admin===true){location.replace('/admin.html');return;}}catch{}
   watchSession(()=>location.replace('login.html'));
   onCloudSave({onError:()=>{cloudSaveFailed=true;syncBanner();toast('Não foi possível salvar na nuvem. Verifique sua conexão.');},onSaved:()=>{if(cloudSaveFailed){cloudSaveFailed=false;syncBanner();}}});
   // Abre na hora com a última cópia deste usuário no aparelho; a nuvem atualiza logo em seguida.
