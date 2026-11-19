@@ -65,3 +65,13 @@
 .btn-social svg{width:20px;height:20px;flex:none}
 .btn-social:focus-visible{box-shadow:var(--ring);outline:2px solid transparent}
 .auth-hint{margin:4px 0 0;color:var(--muted);font-size:.82rem;text-align:center}
+
+/* ==gradiente-auto== */
+/* Fundos com degradê cobrem também a área da borda e não repetem: acaba o fio de outra cor (rosa) nas bordas arredondadas. Gerado a partir dos seletores com degradê. */
+.auth-brand b,
+.auth-main,
+.auth-mobile-brand b,
+.auth-show,
+.auth-steps b,
+.btn-primary{background-origin:border-box;background-repeat:no-repeat}
+/* ==/gradiente-auto== */

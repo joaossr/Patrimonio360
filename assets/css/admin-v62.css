@@ -65,3 +65,11 @@ a{color:#8fb4ff}
 .adm-stats small{color:var(--muted);font-size:.76rem;font-weight:600}
 .adm-stats b{font-size:1.7rem;letter-spacing:-.02em;background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent}
 @media (max-width:760px){.adm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.adm-stats>div:last-child{grid-column:1/-1}}
+
+/* ==gradiente-auto== */
+/* Fundos com degradê cobrem também a área da borda e não repetem: acaba o fio de outra cor (rosa) nas bordas arredondadas. Gerado a partir dos seletores com degradê. */
+.adm-brand b,
+.adm-btn,
+.adm-filter button.active,
+.adm-stats b{background-origin:border-box;background-repeat:no-repeat}
+/* ==/gradiente-auto== */

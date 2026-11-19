@@ -1110,7 +1110,7 @@ function assistantPage(){
   <div class="ai-head-actions"><button type="button" class="ai-icon-btn" id="aiReport" aria-label="Resumo do mês" title="Resumo do mês">${icon('report',{size:18})}</button><button type="button" class="ai-icon-btn" id="downloadAI" aria-label="Baixar conversa" title="Baixar conversa">${icon('download',{size:18})}</button><button type="button" class="ai-icon-btn" id="clearAI" aria-label="Limpar conversa" title="Limpar conversa">${icon('trash',{size:18})}</button></div></div>
   <div class="ai-messages" id="aiMessages" aria-live="polite">${history.length?history.map(aiMessageHTML).join(''):aiWelcome()}</div>
   <form class="ai-composer" id="aiForm"><label for="aiInput" class="sr-only">Pergunta para a IA</label><textarea id="aiInput" rows="1" maxlength="500" placeholder="Pergunte sobre seu dinheiro…" enterkeyhint="send"></textarea><button class="ai-send" aria-label="Enviar pergunta" title="Enviar">${icon('send',{size:20})}</button></form>
-  <p class="ai-disclaimer">Análise educativa baseada nos seus dados. Não é recomendação de investimento.</p></div>
+  <p class="ai-disclaimer">Análise educativa baseada nos seus dados. Não&nbsp;é&nbsp;recomendação de investimento.</p></div>
   <aside class="ai-side" aria-label="Painel da IA">
   ${panel('insights','Agora no seu mês','O que a IA percebeu',`<div class="ai-insights">${aiInsightsHTML(4)}</div>`)}
   ${panel('learn','O que a IA aprendeu','Atualizado a cada uso',aiLearningPanel(),open)}
