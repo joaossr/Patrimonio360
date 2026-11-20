@@ -152,8 +152,9 @@ button,.nav-item,.bottom-nav-item,.page-tab,.origin-seg button,select,summary,[r
   .page{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
   .topbar{padding-top:max(8px,env(safe-area-inset-top))}
 }
-/* Instalado como app (sem barra do navegador) */
-@media (display-mode:standalone),(display-mode:fullscreen){
+/* Instalado como app (sem barra do navegador). Atenção: NÃO incluir "display-mode:fullscreen" aqui: o F11 do navegador
+   também cai nesse modo e a regra overscroll-behavior-y:none travava a roda do mouse (a página não rolava). */
+@media (display-mode:standalone),(display-mode:minimal-ui){
   html,body{overscroll-behavior-y:none}
   .skip-link{display:none}
   body{user-select:none;-webkit-user-select:none}

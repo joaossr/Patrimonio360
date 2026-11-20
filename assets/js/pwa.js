@@ -1,7 +1,7 @@
 /* Patrimônio 360 como app: registra o service worker, oferece "Instalar", avisa de atualização e de falta de internet.
    Script externo (a CSP do site não permite scripts inline). Expõe window.p360PWA para a tela de Configurações. */
 (() => {
-  const standaloneQuery = window.matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)');
+  const standaloneQuery = window.matchMedia('(display-mode: standalone), (display-mode: minimal-ui)');
   const ua = navigator.userAgent || '';
   const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = () => standaloneQuery.matches || window.navigator.standalone === true;
