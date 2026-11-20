@@ -62,6 +62,29 @@
     gio.observe(gal);
   }
 
+  // 3b) Fotos de pessoas ("Para quem é"): se existir assets/images/pessoas/<nome>.webp|jpg|jpeg|png, ela substitui o fundo colorido.
+  const PEXT = ['webp', 'jpg', 'jpeg', 'png'];
+  const loadPhoto = fig => {
+    if (fig.dataset.tried) return; fig.dataset.tried = '1';
+    const name = fig.dataset.photo;
+    const next = i => {
+      if (i >= PEXT.length) return;
+      const img = new Image(); img.decoding = 'async'; img.alt = '';
+      img.onload = () => { img.className = 'who-img'; fig.prepend(img); fig.classList.add('has-photo'); };
+      img.onerror = () => next(i + 1);
+      img.src = `/assets/images/pessoas/${name}.${PEXT[i]}`;
+    };
+    next(0);
+  };
+  const photos = $$('[data-photo]');
+  if ('IntersectionObserver' in window) {
+    const phio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { loadPhoto(e.target); phio.unobserve(e.target); } }), { rootMargin: '500px 0px' });
+    photos.forEach(f => phio.observe(f));
+    // no celular os cartões rolam na horizontal (o observador não vê o que está fora): carrega todas ao chegar perto
+    const wg = $('.who-grid');
+    if (wg) { const wio = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { photos.forEach(loadPhoto); wio.disconnect(); } }, { rootMargin: '600px 0px' }); wio.observe(wg); }
+  } else photos.forEach(loadPhoto);
+
   // 4) Barra de progresso da rolagem
   const bar = $('.scroll-progress i');
   const onScroll = (() => {

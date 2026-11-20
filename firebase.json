@@ -126,6 +126,10 @@
         "destination": "/assets/images/prints/vazio.txt"
       },
       {
+        "source": "/assets/images/pessoas/**",
+        "destination": "/assets/images/pessoas/vazio.txt"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

@@ -1,0 +1,27 @@
+/* Landing /oferta — v3: seção "Para quem é" (fotos de pessoas) */
+.who-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:46px}
+.who{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;transition:transform .35s,border-color .35s,box-shadow .35s}
+.who:hover{transform:translateY(-8px);border-color:rgba(140,88,232,.55);box-shadow:0 26px 60px rgba(60,80,230,.25)}
+.who-photo{position:relative;margin:0;aspect-ratio:4/5;overflow:hidden;background:radial-gradient(120% 90% at 20% 10%,#1d3a6b 0,#14123a 55%,#2a1235 100%)}
+.who-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 52%,rgba(16,24,38,.92));pointer-events:none}
+.who-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;transform:scale(1.06);filter:blur(10px);transition:transform 1.3s cubic-bezier(.2,.7,.2,1),filter 1s}
+.who.in .who-img{filter:none}
+.who:hover .who-img{transform:scale(1.13)}
+/* enquanto não há foto: ícone grande sobre o degradê, com brilho que respira */
+.who-fallback{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.92)}
+.who-fallback::before{content:"";position:absolute;width:55%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(99,140,255,.45),transparent 68%);animation:breathe 4.5s ease-in-out infinite}
+.who-fallback .i{position:relative;width:34%;height:34%;stroke-width:1.5}
+@keyframes breathe{50%{transform:scale(1.25);opacity:.65}}
+.has-photo .who-fallback{display:none}
+.who-body{display:grid;gap:8px;padding:20px 22px 24px}
+.who-body .tag{justify-self:start;margin:0}
+.who-body h3{font-size:1.1rem;line-height:1.25}
+.who-body p{color:var(--muted);font-size:.93rem;line-height:1.55}
+
+@media(max-width:1020px){.who-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+  .who-grid{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:76%;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;margin-inline:-20px;padding:6px 20px 24px;scrollbar-width:none}
+  .who-grid::-webkit-scrollbar{display:none}
+  .who{scroll-snap-align:center}
+}
+@media(prefers-reduced-motion:reduce){.who-fallback::before{animation:none}}
