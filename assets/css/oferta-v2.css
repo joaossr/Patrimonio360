@@ -6,7 +6,7 @@
 .in .frame-img{filter:none;transform:none}
 .lap-screen .frame-img,.phone .frame-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center}
 .win .frame-img{width:100%;height:auto}
-.phone{background:#05080d}
+.phone{background:#05080d;aspect-ratio:780/1688}
 .illus{left:0;right:auto;text-align:left}
 @media(min-width:1021px){.hero-grid{grid-template-columns:.9fr 1.1fr}.shot-hero{width:97%}.hero h1{font-size:clamp(2.1rem,3.7vw,3.35rem)}}
 /* brilho que passa pela tela quando a imagem aparece */
@@ -88,6 +88,16 @@ html{background:#05080d}
   .trust{margin-top:clamp(10px,2vh,20px);gap:5px 18px;font-size:clamp(.76rem,1.65vh,.9rem)}
   .hero-visual{max-width:calc((100svh - 150px) * 1.32);margin-inline:auto;width:100%;min-height:0}
 }
+/* celular e tablet: fundo do topo mais simples (sem manchas roxas atrás do texto) para ler melhor */
+@media(max-width:1020px){
+  .hero{background:linear-gradient(180deg,#0b1424 0,#070b12 62%)}
+  .orb{opacity:.15;filter:blur(120px)}
+  .o2,.o3{display:none}
+  .particles{display:none}
+  .lead,.rotator-line,.trust{color:#e3eaf4}
+  .price-old small,.price-note span{color:#b9c5d6}
+  .final .orb{opacity:.12}
+}
 /* celular: título, preço e botão já aparecem na primeira tela */
 @media(max-width:1020px){
   .rotator{display:block;margin:0 auto;min-width:0;text-align:center}
@@ -104,6 +114,7 @@ html{background:#05080d}
 .btn-lg,.sticky-cta em{animation:ringpulse 2.8s ease-out infinite}
 @keyframes ringpulse{0%{box-shadow:0 14px 34px rgba(63,140,255,.32),0 0 0 0 rgba(99,140,255,.55)}70%,100%{box-shadow:0 14px 34px rgba(63,140,255,.32),0 0 0 16px rgba(99,140,255,0)}}
 .btn:active{transform:scale(.97)}
+.btn-ghost.btn-lg{animation:none}
 
 /* faixa de números */
 .stats{padding:46px 0;background:linear-gradient(180deg,#0a1019,var(--bg));border-bottom:1px solid var(--line)}
