@@ -22,6 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/oferta.css">
+<link rel="stylesheet" href="/assets/css/oferta-v2.css">
 </head>
 <!--
   COMO EDITAR ESTA PÁGINA
@@ -34,6 +35,7 @@
      Não publique anúncios com depoimentos inventados sem a etiqueta.
 -->
 <body data-exemplos="on">
+<div class="scroll-progress" aria-hidden="true"><i></i></div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -75,15 +77,18 @@
 <!-- ================= HERO ================= -->
 <section class="hero">
   <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="particles" aria-hidden="true"></div>
   <div class="wrap hero-grid">
     <div class="hero-copy">
       <span class="pill reveal"><svg class="i"><use href="#i-bolt"/></svg> Oferta de lançamento</span>
       <h1 class="reveal d1">Controle o seu dinheiro por <span class="grad">menos de R$&nbsp;10</span>. Uma vez só, para sempre.</h1>
       <p class="lead reveal d2">Painel completo, IA financeira e lançamento pelo Telegram. Sem mensalidade, sem pegadinha: você paga uma única vez e usa o Patrimônio 360 quando e onde quiser.</p>
 
+      <p class="rotator-line reveal d2">Organize em um só lugar os seus <span class="sr-only">gastos, cartões, metas e investimentos</span><span class="rotator" aria-hidden="true"><span class="rot-in"><b>gastos</b><b>cartões</b><b>metas</b><b>investimentos</b><b>gastos</b></span></span></p>
+
       <div class="price-hero reveal d3">
-        <div class="price-old"><s>R$ 79,90</s><small>preço normal</small></div>
-        <div class="price-now"><span class="cur">R$</span><b>9</b><span class="cents">,90</span></div>
+        <div class="price-old"><s>R$ 29,90</s><small>preço normal</small></div>
+        <div class="price-now" data-price-anim><span class="cur">R$</span><b>9</b><span class="cents">,90</span></div>
         <div class="price-note"><strong>pagamento único</strong><span>acesso vitalício</span></div>
       </div>
 
@@ -144,7 +149,9 @@
 
       <div class="chip chip-1 float-c"><svg class="i"><use href="#i-send"/></svg><span>“gastei 45 no mercado”</span><em>✓ Lançado</em></div>
       <div class="chip chip-2 float-a"><svg class="i"><use href="#i-spark"/></svg><span>IA: você gastou <b>12% menos</b> que em outubro</span></div>
-      <p class="illus">Imagens ilustrativas</p>
+      <div class="chip chip-3"><svg class="i"><use href="#i-target"/></svg><span>Meta <b>Viagem</b>: 40% concluída</span></div>
+      <div class="chip chip-4"><svg class="i"><use href="#i-wallet"/></svg><span>Salário recebido <b>+ R$ 4.800</b></span></div>
+      <p class="illus">Imagens do sistema com dados de exemplo</p>
     </div>
   </div>
 </section>
@@ -154,6 +161,15 @@
   <span>Sem mensalidade</span><span>Pague uma vez</span><span>Acesso vitalício</span><span>IA financeira</span><span>Lançamento pelo Telegram</span><span>Pix, cartão e boleto</span><span>Funciona no celular</span><span>7 dias de garantia</span>
   <span>Sem mensalidade</span><span>Pague uma vez</span><span>Acesso vitalício</span><span>IA financeira</span><span>Lançamento pelo Telegram</span><span>Pix, cartão e boleto</span><span>Funciona no celular</span><span>7 dias de garantia</span>
 </div></div>
+
+<section class="stats" aria-label="Resumo">
+  <div class="wrap stats-grid">
+    <div class="stat reveal"><b><span data-count="12">12</span></b><small>funções incluídas</small></div>
+    <div class="stat reveal d1"><b>R$&nbsp;<span data-count="0">0</span></b><small>de mensalidade</small></div>
+    <div class="stat reveal d2"><b><span data-count="7">7</span> dias</b><small>de garantia</small></div>
+    <div class="stat reveal d3"><b>∞</b><small>acesso vitalício</small></div>
+  </div>
+</section>
 
 <!-- ================= PREÇO NA PRÁTICA ================= -->
 <section class="sec" id="preco-pratica">
@@ -280,6 +296,21 @@
   </div>
 </section>
 
+<!-- ================= NO CELULAR ================= -->
+<section class="sec" id="celular">
+  <div class="wrap">
+    <h2 class="reveal">E no celular <span class="grad">é ainda melhor</span></h2>
+    <p class="sub reveal d1">Instale como aplicativo, com ícone na tela inicial e em tela cheia, no iPhone e no Android.</p>
+    <div class="gallery">
+      <figure class="shot gal reveal" data-print="celular"><div class="phone"><div class="mk ph-mock"></div></div><figcaption>Início</figcaption></figure>
+      <figure class="shot gal reveal" data-print="cel-movimentacoes"><div class="phone"><div class="mk ph-mock"></div></div><figcaption>Movimentações</figcaption></figure>
+      <figure class="shot gal reveal" data-print="cel-metas"><div class="phone"><div class="mk ph-mock"></div></div><figcaption>Metas</figcaption></figure>
+      <figure class="shot gal reveal" data-print="cel-ia"><div class="phone"><div class="mk ph-mock"></div></div><figcaption>IA Financeira</figcaption></figure>
+    </div>
+    <p class="gal-note reveal">Telas reais do sistema, com dados de exemplo.</p>
+  </div>
+</section>
+
 <!-- ================= COMO FUNCIONA ================= -->
 <section class="sec alt" id="como-funciona">
   <div class="wrap">
@@ -299,7 +330,7 @@
       <div class="offer-glow"></div>
       <span class="pill"><svg class="i"><use href="#i-bolt"/></svg> Oferta de lançamento</span>
       <h2>Acesso vitalício ao Patrimônio 360</h2>
-      <div class="offer-price"><div class="price-old"><s>R$ 79,90</s></div><div class="price-now big"><span class="cur">R$</span><b>9</b><span class="cents">,90</span></div></div>
+      <div class="offer-price"><div class="price-old"><s>R$ 29,90</s></div><div class="price-now big" data-price-anim><span class="cur">R$</span><b>9</b><span class="cents">,90</span></div></div>
       <p class="offer-sub">Pagamento único · sem mensalidade · sem renovação</p>
       <ul class="offer-list">
         <li><svg class="i"><use href="#i-check"/></svg> Painel, contas, cartões e orçamento</li>
@@ -311,7 +342,7 @@
       </ul>
       <a class="btn btn-lg wide" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Quero meu acesso por R$ 9,90</span><svg class="i"><use href="#i-arrow"/></svg></a>
       <div class="pay-row"><span>Pix</span><span>Cartão em até 12x</span><span>Boleto</span><span>Apple Pay</span></div>
-      <p class="guarantee"><svg class="i"><use href="#i-shield"/></svg> <strong>7 dias de garantia.</strong> Se não gostar, você pede o reembolso direto pela Kiwify, sem burocracia.</p>
+      <p class="guarantee"><svg class="i"><use href="#i-shield"/></svg><span><strong>7 dias de garantia.</strong> Se não gostar, você pede o reembolso direto pela Kiwify, sem burocracia.</span></p>
     </div>
   </div>
 </section>
@@ -322,14 +353,14 @@
     <h2 class="reveal">O que as pessoas <span class="grad">estão dizendo</span></h2>
     <p class="sub reveal d1">Quem usa o Patrimônio 360 no dia a dia.</p>
     <!-- TROQUE estes textos pelos depoimentos reais e mude data-exemplos para "off" na tag <body>. -->
-    <div class="reviews">
+    <div class="reviews-wrap"><div class="reviews" id="reviewsTrack">
       <article class="rev-card reveal"><span class="tag-exemplo">Exemplo</span><div class="stars" aria-label="5 estrelas"><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg></div><p>“Pelo preço de um lanche eu finalmente sei para onde vai o meu dinheiro. Em uma semana já tinha tudo organizado.”</p><footer><span class="avt a1">M</span><div><b>Mariana S.</b><small>Professora · Salvador</small></div></footer></article>
       <article class="rev-card reveal d1"><span class="tag-exemplo">Exemplo</span><div class="stars" aria-label="5 estrelas"><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg></div><p>“Lançar gasto pelo Telegram mudou tudo. Mando uma mensagem na fila do mercado e acabou. Não largo mais.”</p><footer><span class="avt a2">R</span><div><b>Rafael L.</b><small>Analista · Recife</small></div></footer></article>
       <article class="rev-card reveal d2"><span class="tag-exemplo">Exemplo</span><div class="stars" aria-label="5 estrelas"><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg></div><p>“Eu pagava mensalidade em outro app. Aqui paguei uma vez e tem até IA. Achei barato demais para o que entrega.”</p><footer><span class="avt a3">C</span><div><b>Camila R.</b><small>Designer · São Paulo</small></div></footer></article>
       <article class="rev-card reveal"><span class="tag-exemplo">Exemplo</span><div class="stars" aria-label="5 estrelas"><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg></div><p>“As metas e a reserva de emergência me motivaram a guardar todo mês. Ver o gráfico subindo é viciante.”</p><footer><span class="avt a4">T</span><div><b>Thiago M.</b><small>Autônomo · Belo Horizonte</small></div></footer></article>
       <article class="rev-card reveal d1"><span class="tag-exemplo">Exemplo</span><div class="stars" aria-label="5 estrelas"><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg></div><p>“Instalei no iPhone e parece aplicativo de loja. Controlo as faturas dos cartões sem estresse.”</p><footer><span class="avt a5">L</span><div><b>Letícia A.</b><small>Enfermeira · Fortaleza</small></div></footer></article>
       <article class="rev-card reveal d2"><span class="tag-exemplo">Exemplo</span><div class="stars" aria-label="5 estrelas"><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg><svg class="i"><use href="#i-star"/></svg></div><p>“Simples de usar e bonito. Minha esposa e eu finalmente conversamos sobre dinheiro olhando o mesmo painel.”</p><footer><span class="avt a6">D</span><div><b>Diego P.</b><small>Motorista · Curitiba</small></div></footer></article>
-    </div>
+    </div></div>
   </div>
 </section>
 
@@ -370,7 +401,7 @@
   <p class="copy">© <span id="ano">2026</span> Patrimônio 360. Pagamento processado pela Kiwify. As imagens do sistema são ilustrativas.</p>
 </footer>
 
-<a class="sticky-cta" data-buy href="https://pay.kiwify.com.br/QcUC1dC" aria-label="Comprar por R$ 9,90"><span><s>R$ 79,90</s> <b>R$ 9,90</b><small>pagamento único</small></span><em>Comprar agora</em></a>
+<a class="sticky-cta" data-buy href="https://pay.kiwify.com.br/QcUC1dC" aria-label="Comprar por R$ 9,90"><span><s>R$ 29,90</s> <b>R$ 9,90</b><small>pagamento único</small></span><em>Comprar agora</em></a>
 
 <script src="/assets/js/oferta.js" defer></script>
 </body>
