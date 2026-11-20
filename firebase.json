@@ -89,6 +89,19 @@
         ]
       },
       {
+        "source": "/obrigado",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          },
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
         "source": "/oferta",
         "headers": [
           {
@@ -129,6 +142,10 @@
       {
         "source": "/oferta",
         "destination": "/oferta.html"
+      },
+      {
+        "source": "/obrigado",
+        "destination": "/obrigado.html"
       },
       {
         "source": "/assets/images/prints/**",
