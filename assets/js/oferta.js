@@ -21,8 +21,13 @@
   const dealBar = $('#dealBar');
   let dealStart = Date.now();
   try {
+    // Abrir o link de novo (clicar no anúncio, colar o endereço) é uma navegação nova: se a oferta já tinha acabado, a promoção volta com 5 minutos.
+    // Recarregar a página ou voltar nela pelo botão "voltar" não reinicia, para o tempo não ser burlado só com F5.
+    const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
     const saved = Number(localStorage.getItem(DEAL_KEY));
-    if (saved > 0 && saved <= Date.now()) dealStart = saved; else localStorage.setItem(DEAL_KEY, String(dealStart));
+    const valido = saved > 0 && saved <= Date.now();
+    const expirou = valido && Date.now() - saved >= DEAL_MS;
+    if (valido && !(expirou && nav === 'navigate')) dealStart = saved; else localStorage.setItem(DEAL_KEY, String(dealStart));
   } catch { /* sem armazenamento: o cronômetro vale só para esta visita */ }
   const dealLeft = () => Math.max(0, DEAL_MS - (Date.now() - dealStart));
   let dealOver = dealLeft() <= 0;
