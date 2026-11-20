@@ -11,6 +11,7 @@
       "**/.*",
       "**/node_modules/**",
       "backend/**",
+      "divulgacao/**",
       "**/*.md",
       "server-local-backup.patch",
       "firebase-hosting.public.json",
@@ -116,6 +117,14 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/oferta",
+        "destination": "/oferta.html"
+      },
+      {
+        "source": "/assets/images/prints/**",
+        "destination": "/assets/images/prints/vazio.txt"
+      },
       {
         "source": "**",
         "destination": "/index.html"
