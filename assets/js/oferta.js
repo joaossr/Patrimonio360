@@ -24,7 +24,7 @@
 
   // 2) Entrada animada ao rolar
   const reveal = $$('.reveal, .shot, .show-text, .features, .compare');
-  if (reduce || !('IntersectionObserver' in window)) reveal.forEach(e => e.classList.add('in'));
+  if (!('IntersectionObserver' in window)) reveal.forEach(e => e.classList.add('in'));
   else {
     const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .14, rootMargin: '0px 0px -6% 0px' });
     reveal.forEach(e => io.observe(e));
@@ -93,7 +93,7 @@
   const fq = $$('.faq details');
   fq.forEach(d => d.addEventListener('toggle', () => { if (d.open) fq.forEach(o => { if (o !== d) o.open = false; }); }));
 
-  if (reduce) return; // daqui para baixo é só movimento
+  // Com "reduzir animações" ligado no aparelho ficam de fora só os efeitos de deslocamento grande (partículas, 3D e ímã).
 
   // 7) Preço: o valor antigo cai até R$ 9,90 quando aparece
   const fmt = v => { const c = Math.round(v * 100); return [String(Math.floor(c / 100)), ',' + String(c % 100).padStart(2, '0')]; };
@@ -121,7 +121,7 @@
 
   // 9) Partículas do hero
   const pc = $('.particles');
-  if (pc) {
+  if (pc && !reduce) {
     const colors = ['rgba(63,140,255,.9)', 'rgba(140,88,232,.9)', 'rgba(224,74,151,.85)', 'rgba(25,184,201,.9)'];
     const n = innerWidth < 700 ? 9 : 20, rnd = (a, b) => a + Math.random() * (b - a);
     for (let i = 0; i < n; i++) {
@@ -133,7 +133,7 @@
 
   // 10) Hero em 3D que acompanha o mouse
   const hero = $('.hero'), vis = $('.hero-visual');
-  if (finePointer && hero && vis) {
+  if (finePointer && !reduce && hero && vis) {
     let raf = 0, tx = 0, ty = 0;
     hero.addEventListener('pointermove', e => {
       if (innerWidth <= 1020) return;
@@ -144,7 +144,7 @@
   }
 
   // 11) Botões "ímã" e luz que segue o mouse nos cartões
-  if (finePointer) {
+  if (finePointer && !reduce) {
     $$('.btn').forEach(b => {
       b.addEventListener('pointermove', e => {
         const r = b.getBoundingClientRect();

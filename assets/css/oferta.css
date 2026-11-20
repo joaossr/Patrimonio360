@@ -333,10 +333,10 @@ body[data-exemplos="on"] .tag-exemplo{display:inline-block}
   .guarantee{text-align:left}
 }
 @media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation:none!important;transition:none!important}
-  .reveal{opacity:1;transform:none}
-  .msg,.bub{opacity:1;transform:none}
-  .bars i{height:var(--h)}.hbars i{width:var(--w)}.line path{stroke-dashoffset:0}
+  /* "reduzir animações" ligado: seguram-se só os efeitos de deslocamento grande e brilho contínuo.
+     A faixa que corre, os avisos, a troca de palavra, o preço e as entradas suaves continuam. */
+  .orb,.float-a:not(.chip),.float-b:not(.chip),.float-c:not(.chip),.grad,.btn::after,.price-now b,.stat b,.gal .phone,.feat .fi,.hero-visual,.offer-glow{animation:none!important}
+  .reveal{transform:none}
 }
 
 /* ---------- página de privacidade e termos ---------- */
