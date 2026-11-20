@@ -31,7 +31,7 @@
 .rot-in b{display:block;height:1.5em;line-height:1.5em;background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
 @keyframes rotslide{0%,18%{transform:translateY(0)}25%,43%{transform:translateY(-1.5em)}50%,68%{transform:translateY(-3em)}75%,93%{transform:translateY(-4.5em)}100%{transform:translateY(-6em)}}
 
-/* preço antigo riscado na hora e novo "caindo" até R$ 9,90 */
+/* preço antigo riscado na hora e novo "caindo" até R$ 29,90 */
 .price-old s{text-decoration:none;position:relative}
 .price-old s::after{content:"";position:absolute;left:-3px;right:-3px;top:54%;height:3px;border-radius:3px;background:var(--red);transform:scaleX(0);transform-origin:left;animation:strike .6s .9s cubic-bezier(.6,0,.2,1) forwards}
 @keyframes strike{to{transform:scaleX(1)}}

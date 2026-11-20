@@ -1,0 +1,43 @@
+/* Faixa da oferta de lançamento com cronômetro (fica fixa no topo da /oferta) */
+:root{--deal-h:42px}
+.deal-bar{position:fixed;inset:0 0 auto 0;height:var(--deal-h);z-index:55;display:flex;align-items:center;background:linear-gradient(90deg,#2a1450,#4a1a5e 55%,#5b1d4e);border-bottom:1px solid rgba(255,255,255,.12);color:#fff;overflow:hidden}
+.deal-in{width:min(1180px,100% - 28px);margin-inline:auto;display:flex;align-items:center;justify-content:center;gap:14px;font-size:.88rem;line-height:1.2;white-space:nowrap}
+.deal-on,.deal-off{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.deal-on .i{color:var(--yellow);width:1.05em;height:1.05em}
+.deal-on s{opacity:.7}
+.deal-on b{font-weight:800}
+.deal-short{display:none}
+.deal-time{display:inline-block;min-width:3.6ch;text-align:center;padding:3px 9px;border-radius:8px;background:rgba(0,0,0,.38);border:1px solid rgba(246,196,83,.55);color:var(--yellow);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.deal-bar.urgent .deal-time{color:#fff;background:#d6304a;border-color:#ff7b8c;animation:dealpulse 1s ease-in-out infinite}
+@keyframes dealpulse{50%{transform:scale(1.07)}}
+.deal-btn{flex:none;text-decoration:none;font-weight:800;font-size:.8rem;padding:6px 14px;border-radius:999px;background:#fff;color:#2a1450;transition:transform .2s,box-shadow .2s}
+.deal-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.deal-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--gradient);transform-origin:left;transform:scaleX(1);transition:transform .3s linear}
+/* terminou: faixa discreta, sem pressão */
+.deal-bar.over{background:#101826;border-bottom-color:var(--line)}
+.deal-bar.over .deal-progress{display:none}
+.deal-off{color:var(--soft)}
+.deal-off b{color:#fff;white-space:nowrap}
+.deal-off{text-align:center}
+.deal-bar.over .deal-btn{background:rgba(255,255,255,.12);color:#fff}
+[hidden]{display:none!important}
+
+/* o menu e a primeira tela descem para caber a faixa */
+.has-deal .top{top:var(--deal-h)}
+@media(min-width:1021px){.has-deal .hero-grid{padding-top:calc(76px + var(--deal-h));padding-bottom:12px}.has-deal .hero-visual{max-width:calc((100svh - 190px) * 1.32)}}
+@media(max-width:1020px){.has-deal .hero{padding-top:calc(84px + var(--deal-h))}}
+.has-deal [id]{scroll-margin-top:calc(var(--deal-h) + 70px)}
+
+@media(max-width:700px){
+  :root{--deal-h:40px}
+  .deal-in{gap:8px;font-size:.78rem;width:calc(100% - 20px)}
+  .deal-long{display:none}
+  .deal-short{display:inline}
+  .deal-on{gap:6px}
+  .deal-on .i{display:none}
+  .deal-time{padding:2px 7px}
+  .deal-btn{padding:5px 11px;font-size:.74rem}
+  .deal-off{white-space:normal;font-size:.74rem;line-height:1.15}
+}
+@media(max-width:360px){.deal-in{font-size:.72rem;gap:6px}.deal-btn{padding:5px 9px}}
+@media(prefers-reduced-motion:reduce){.deal-bar.urgent .deal-time{animation:none}.deal-progress{transition:none}}

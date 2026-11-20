@@ -15,6 +15,18 @@
   // ano do rodapé
   const ano = $('#ano'); if (ano) ano.textContent = new Date().getFullYear();
 
+  // 0) Oferta de lançamento com cronômetro de 5 minutos, contado desde a primeira entrada neste navegador.
+  //    Depois que acaba, a página mostra R$ 79,90 e o botão leva ao checkout de R$ 79,90 (oferta "Preço normal" da Kiwify).
+  const DEAL_MS = 5 * 60 * 1000, PROMO_PATH = '/QcUC1dC', NORMAL_PATH = '/2HbPXdl', DEAL_KEY = 'p360_oferta_inicio';
+  const dealBar = $('#dealBar');
+  let dealStart = Date.now();
+  try {
+    const saved = Number(localStorage.getItem(DEAL_KEY));
+    if (saved > 0 && saved <= Date.now()) dealStart = saved; else localStorage.setItem(DEAL_KEY, String(dealStart));
+  } catch { /* sem armazenamento: o cronômetro vale só para esta visita */ }
+  const dealLeft = () => Math.max(0, DEAL_MS - (Date.now() - dealStart));
+  let dealOver = dealLeft() <= 0;
+
   // 1) Parâmetros dos anúncios (utm_*, src, sck) seguem para o checkout da Kiwify: assim as vendas aparecem por campanha.
   try {
     const q = new URLSearchParams(location.search), keep = new URLSearchParams();
@@ -118,12 +130,14 @@
 
   // Com "reduzir animações" ligado no aparelho ficam de fora só os efeitos de deslocamento grande (partículas, 3D e ímã).
 
-  // 7) Preço: o valor antigo cai até R$ 9,90 quando aparece
+  // 7) Preço: o valor antigo (R$ 79,90) cai até R$ 29,90 quando aparece
   const fmt = v => { const c = Math.round(v * 100); return [String(Math.floor(c / 100)), ',' + String(c % 100).padStart(2, '0')]; };
   const priceEls = $$('[data-price-anim]');
-  priceEls.forEach(el => { const b = $('b', el), c = $('.cents', el); const [i, d] = fmt(29.9); b.textContent = i; c.textContent = d; });
+  const setPrice = (el, v) => { const [i, d] = fmt(v); $('b', el).textContent = i; $('.cents', el).textContent = d; };
+  priceEls.forEach(el => setPrice(el, 79.9));
   onVisible(priceEls, el => {
-    const b = $('b', el), c = $('.cents', el), t0 = performance.now(), D = 1900, from = 29.9, to = 9.9;
+    if (dealOver) return;
+    const b = $('b', el), c = $('.cents', el), t0 = performance.now(), D = 1900, from = 79.9, to = 29.9;
     const step = now => {
       const k = Math.min(1, (now - t0) / D), v = from + (to - from) * ease(k);
       const [i, d] = fmt(k < 1 ? v : to); b.textContent = i; c.textContent = d;
@@ -131,6 +145,35 @@
     };
     setTimeout(() => requestAnimationFrame(step), 450);
   }, .6);
+
+  // 7b) Cronômetro: atualiza a faixa e, quando zera, troca preço e link de compra
+  const swapBuyLinks = path => $$('[data-buy]').forEach(a => { try { const u = new URL(a.href); u.pathname = path; a.href = u.toString(); } catch { /* mantém o link */ } });
+  const applyOver = () => {
+    dealOver = true;
+    document.body.classList.add('deal-over');
+    if (dealBar) {
+      dealBar.classList.remove('urgent'); dealBar.classList.add('over');
+      $$('.deal-on, .deal-btn-on', dealBar).forEach(e => { e.hidden = true; });
+      $$('.deal-off, .deal-btn-off', dealBar).forEach(e => { e.hidden = false; });
+    }
+    $$('.px').forEach(e => { e.textContent = 'R$ 79,90'; });
+    $$('.old-px, [data-deal-pill]').forEach(e => { e.hidden = true; });
+    priceEls.forEach(el => setPrice(el, 79.9));
+    swapBuyLinks(NORMAL_PATH);
+  };
+  if (dealBar) {
+    const tEl = $('[data-deal-time]', dealBar), pEl = $('[data-deal-bar]', dealBar);
+    const tick = () => {
+      const left = dealLeft();
+      if (left <= 0) { clearInterval(timer); if (!dealOver) applyOver(); return; }
+      const s = Math.ceil(left / 1000);
+      tEl.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+      pEl.style.transform = 'scaleX(' + (left / DEAL_MS).toFixed(4) + ')';
+      dealBar.classList.toggle('urgent', s <= 60);
+    };
+    let timer = 0;
+    if (dealOver) applyOver(); else { tick(); timer = setInterval(tick, 250); }
+  }
 
   // 8) Números que sobem
   onVisible($$('[data-count]'), el => {

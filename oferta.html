@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#070b12">
-<title>Patrimônio 360 · Controle financeiro por R$ 9,90, uma vez só</title>
-<meta name="description" content="Controle contas, cartões, metas e investimentos com IA e lançamento pelo Telegram. Pague R$ 9,90 uma única vez e use para sempre, sem mensalidade.">
+<title>Patrimônio 360 · Controle financeiro por R$ 29,90, uma vez só</title>
+<meta name="description" content="Controle contas, cartões, metas e investimentos com IA e lançamento pelo Telegram. Pague R$ 29,90 uma única vez e use para sempre, sem mensalidade.">
 <link rel="canonical" href="https://patrimonio360-e4190.web.app/oferta">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_BR">
-<meta property="og:title" content="Patrimônio 360 · Controle financeiro por R$ 9,90, uma vez só">
+<meta property="og:title" content="Patrimônio 360 · Controle financeiro por R$ 29,90, uma vez só">
 <meta property="og:description" content="Painel completo, IA financeira e lançamento pelo Telegram. Pagamento único, sem mensalidade.">
 <meta property="og:url" content="https://patrimonio360-e4190.web.app/oferta">
 <meta property="og:image" content="https://patrimonio360-e4190.web.app/assets/images/og-oferta.jpg">
@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="/assets/css/oferta.css">
 <link rel="stylesheet" href="/assets/css/oferta-v2.css">
 <link rel="stylesheet" href="/assets/css/oferta-v3.css">
+<link rel="stylesheet" href="/assets/css/oferta-v4.css">
 </head>
 <!--
   COMO EDITAR ESTA PÁGINA
@@ -35,8 +36,17 @@
      data-exemplos="off"  na tag <body> (isso some com a etiqueta "Exemplo" de cada depoimento).
      Não publique anúncios com depoimentos inventados sem a etiqueta.
 -->
-<body data-exemplos="on">
+<body class="has-deal" data-exemplos="on">
 <div class="scroll-progress" aria-hidden="true"><i></i></div>
+
+<div class="deal-bar" id="dealBar" role="region" aria-label="Oferta por tempo limitado">
+  <div class="deal-in">
+    <span class="deal-on"><svg class="i"><use href="#i-bolt"/></svg> <span class="deal-long"><b>Oferta de lançamento:</b> <b class="px">R$ 29,90</b> em vez de <s>R$ 79,90</s>.</span> <span class="deal-short">Lançamento ·</span> Termina em <span class="deal-time" role="timer" aria-live="off" data-deal-time>05:00</span></span>
+    <span class="deal-off" hidden>A oferta de lançamento terminou. Preço normal: <b>R$ 79,90</b></span>
+    <a class="deal-btn" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span class="deal-btn-on">Garantir agora</span><span class="deal-btn-off" hidden>Comprar</span></a>
+  </div>
+  <i class="deal-progress" data-deal-bar aria-hidden="true"></i>
+</div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -70,7 +80,7 @@
   <nav class="top-nav" aria-label="Seções">
     <a href="#funcoes">Funções</a><a href="#sistema">Por dentro</a><a href="#para-quem">Para quem é</a><a href="#avaliacoes">Avaliações</a><a href="#duvidas">Dúvidas</a>
   </nav>
-  <a class="btn btn-sm" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Comprar por R$ 9,90</span></a>
+  <a class="btn btn-sm" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Comprar por <span class="px">R$ 29,90</span></span></a>
 </header>
 
 <main id="conteudo">
@@ -81,15 +91,15 @@
   <div class="particles" aria-hidden="true"></div>
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <span class="pill reveal"><svg class="i"><use href="#i-bolt"/></svg> Oferta de lançamento</span>
-      <h1 class="reveal d1">Controle o seu dinheiro por <span class="grad">menos de R$&nbsp;10</span>. Uma vez só, para sempre.</h1>
+      <span class="pill reveal" data-deal-pill><svg class="i"><use href="#i-bolt"/></svg> Oferta de lançamento</span>
+      <h1 class="reveal d1">Controle o seu dinheiro <span class="grad">pagando uma vez só</span>. Para sempre.</h1>
       <p class="lead reveal d2">Painel completo, IA financeira e lançamento pelo Telegram. Sem mensalidade: você paga uma vez e usa para sempre.</p>
 
       <p class="rotator-line reveal d2">Organize em um só lugar os seus <span class="sr-only">gastos, cartões, metas e investimentos</span><span class="rotator" aria-hidden="true"><span class="rot-in"><b>gastos</b><b>cartões</b><b>metas</b><b>investimentos</b><b>gastos</b></span></span></p>
 
       <div class="price-hero reveal d3">
-        <div class="price-old"><s>R$ 29,90</s><small>preço normal</small></div>
-        <div class="price-now" data-price-anim><span class="cur">R$</span><b>9</b><span class="cents">,90</span></div>
+        <div class="price-old old-px"><s>R$ 79,90</s><small>valor antigo</small></div>
+        <div class="price-now" data-price-anim><span class="cur">R$</span><b>29</b><span class="cents">,90</span></div>
         <div class="price-note"><strong>pagamento único</strong><span>acesso vitalício</span></div>
       </div>
 
@@ -100,7 +110,7 @@
 
       <ul class="trust reveal d5">
         <li><svg class="i"><use href="#i-check"/></svg> Pix, cartão e boleto</li>
-        <li><svg class="i"><use href="#i-check"/></svg> Em até 12x no cartão</li>
+        <li><svg class="i"><use href="#i-check"/></svg> Parcelado no cartão</li>
         <li><svg class="i"><use href="#i-check"/></svg> 7 dias de garantia</li>
         <li><svg class="i"><use href="#i-check"/></svg> iPhone, Android e computador</li>
       </ul>
@@ -174,13 +184,13 @@
 <!-- ================= PREÇO NA PRÁTICA ================= -->
 <section class="sec" id="preco-pratica">
   <div class="wrap">
-    <h2 class="reveal">Menos que um lanche. <span class="grad">Para organizar a vida inteira.</span></h2>
+    <h2 class="reveal">Pague uma vez. <span class="grad">Organize a vida inteira.</span></h2>
     <p class="sub reveal d1">A maioria dos aplicativos de finanças cobra todo mês, para sempre. Aqui o jogo é outro.</p>
     <div class="compare">
       <article class="cmp reveal"><h3>Planilha</h3><p class="cmp-p">Grátis, mas dá trabalho</p><ul><li>Fórmulas que quebram</li><li>Esqueceu de preencher? Perdeu o mês</li><li>Difícil de usar no celular</li></ul></article>
       <article class="cmp reveal d1"><h3>App por assinatura</h3><p class="cmp-p">Mensalidade para sempre</p><ul><li>Cobrança todo mês</li><li>Parou de pagar, perdeu o acesso</li><li>Recursos importantes só no plano caro</li></ul></article>
-      <article class="cmp best reveal d2"><span class="ribbon">Melhor custo</span><h3>Patrimônio 360</h3><p class="cmp-p"><b>R$ 9,90</b> uma única vez</p><ul><li><svg class="i"><use href="#i-check"/></svg> Acesso vitalício</li><li><svg class="i"><use href="#i-check"/></svg> IA e Telegram incluídos</li><li><svg class="i"><use href="#i-check"/></svg> Sem renovação, sem surpresa</li></ul>
-        <a class="btn" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Garantir por R$ 9,90</span></a></article>
+      <article class="cmp best reveal d2"><span class="ribbon">Melhor custo</span><h3>Patrimônio 360</h3><p class="cmp-p"><b class="px">R$ 29,90</b> uma única vez</p><ul><li><svg class="i"><use href="#i-check"/></svg> Acesso vitalício</li><li><svg class="i"><use href="#i-check"/></svg> IA e Telegram incluídos</li><li><svg class="i"><use href="#i-check"/></svg> Sem renovação, sem surpresa</li></ul>
+        <a class="btn" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Garantir por <span class="px">R$ 29,90</span></span></a></article>
     </div>
   </div>
 </section>
@@ -316,7 +326,7 @@
   <div class="wrap">
     <h2 class="reveal">Comece em <span class="grad">3 passos</span></h2>
     <div class="steps">
-      <article class="step reveal"><b>1</b><h3>Compre por R$ 9,90</h3><p>Pague com Pix, cartão (em até 12x) ou boleto, de forma segura pela Kiwify.</p></article>
+      <article class="step reveal"><b>1</b><h3>Compre por <span class="px">R$ 29,90</span></h3><p>Pague com Pix, cartão (parcelado) ou boleto, de forma segura pela Kiwify.</p></article>
       <article class="step reveal d1"><b>2</b><h3>Crie sua conta</h3><p>Use o <u>mesmo e-mail da compra</u>, com senha ou com o Google. O acesso é liberado sozinho.</p></article>
       <article class="step reveal d2"><b>3</b><h3>Organize suas finanças</h3><p>Instale no celular, conecte o Telegram se quiser e comece a lançar.</p></article>
     </div>
@@ -328,9 +338,9 @@
   <div class="wrap">
     <div class="offer reveal">
       <div class="offer-glow"></div>
-      <span class="pill"><svg class="i"><use href="#i-bolt"/></svg> Oferta de lançamento</span>
+      <span class="pill" data-deal-pill><svg class="i"><use href="#i-bolt"/></svg> Oferta de lançamento</span>
       <h2>Acesso vitalício ao Patrimônio 360</h2>
-      <div class="offer-price"><div class="price-old"><s>R$ 29,90</s></div><div class="price-now big" data-price-anim><span class="cur">R$</span><b>9</b><span class="cents">,90</span></div></div>
+      <div class="offer-price"><div class="price-old old-px"><s>R$ 79,90</s></div><div class="price-now big" data-price-anim><span class="cur">R$</span><b>29</b><span class="cents">,90</span></div></div>
       <p class="offer-sub">Pagamento único · sem mensalidade · sem renovação</p>
       <ul class="offer-list">
         <li><svg class="i"><use href="#i-check"/></svg> Painel, contas, cartões e orçamento</li>
@@ -340,8 +350,8 @@
         <li><svg class="i"><use href="#i-check"/></svg> Relatórios, PDF, planilha e backup</li>
         <li><svg class="i"><use href="#i-check"/></svg> Instalável no iPhone e no Android</li>
       </ul>
-      <a class="btn btn-lg wide" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Quero meu acesso por R$ 9,90</span><svg class="i"><use href="#i-arrow"/></svg></a>
-      <div class="pay-row"><span>Pix</span><span>Cartão em até 12x</span><span>Boleto</span><span>Apple Pay</span></div>
+      <a class="btn btn-lg wide" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Quero meu acesso por <span class="px">R$ 29,90</span></span><svg class="i"><use href="#i-arrow"/></svg></a>
+      <div class="pay-row"><span>Pix</span><span>Cartão parcelado</span><span>Boleto</span><span>Apple Pay</span></div>
       <p class="guarantee"><svg class="i"><use href="#i-shield"/></svg><span><strong>7 dias de garantia.</strong> Se não gostar, você pede o reembolso direto pela Kiwify, sem burocracia.</span></p>
     </div>
   </div>
@@ -404,12 +414,12 @@
   <div class="wrap narrow">
     <h2 class="reveal">Perguntas <span class="grad">frequentes</span></h2>
     <div class="faq">
-      <details class="reveal"><summary>É assinatura? Vou pagar todo mês?</summary><p>Não. É um pagamento único de R$ 9,90 e o acesso é vitalício. Não existe renovação nem mensalidade.</p></details>
+      <details class="reveal"><summary>É assinatura? Vou pagar todo mês?</summary><p>Não. É um pagamento único de <span class="px">R$ 29,90</span> e o acesso é vitalício. Não existe renovação nem mensalidade.</p></details>
       <details class="reveal"><summary>Como recebo o meu acesso?</summary><p>Depois do pagamento, crie a sua conta em patrimonio360-e4190.web.app usando o <strong>mesmo e-mail da compra</strong> (com senha ou com o Google). O acesso é liberado automaticamente. Se comprou com um e-mail e cadastrou outro, fale com a gente que liberamos.</p></details>
       <details class="reveal"><summary>Funciona no iPhone e no Android?</summary><p>Sim. Funciona no navegador do computador e pode ser instalado no celular como aplicativo, com ícone na tela inicial e em tela cheia.</p></details>
       <details class="reveal"><summary>Meus dados estão seguros?</summary><p>Cada conta só enxerga os próprios dados, com login protegido e e-mail confirmado. O aplicativo não pede senha nem número de cartão ou de conta bancária: você apenas registra valores. Veja os detalhes na nossa <a href="/privacidade.html">política de privacidade</a>.</p></details>
       <details class="reveal"><summary>Como funciona a IA? Ela envia meus dados para algum lugar?</summary><p>A IA Financeira roda no seu próprio aparelho, analisando as movimentações que você registrou. As respostas usam os seus números e não dependem de serviços externos de IA.</p></details>
-      <details class="reveal"><summary>Quais formas de pagamento posso usar?</summary><p>Pix, cartão de crédito (em até 12x, conforme o valor mínimo de parcela da Kiwify), boleto e Apple Pay. O pagamento é processado pela Kiwify, uma plataforma de pagamentos segura.</p></details>
+      <details class="reveal"><summary>Quais formas de pagamento posso usar?</summary><p>Pix, cartão de crédito (parcelado, conforme as opções que aparecem no checkout), boleto e Apple Pay. O pagamento é processado pela Kiwify, uma plataforma de pagamentos segura.</p></details>
       <details class="reveal"><summary>E se eu não gostar?</summary><p>Você tem 7 dias de garantia. É só pedir o reembolso pela Kiwify ou falar com o nosso suporte e o acesso é encerrado com devolução do valor.</p></details>
     </div>
   </div>
@@ -420,7 +430,7 @@
   <div class="orb o1"></div><div class="orb o2"></div>
   <div class="wrap">
     <h2 class="reveal">Comece a organizar o seu dinheiro <span class="grad">hoje</span></h2>
-    <p class="reveal d1">Por R$ 9,90 você leva o Patrimônio 360 para sempre. Sem mensalidade.</p>
+    <p class="reveal d1">Por <span class="px">R$ 29,90</span> você leva o Patrimônio 360 para sempre. Sem mensalidade.</p>
     <a class="btn btn-lg reveal d2" data-buy href="https://pay.kiwify.com.br/QcUC1dC"><span>Quero meu acesso vitalício</span><svg class="i"><use href="#i-arrow"/></svg></a>
     <small class="reveal d3">Compra segura pela Kiwify · 7 dias de garantia</small>
   </div>
@@ -436,7 +446,7 @@
   <p class="copy">© <span id="ano">2026</span> Patrimônio 360 · 65.322.704 JOAO PEDRO SILVA SA RIBEIRO - ME · CNPJ 65.322.704/0001-26<br>Pagamento processado pela Kiwify. As imagens do sistema são ilustrativas.</p>
 </footer>
 
-<a class="sticky-cta" data-buy href="https://pay.kiwify.com.br/QcUC1dC" aria-label="Comprar por R$ 9,90"><span><s>R$ 29,90</s> <b>R$ 9,90</b><small>pagamento único</small></span><em>Comprar agora</em></a>
+<a class="sticky-cta" data-buy href="https://pay.kiwify.com.br/QcUC1dC" aria-label="Comprar agora"><span><s class="old-px">R$ 79,90</s> <b class="px">R$ 29,90</b><small>pagamento único</small></span><em>Comprar agora</em></a>
 
 <script src="/assets/js/oferta.js" defer></script>
 </body>
