@@ -20,6 +20,7 @@ export function createApp({
   kiwifyToken = '', kiwifyProductId = '', // webhook da Kiwify: token secreto e (opcional) ID do produto
   extraOrigins = [], production = process.env.NODE_ENV === 'production',
   limits = {}, // { disabled: true } só nos testes de capacidade
+  increment = n => n, // FieldValue.increment no servidor de verdade; nos testes, um número comum
   loadState = async uid => { const s = await db.doc(`users/${uid}/app/state`).get(); return s.exists ? s.data().state || {} : {}; },
 } = {}) {
   const app = express();
@@ -145,6 +146,23 @@ export function createApp({
   app.get('/api/status', (req, res) => { const s = backendStatus(); res.status(s.ok ? 200 : 503).json(s); });
   app.get('/health', (req, res) => { const s = backendStatus(); res.status(s.ok ? 200 : 503).json(s); });
 
+  // ---------- Contador anônimo da página de oferta ----------
+  // Só conta quantas vezes cada passo aconteceu, por anúncio e por dia. Não grava IP, cookie, identificador nem texto livre:
+  // o evento é uma de 5 palavras fixas e o anúncio só aceita letras minúsculas, números e "_" (o resto vira "sem_origem").
+  const OFERTA_EVENTS = new Set(['view', 'price', 's50', 's90', 'buy']);
+  const ofertaLimiter = rateLimit({ windowMs: 60_000, max: 60, keyPrefix: 'oferta' });
+  const dayBR = (ms = Date.now()) => new Date(ms - 3 * 3600e3).toISOString().slice(0, 10); // dia em Brasília (UTC-3)
+  app.post('/api/oferta/evento', ofertaLimiter, (req, res) => {
+    res.status(204).end(); // sempre responde 204: a página nunca espera nem sabe se contou
+    const origin = String(req.headers.origin || '');
+    if (!(ALLOWED_ORIGINS.has(origin) || (!production && isLocalOrigin(origin)))) return; // só a nossa página conta
+    const e = String(req.body?.e || ''), c0 = String(req.body?.c || '');
+    if (!OFERTA_EVENTS.has(e) || !db) return;
+    const c = /^[a-z0-9_]{1,40}$/i.test(c0) ? c0.toLowerCase() : 'sem_origem';
+    db.doc(`ofertaStats/${dayBR()}`).set({ [c]: { [e]: increment(1) } }, { merge: true })
+      .catch(err => console.error('Contador da oferta:', err?.message));
+  });
+
   // ---------- Assinatura: acesso vitalício por compra ----------
   app.get('/api/license/status', authUser, guarded(async (req, res) => {
     let st = await license.status(req.user.uid);
@@ -178,6 +196,12 @@ export function createApp({
 
   // ---------- Painel de administração ----------
   app.get('/api/admin/users', authUser, adminLimiter, adminOnly, guarded(async (req, res) => { res.json({ users: await license.listUsers(), purchases: await license.listPurchases() }); }));
+  // Números anônimos da página de oferta (últimos 30 dias): { days: [{ day, ads: { anuncio: { view, price, s50, s90, buy } } }] }
+  app.get('/api/admin/oferta', authUser, adminLimiter, adminOnly, guarded(async (req, res) => {
+    const snap = await db.collection('ofertaStats').orderBy('__name__', 'desc').limit(30).get();
+    const days = snap.docs.map(d => ({ day: d.id, ads: d.data() || {} })).sort((a, b) => (a.day < b.day ? -1 : 1));
+    res.json({ days });
+  }));
   // Liberação manual (cortesia, suporte, comprou com outro e-mail) e cancelamento manual.
   app.post('/api/admin/grant', authUser, adminLimiter, adminOnly, guarded(async (req, res) => {
     const r = await license.recordPurchase({ email: req.body?.email, orderId: '', source: 'admin' });

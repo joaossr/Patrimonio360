@@ -53,6 +53,32 @@ async function loadAll() {
   const r = await aapi('/api/admin/users', { token: await tokenOf() });
   users = r.users || []; purchases = r.purchases || [];
   renderPurchases(); renderUsers(); renderStats();
+  loadOferta();
+}
+
+const OF_COLS = ['view', 'price', 's50', 's90', 'buy'];
+function renderOferta(days) {
+  const by = {}, perDay = [];
+  for (const d of days) {
+    let tot = 0;
+    for (const [ad, ev] of Object.entries(d.ads || {})) {
+      const row = by[ad] || (by[ad] = { view: 0, price: 0, s50: 0, s90: 0, buy: 0 });
+      for (const k of OF_COLS) row[k] += Number(ev?.[k]) || 0;
+      tot += Number(ev?.view) || 0;
+    }
+    perDay.push(`${d.day.slice(8, 10)}/${d.day.slice(5, 7)}: ${tot}`);
+  }
+  const rows = Object.entries(by).sort((a, b) => b[1].view - a[1].view);
+  $('#ofEmpty').hidden = rows.length > 0;
+  $('#ofRows').innerHTML = rows.map(([ad, r]) => {
+    const pct = r.view ? Math.round(r.buy / r.view * 100) + '%' : '—';
+    return `<tr><td data-l="Anúncio">${esc(ad)}</td><td data-l="Abriram">${r.view}</td><td data-l="Viram o preço">${r.price}</td><td data-l="Rolaram 50%">${r.s50}</td><td data-l="Rolaram 90%">${r.s90}</td><td data-l="Clicaram em comprar">${r.buy}</td><td data-l="Cliques ÷ abriram">${pct}</td></tr>`;
+  }).join('');
+  $('#ofDays').hidden = !perDay.length; $('#ofDays').textContent = 'Aberturas por dia: ' + perDay.join(' · ');
+}
+async function loadOferta() {
+  try { const r = await aapi('/api/admin/oferta', { token: await tokenOf() }); renderOferta(r.days || []); }
+  catch (e) { console.error('Contador da oferta:', e); $('#ofEmpty').textContent = 'Não foi possível carregar os números agora.'; $('#ofEmpty').hidden = false; }
 }
 
 async function start() {
@@ -100,6 +126,7 @@ $('#genForm').onsubmit = async e => {
   catch (error) { console.error('Liberar acesso:', error); err.textContent = error.message + (error.status ? ` (código ${error.status})` : ''); err.hidden = false; }
   finally { btn.disabled = false; btn.textContent = 'Liberar acesso'; }
 };
+$('#reloadOferta').onclick = async () => { await loadOferta(); toast('Atualizado.'); };
 $('#reloadAll').onclick = async () => { try { await loadAll(); toast('Atualizado.'); } catch (e) { toast(e.message); } };
 $('.adm-filter').onclick = e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; document.querySelectorAll('.adm-filter button').forEach(x => x.classList.toggle('active', x === b)); renderPurchases(); };
 $('#keyRows').onclick = async e => {

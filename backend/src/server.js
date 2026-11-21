@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { cert, initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createLicenseService } from './license.js';
 import { createApp } from './app.js';
 import { startTelegramBot, telegramMode } from './telegram/bot.js';
@@ -34,7 +34,7 @@ const adminEmails = new Set(String(process.env.ADMIN_EMAILS || '').split(',').ma
 const license = firebaseReady ? createLicenseService({ db, auth, adminEmails }) : null;
 
 const { app, loadState } = createApp({
-  db, firebaseReady, license,
+  db, firebaseReady, license, increment: n => FieldValue.increment(n),
   verifyIdToken: auth ? token => auth.verifyIdToken(token, true) : null, // true = recusa tokens revogados
   projectRoot: path.resolve(__dirname, '../..'),
   adminEmails,
