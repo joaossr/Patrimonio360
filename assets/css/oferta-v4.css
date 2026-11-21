@@ -41,12 +41,3 @@
 }
 @media(max-width:360px){.deal-in{font-size:.72rem;gap:6px}.deal-btn{padding:5px 9px}}
 @media(prefers-reduced-motion:reduce){.deal-bar.urgent .deal-time{animation:none}.deal-progress{transition:none}}
-
-/* aviso de cookies (Pixel da Meta) */
-.ck-bar{position:fixed;left:12px;right:12px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:60;max-width:560px;margin:0 auto;padding:12px 14px;border-radius:14px;background:#0f1726;border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 34px rgba(0,0,0,.5);color:#dbe4f3;font-size:.8rem;line-height:1.4}
-.ck-bar p{margin:0 0 10px}
-.ck-bar a{color:#7fb2ff;text-decoration:underline}
-.ck-btns{display:flex;gap:8px;justify-content:flex-end}
-.ck-btns button{font:inherit;font-weight:700;padding:9px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;cursor:pointer;min-height:40px}
-.ck-btns button[data-ck="1"]{background:#fff;color:#0b1220;border-color:#fff}
-@media(min-width:900px){.ck-bar{bottom:18px;left:18px;right:auto;margin:0}}
