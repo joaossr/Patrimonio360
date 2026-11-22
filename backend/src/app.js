@@ -204,9 +204,15 @@ export function createApp({
   app.get('/api/admin/users', authUser, adminLimiter, adminOnly, guarded(async (req, res) => { res.json({ users: await license.listUsers(), purchases: await license.listPurchases() }); }));
   // Números anônimos da página de oferta (últimos 30 dias): { days: [{ day, ads: { anuncio: { view, price, s50, s90, buy } } }] }
   app.get('/api/admin/oferta', authUser, adminLimiter, adminOnly, guarded(async (req, res) => {
-    const snap = await db.collection('ofertaStats').orderBy('__name__', 'desc').limit(30).get();
-    const days = snap.docs.map(d => ({ day: d.id, ads: d.data() || {} })).sort((a, b) => (a.day < b.day ? -1 : 1));
-    res.json({ days });
+    try {
+      const snap = await db.collection('ofertaStats').orderBy('__name__', 'desc').limit(30).get();
+      const days = snap.docs.map(d => ({ day: d.id, ads: d.data() || {} })).sort((a, b) => (a.day < b.day ? -1 : 1));
+      res.json({ days });
+    } catch (e) {
+      // Só o administrador chega aqui: mostra o motivo real em vez de "Erro interno" (sem dados pessoais nele).
+      console.error('Contador da oferta (leitura):', e?.code, e?.message);
+      res.status(500).json({ error: `Não foi possível ler o contador: ${String(e?.code || '')} ${String(e?.message || '').slice(0, 160)}`.trim() });
+    }
   }));
   // Liberação manual (cortesia, suporte, comprou com outro e-mail) e cancelamento manual.
   app.post('/api/admin/grant', authUser, adminLimiter, adminOnly, guarded(async (req, res) => {
