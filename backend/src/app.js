@@ -149,8 +149,14 @@ export function createApp({
   // ---------- Contador anônimo da página de oferta ----------
   // Só conta quantas vezes cada passo aconteceu, por anúncio e por dia. Não grava IP, cookie, identificador nem texto livre:
   // o evento é uma de 5 palavras fixas e o anúncio só aceita letras minúsculas, números e "_" (o resto vira "sem_origem").
-  const OFERTA_EVENTS = new Set(['view', 'price', 's50', 's90', 'buy']);
-  const ofertaLimiter = rateLimit({ windowMs: 60_000, max: 60, keyPrefix: 'oferta' });
+  // Lista fechada: só estes nomes são aceitos (nada de texto livre vindo do navegador).
+  const OFERTA_EVENTS = new Set([
+    'view', 'price', 's50', 's90', 'buy',
+    ...['barra', 'topo', 'hero', 'preco', 'oferta', 'final', 'fixo'].map(x => `b_${x}`),                                                          // qual botão de comprar
+    ...['preco_pratica', 'funcoes', 'sistema', 'celular', 'como_funciona', 'oferta', 'para_quem', 'avaliacoes', 'duvidas'].map(x => `sec_${x}`), // seção vista
+    ...[1, 2, 3, 4, 5, 6, 7].map(x => `faq_${x}`),                                                                                                // dúvida aberta
+  ]);
+  const ofertaLimiter = rateLimit({ windowMs: 60_000, max: 240, keyPrefix: 'oferta' });
   const dayBR = (ms = Date.now()) => new Date(ms - 3 * 3600e3).toISOString().slice(0, 10); // dia em Brasília (UTC-3)
   app.post('/api/oferta/evento', ofertaLimiter, (req, res) => {
     res.status(204).end(); // sempre responde 204: a página nunca espera nem sabe se contou

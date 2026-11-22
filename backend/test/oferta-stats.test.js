@@ -66,3 +66,14 @@ test('o pedido de verificação (OPTIONS) só libera a nossa página', async () 
   const no = await fetch(base + '/api/oferta/evento', { method: 'OPTIONS', headers: { Origin: 'https://evil.example', 'Access-Control-Request-Method': 'POST' } });
   assert.equal(no.headers.get('access-control-allow-origin'), null);
 });
+
+test('aceita os eventos novos (botão, seção, dúvida) e recusa nomes fora da lista', async () => {
+  const before = JSON.stringify(saved());
+  for (const e of ['b_fixo', 'sec_duvidas', 'sec_como_funciona', 'faq_3']) assert.equal((await post({ e, c: 'p360_final' })).status, 204);
+  await wait();
+  const v = saved()[0][1].p360_final;
+  assert.equal(v.b_fixo, 1); assert.equal(v.sec_duvidas, 1); assert.equal(v.sec_como_funciona, 1); assert.equal(v.faq_3, 1);
+  const mid = JSON.stringify(saved());
+  for (const e of ['b_inventado', 'sec_', 'faq_8', 'faq_0', 'sec_preco-pratica', 'b_barra;x']) assert.equal((await post({ e, c: 'p360_final' })).status, 204);
+  await wait(); assert.equal(JSON.stringify(saved()), mid); assert.notEqual(before, mid);
+});
