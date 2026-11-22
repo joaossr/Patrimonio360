@@ -205,8 +205,9 @@ export function createApp({
   // Números anônimos da página de oferta (últimos 30 dias): { days: [{ day, ads: { anuncio: { view, price, s50, s90, buy } } }] }
   app.get('/api/admin/oferta', authUser, adminLimiter, adminOnly, guarded(async (req, res) => {
     try {
-      const snap = await db.collection('ofertaStats').orderBy('__name__', 'desc').limit(30).get();
-      const days = snap.docs.map(d => ({ day: d.id, ads: d.data() || {} })).sort((a, b) => (a.day < b.day ? -1 : 1));
+      // Um documento por dia: ler tudo e ficar com os 30 mais recentes dispensa índice do Firestore (orderBy no id exigia um).
+      const snap = await db.collection('ofertaStats').get();
+      const days = snap.docs.map(d => ({ day: d.id, ads: d.data() || {} })).sort((a, b) => (a.day < b.day ? -1 : 1)).slice(-30);
       res.json({ days });
     } catch (e) {
       // Só o administrador chega aqui: mostra o motivo real em vez de "Erro interno" (sem dados pessoais nele).

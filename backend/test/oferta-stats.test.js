@@ -16,7 +16,7 @@ function fakeDb() {
   const merge = (a, b) => { for (const [k, v] of Object.entries(b)) { if (v && typeof v === 'object') { a[k] = merge(a[k] || {}, v); } else a[k] = (typeof a[k] === 'number' && typeof v === 'number') ? a[k] + v : v; } return a; };
   const db = {
     doc: p => ({ async set(v, opt) { const cur = docs.get(p) || {}; docs.set(p, opt?.merge ? merge(cur, structuredClone(v)) : structuredClone(v)); } }),
-    collection: name => ({ orderBy: () => ({ limit: () => ({ async get() { return { docs: [...docs.entries()].filter(([k]) => k.startsWith(name + '/')).map(([k, v]) => ({ id: k.split('/')[1], data: () => v })) }; } }) }) }),
+    collection: name => ({ async get() { return { docs: [...docs.entries()].filter(([k]) => k.startsWith(name + '/')).map(([k, v]) => ({ id: k.split('/')[1], data: () => v })) }; } }),
   };
   return { db, docs };
 }
